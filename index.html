@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Crypto Max</title>
+
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+<style>
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  min-height:100vh;
+  font-family:Arial,sans-serif;
+  color:#fff;
+  background:
+    radial-gradient(circle at 50% 0%,#4a3600 0%,#111 32%,#030303 80%);
+}
+
+.container{
+  max-width:520px;
+  margin:auto;
+  padding:25px 16px 40px;
+}
+
+.logo{
+  text-align:center;
+  font-size:32px;
+  font-weight:bold;
+  color:#ffd54a;
+  text-shadow:0 0 10px #ffd54a,0 0 25px #b8860b;
+  margin:15px 0 28px;
+}
+
+.balance{
+  text-align:center;
+  padding:22px;
+  margin-bottom:20px;
+  border:1px solid #b8860b;
+  border-radius:20px;
+  background:linear-gradient(145deg,#191919,#080808);
+  box-shadow:0 0 22px rgba(255,193,7,.18);
+}
+
+.balance small{color:#aaa}
+
+.balance h1{
+  margin:8px 0 0;
+  color:#ffd54a;
+  font-size:34px;
+}
+
+.menu{
+  display:grid;
+  gap:12px;
+}
+
+button{
+  width:100%;
+  padding:17px;
+  border:1px solid #b8860b;
+  border-radius:16px;
+  background:linear-gradient(145deg,#1b1b1b,#080808);
+  color:#fff;
+  font-size:17px;
+  font-weight:bold;
+  box-shadow:0 0 12px rgba(255,193,7,.15);
+  transition:.2s;
+}
+
+button:active{
+  transform:scale(.96);
+  box-shadow:0 0 25px rgba(255,193,7,.55);
+}
+
+.gold{color:#ffd54a}
+
+.footer{
+  text-align:center;
+  margin-top:28px;
+  color:#777;
+  font-size:13px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <div class="logo">🪙 CRYPTO MAX</div>
+
+  <div class="balance">
+    <small>رصيدك الحالي</small>
+    <h1>0 GRAM</h1>
+  </div>
+
+  <div class="menu">
+
+    <button>🏠 الرئيسية</button>
+
+    <button>💰 الاستثمار</button>
+
+    <button>
+      👥 دعوة الأصدقاء — <span class="gold">5%</span>
+    </button>
+
+    <button>📊 المستويات</button>
+
+    <button>📈 الإحصائيات</button>
+
+    <button>💵 السحب</button>
+
+    <button>🎁 المكافآت</button>
+
+    <button>🆘 الدعم</button>
+
+  </div>
+
+  <div class="footer">
+    Crypto Max
+  </div>
+
+</div>
+
+<script>
+const tg = window.Telegram.WebApp;
+tg.ready();
+tg.expand();
+</script>
+
+</body>
+</html>
