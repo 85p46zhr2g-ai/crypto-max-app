@@ -4,7 +4,7 @@ from telegram import Update, ReplyKeyboardMarkup
 from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters
 
 # التوكن الجديد
-BOT_TOKEN = "8724497887:AAGj-Sfd6ID2vdu_4mbnOQ3E8yJqbZ5zMRA"
+BOT_TOKEN = "8724497887:AAGhZ-bTsoHkRcPBiUXlzSisEz08RklX3Bw"
 
 # عنوان محفظتك
 WALLET_ADDRESS = "UQBrfxfxzB5-op8FGLs-BxnZg0Bv0CveJ8VJbC3Xc9pVXZ5X"
