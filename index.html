@@ -16,6 +16,11 @@
     -webkit-tap-highlight-color:transparent;
 }
 
+html,body{
+    width:100%;
+    min-height:100%;
+}
+
 body{
     background:#090909;
     color:#fff;
@@ -26,6 +31,12 @@ body{
 
 button,input,textarea{
     font-family:inherit;
+}
+
+button{
+    -webkit-appearance:none;
+    appearance:none;
+    touch-action:manipulation;
 }
 
 .header{
@@ -108,7 +119,9 @@ button,input,textarea{
 }
 
 .btn{
+    display:block;
     width:100%;
+    min-height:48px;
     border:none;
     border-radius:13px;
     padding:14px;
@@ -118,6 +131,18 @@ button,input,textarea{
     cursor:pointer;
     background:#ff8a00;
     color:#000;
+    text-align:center;
+    position:relative;
+    z-index:5;
+}
+
+.btn:active{
+    transform:scale(.98);
+}
+
+.btn:disabled{
+    opacity:.55;
+    cursor:not-allowed;
 }
 
 .btn.secondary{
@@ -144,6 +169,12 @@ input,textarea{
     border-radius:12px;
     outline:none;
     margin-top:8px;
+    font-size:15px;
+}
+
+input:focus,
+textarea:focus{
+    border-color:#ff9500;
 }
 
 textarea{
@@ -182,6 +213,8 @@ textarea{
 .stat{
     display:flex;
     justify-content:space-between;
+    align-items:center;
+    gap:10px;
     padding:12px 0;
     border-bottom:1px solid #292929;
 }
@@ -196,6 +229,8 @@ textarea{
 
 .stat span:last-child{
     font-weight:bold;
+    text-align:left;
+    word-break:break-all;
 }
 
 .nav{
@@ -209,10 +244,12 @@ textarea{
     display:flex;
     justify-content:space-around;
     align-items:center;
-    z-index:999;
+    z-index:9999;
 }
 
 .nav button{
+    flex:1;
+    height:75px;
     background:none;
     border:0;
     color:#777;
@@ -220,7 +257,9 @@ textarea{
     display:flex;
     flex-direction:column;
     align-items:center;
+    justify-content:center;
     gap:5px;
+    cursor:pointer;
 }
 
 .nav button.active{
@@ -261,18 +300,14 @@ textarea{
     line-height:1.8;
 }
 
-.loading{
-    text-align:center;
-    color:#999;
-    padding:30px 0;
-}
-
 .success{
     color:#22c55e;
+    margin-top:10px;
 }
 
 .error{
     color:#ef4444;
+    margin-top:10px;
 }
 
 .ref-box{
@@ -283,20 +318,31 @@ textarea{
     word-break:break-all;
     font-size:12px;
     color:#bbb;
+    margin-top:10px;
 }
 
 .language-buttons{
     display:flex;
     gap:8px;
+    margin-top:12px;
 }
 
 .language-buttons button{
     flex:1;
     background:#242424;
     color:#fff;
-    border:0;
+    border:1px solid #333;
     border-radius:10px;
-    padding:12px;
+    padding:12px 5px;
+    min-height:45px;
+    cursor:pointer;
+}
+
+.language-buttons button.active{
+    background:#ff8a00;
+    color:#000;
+    border-color:#ff8a00;
+    font-weight:900;
 }
 
 .notice{
@@ -309,6 +355,10 @@ textarea{
     line-height:1.7;
     margin-bottom:12px;
 }
+
+.hidden{
+    display:none !important;
+}
 </style>
 </head>
 
@@ -316,11 +366,11 @@ textarea{
 
 <div class="header">
     <div class="logo">GRAM MAX</div>
-    <div class="subtitle">منصة GRAM MAX</div>
+    <div class="subtitle" id="subtitle">منصة GRAM MAX</div>
 </div>
 
 <div class="balance-card">
-    <div class="balance-title">رصيدك الحالي</div>
+    <div class="balance-title" id="balanceTitle">رصيدك الحالي</div>
     <div class="balance" id="balance">0.00</div>
     <div class="currency">GRAM</div>
 </div>
@@ -330,31 +380,33 @@ textarea{
 <!-- الرئيسية -->
 <section id="home" class="page active">
 
-    <div class="section-title">🏠 الرئيسية</div>
+    <div class="section-title" data-ar="🏠 الرئيسية" data-en="🏠 Home" data-ru="🏠 Главная">
+        🏠 الرئيسية
+    </div>
 
     <div class="card">
-        <h3>👋 أهلاً بك في GRAM MAX</h3>
-        <p>
+        <h3 id="welcomeTitle">👋 أهلاً بك في GRAM MAX</h3>
+        <p id="welcomeText">
             من هنا يمكنك الوصول إلى الاستثمار والمهام والمحفظة
             والإحصائيات والدعوات والدعم.
         </p>
     </div>
 
     <div class="card">
-        <h3>📊 معلومات حسابك</h3>
+        <h3 id="accountInfoTitle">📊 معلومات حسابك</h3>
 
         <div class="stat">
-            <span>💰 الرصيد</span>
+            <span id="balanceLabel">💰 الرصيد</span>
             <span id="homeBalance">0.00 GRAM</span>
         </div>
 
         <div class="stat">
-            <span>👥 الإحالات</span>
+            <span id="referralsLabel">👥 الإحالات</span>
             <span id="homeReferrals">0</span>
         </div>
 
         <div class="stat">
-            <span>👛 المحفظة</span>
+            <span id="walletLabel">👛 المحفظة</span>
             <span id="homeWallet">غير مربوطة</span>
         </div>
     </div>
@@ -365,9 +417,11 @@ textarea{
 <!-- الاستثمار -->
 <section id="investment" class="page">
 
-    <div class="section-title">📈 الاستثمار</div>
+    <div class="section-title" data-ar="📈 الاستثمار" data-en="📈 Investment" data-ru="📈 Инвестиции">
+        📈 الاستثمار
+    </div>
 
-    <div class="notice">
+    <div class="notice" id="investmentNotice">
         اختر المستوى المناسب لك. سيتم خصم المبلغ من رصيد GRAM عند تنفيذ الاستثمار.
     </div>
 
@@ -480,14 +534,15 @@ textarea{
         <input
             id="walletInput"
             type="text"
+            autocomplete="off"
             placeholder="EQ... أو UQ..."
         >
 
-        <button class="btn" onclick="linkWallet()">
+        <button class="btn" id="walletBtn" onclick="linkWallet()">
             🔗 ربط المحفظة
         </button>
 
-        <div id="walletStatus" style="margin-top:12px;"></div>
+        <div id="walletStatus"></div>
     </div>
 
 
@@ -503,6 +558,7 @@ textarea{
             id="depositAmount"
             type="number"
             step="0.01"
+            inputmode="decimal"
             placeholder="مبلغ الإيداع بالـ GRAM"
         >
 
@@ -527,10 +583,11 @@ textarea{
             id="withdrawAmount"
             type="number"
             step="0.01"
+            inputmode="decimal"
             placeholder="مبلغ السحب بالـ GRAM"
         >
 
-        <button class="btn red" onclick="createWithdrawal()">
+        <button class="btn red" id="withdrawBtn" onclick="createWithdrawal()">
             إنشاء طلب سحب
         </button>
 
@@ -582,8 +639,8 @@ textarea{
             جاري تجهيز رابط الإحالة...
         </div>
 
-        <button class="btn" onclick="copyReferral()">
-            📋 نسخ رابط الإحالة
+        <button class="btn" onclick="shareReferral()">
+            📤 مشاركة رابط الإحالة
         </button>
 
     </div>
@@ -601,10 +658,22 @@ textarea{
         <h3>🌐 اللغة</h3>
 
         <div class="language-buttons">
-            <button onclick="changeLanguage('ar')">🇸🇦 العربية</button>
-            <button onclick="changeLanguage('en')">🇬🇧 English</button>
-            <button onclick="changeLanguage('ru')">🇷🇺 Русский</button>
+
+            <button id="lang-ar" onclick="changeLanguage('ar')">
+                🇸🇦 العربية
+            </button>
+
+            <button id="lang-en" onclick="changeLanguage('en')">
+                🇬🇧 English
+            </button>
+
+            <button id="lang-ru" onclick="changeLanguage('ru')">
+                🇷🇺 Русский
+            </button>
+
         </div>
+
+        <div id="languageStatus"></div>
 
     </div>
 
@@ -682,32 +751,50 @@ textarea{
 
     <button class="active" onclick="showPage('home',this)">
         <span class="nav-icon">🏠</span>
-        الرئيسية
+        <span class="nav-text"
+              data-ar="الرئيسية"
+              data-en="Home"
+              data-ru="Главная">الرئيسية</span>
     </button>
 
     <button onclick="showPage('investment',this)">
         <span class="nav-icon">📈</span>
-        استثمار
+        <span class="nav-text"
+              data-ar="استثمار"
+              data-en="Invest"
+              data-ru="Инвест">استثمار</span>
     </button>
 
     <button onclick="showPage('tasks',this)">
         <span class="nav-icon">🎯</span>
-        مهام
+        <span class="nav-text"
+              data-ar="مهام"
+              data-en="Tasks"
+              data-ru="Задания">مهام</span>
     </button>
 
     <button onclick="showPage('wallet',this)">
         <span class="nav-icon">👛</span>
-        محفظة
+        <span class="nav-text"
+              data-ar="محفظة"
+              data-en="Wallet"
+              data-ru="Кошелёк">محفظة</span>
     </button>
 
     <button onclick="showPage('stats',this)">
         <span class="nav-icon">📊</span>
-        إحصائيات
+        <span class="nav-text"
+              data-ar="إحصائيات"
+              data-en="Stats"
+              data-ru="Статистика">إحصائيات</span>
     </button>
 
     <button onclick="showPage('settings',this)">
         <span class="nav-icon">⚙️</span>
-        إعدادات
+        <span class="nav-text"
+              data-ar="إعدادات"
+              data-en="Settings"
+              data-ru="Настройки">إعدادات</span>
     </button>
 
 </div>
@@ -725,18 +812,33 @@ tg.expand();
 // بيانات المستخدم
 // ============================================================
 
-const tgUser = tg.initDataUnsafe
-    ? tg.initDataUnsafe.user
-    : null;
+const tgUser =
+    tg.initDataUnsafe &&
+    tg.initDataUnsafe.user
+        ? tg.initDataUnsafe.user
+        : null;
 
-let currentUserId = tgUser
-    ? tgUser.id
-    : null;
+let currentUserId =
+    tgUser
+        ? tgUser.id
+        : null;
 
 let currentBalance = 0;
 let currentReferrals = 0;
 let currentWallet = "";
 let completedTasks = [];
+
+let currentLanguage =
+    localStorage.getItem("gram_max_language") || "ar";
+
+
+// ============================================================
+// حماية الأزرار من مشاكل اللمس
+// ============================================================
+
+document.addEventListener("touchstart", function(){}, {
+    passive:true
+});
 
 
 // ============================================================
@@ -745,21 +847,20 @@ let completedTasks = [];
 
 function showPage(pageId, button){
 
-    document
-        .querySelectorAll(".page")
-        .forEach(page => {
-            page.classList.remove("active");
-        });
+    document.querySelectorAll(".page").forEach(function(page){
+        page.classList.remove("active");
+    });
 
-    document
-        .getElementById(pageId)
-        .classList.add("active");
+    const page =
+        document.getElementById(pageId);
 
-    document
-        .querySelectorAll(".nav button")
-        .forEach(btn => {
-            btn.classList.remove("active");
-        });
+    if(page){
+        page.classList.add("active");
+    }
+
+    document.querySelectorAll(".nav button").forEach(function(btn){
+        btn.classList.remove("active");
+    });
 
     if(button){
         button.classList.add("active");
@@ -778,11 +879,13 @@ function showPage(pageId, button){
 
 function sendAction(data){
 
-    if(!tg){
+    if(!tg || typeof tg.sendData !== "function"){
 
-        alert("يجب فتح التطبيق من داخل Telegram.");
-        return;
+        alert(
+            "❌ يجب فتح التطبيق من داخل Telegram."
+        );
 
+        return false;
     }
 
     try{
@@ -791,29 +894,18 @@ function sendAction(data){
             JSON.stringify(data)
         );
 
+        return true;
+
     }catch(error){
 
         console.error(error);
 
         alert(
-            "حدث خطأ أثناء إرسال الطلب."
+            "❌ حدث خطأ أثناء إرسال الطلب."
         );
 
+        return false;
     }
-
-}
-
-
-// ============================================================
-// تحميل البيانات
-// ============================================================
-
-function requestData(){
-
-    sendAction({
-        action:"get_data"
-    });
-
 }
 
 
@@ -823,72 +915,50 @@ function requestData(){
 
 function updateUI(){
 
-    document
-        .getElementById("balance")
-        .innerText =
-        Number(currentBalance).toFixed(2);
+    const balance =
+        Number(currentBalance || 0).toFixed(2);
 
-    document
-        .getElementById("homeBalance")
-        .innerText =
-        Number(currentBalance).toFixed(2)
-        + " GRAM";
+    document.getElementById("balance").innerText =
+        balance;
 
-    document
-        .getElementById("homeReferrals")
-        .innerText =
+    document.getElementById("homeBalance").innerText =
+        balance + " GRAM";
+
+    document.getElementById("statBalance").innerText =
+        balance + " GRAM";
+
+    document.getElementById("homeReferrals").innerText =
         currentReferrals;
 
-    document
-        .getElementById("statBalance")
-        .innerText =
-        Number(currentBalance).toFixed(2)
-        + " GRAM";
-
-    document
-        .getElementById("statReferrals")
-        .innerText =
+    document.getElementById("statReferrals").innerText =
         currentReferrals;
 
-    document
-        .getElementById("statTasks")
-        .innerText =
+    document.getElementById("statTasks").innerText =
         completedTasks.length;
+
 
     if(currentWallet){
 
-        document
-            .getElementById("homeWallet")
-            .innerText =
+        document.getElementById("homeWallet").innerText =
             "✓ تم الربط";
 
-        document
-            .getElementById("statWallet")
-            .innerText =
+        document.getElementById("statWallet").innerText =
             "✓ تم الربط";
 
-        document
-            .getElementById("walletStatus")
-            .innerHTML =
-            '<div class="success">✓ تم ربط المحفظة</div>';
+        document.getElementById("walletStatus").innerHTML =
+            '<div class="success">✓ تم ربط المحفظة بنجاح</div>';
 
     }else{
 
-        document
-            .getElementById("homeWallet")
-            .innerText =
+        document.getElementById("homeWallet").innerText =
             "غير مربوطة";
 
-        document
-            .getElementById("statWallet")
-            .innerText =
+        document.getElementById("statWallet").innerText =
             "غير مربوطة";
 
     }
 
-
     updateTaskButtons();
-
     createReferralLink();
 }
 
@@ -899,64 +969,91 @@ function updateUI(){
 
 function updateTaskButtons(){
 
-    if(
-        completedTasks.includes("task1")
-    ){
+    const task1 =
+        document.getElementById("task1Btn");
 
-        const btn =
-            document.getElementById("task1Btn");
+    const task2 =
+        document.getElementById("task2Btn");
 
-        btn.innerText = "✓ مكتملة";
-        btn.disabled = true;
 
+    if(task1){
+
+        if(completedTasks.includes("task1")){
+
+            task1.innerText =
+                "✓ مكتملة";
+
+            task1.disabled = true;
+
+        }else{
+
+            task1.innerText =
+                "فتح";
+
+            task1.disabled = false;
+        }
     }
 
-    if(
-        completedTasks.includes("task2")
-    ){
 
-        const btn =
-            document.getElementById("task2Btn");
+    if(task2){
 
-        btn.innerText = "✓ مكتملة";
-        btn.disabled = true;
+        if(completedTasks.includes("task2")){
 
+            task2.innerText =
+                "✓ مكتملة";
+
+            task2.disabled = true;
+
+        }else{
+
+            task2.innerText =
+                "فتح";
+
+            task2.disabled = false;
+        }
     }
-
 }
 
 
 function openTask(taskId,url){
 
-    if(
-        completedTasks.includes(taskId)
-    ){
+    if(completedTasks.includes(taskId)){
         return;
     }
 
-    window.open(
-        url,
-        "_blank"
-    );
+    try{
 
-    setTimeout(
-        function(){
+        if(
+            tg &&
+            typeof tg.openTelegramLink === "function"
+        ){
 
-            const confirmed =
-                confirm(
-                    "بعد الاشتراك بالقناة اضغط موافق للتحقق."
-                );
+            tg.openTelegramLink(url);
 
-            if(confirmed){
+        }else{
 
-                verifyTask(taskId);
+            window.open(url,"_blank");
+        }
 
-            }
+    }catch(error){
 
-        },
-        1500
-    );
+        window.open(url,"_blank");
+    }
 
+
+    setTimeout(function(){
+
+        const confirmed =
+            confirm(
+                "بعد الاشتراك بالقناة اضغط موافق للتحقق."
+            );
+
+        if(confirmed){
+
+            verifyTask(taskId);
+        }
+
+    },1500);
 }
 
 
@@ -969,7 +1066,6 @@ function verifyTask(taskId){
         task_id:taskId
 
     });
-
 }
 
 
@@ -980,7 +1076,8 @@ function verifyTask(taskId){
 function invest(level,amount){
 
     if(
-        Number(currentBalance) < Number(amount)
+        Number(currentBalance) <
+        Number(amount)
     ){
 
         alert(
@@ -988,30 +1085,39 @@ function invest(level,amount){
         );
 
         return;
-
     }
+
 
     const ok =
         confirm(
-            "هل تريد استثمار "
-            + amount
-            + " GRAM؟"
+            "هل تريد استثمار " +
+            amount +
+            " GRAM؟"
         );
 
     if(!ok){
         return;
     }
 
-    sendAction({
 
-        action:"invest_start",
+    const sent =
+        sendAction({
 
-        level:level,
+            action:"invest_start",
 
-        amount:amount
+            level:level,
 
-    });
+            amount:amount
 
+        });
+
+
+    if(sent){
+
+        alert(
+            "✅ تم إرسال طلب الاستثمار."
+        );
+    }
 }
 
 
@@ -1029,38 +1135,87 @@ function linkWallet(){
     const address =
         input.value.trim();
 
+
     if(!address){
 
         alert(
-            "أدخل عنوان المحفظة."
+            "❌ أدخل عنوان المحفظة أولاً."
         );
 
-        return;
+        input.focus();
 
+        return;
     }
 
+
     if(
-        !address.startsWith("EQ")
-        &&
+        !address.startsWith("EQ") &&
         !address.startsWith("UQ")
     ){
 
         alert(
-            "❌ عنوان المحفظة غير صحيح."
+            "❌ عنوان المحفظة غير صحيح.\n\nيجب أن يبدأ العنوان بـ EQ أو UQ."
         );
 
-        return;
+        input.focus();
 
+        return;
     }
 
-    sendAction({
 
-        action:"link_wallet",
+    /*
+     * نحفظ المحفظة فوراً داخل الواجهة
+     * حتى لا تختفي حالة الربط عند إعادة فتح الصفحة.
+     */
 
-        address:address
+    currentWallet =
+        address;
 
-    });
+    localStorage.setItem(
+        "gram_max_wallet",
+        address
+    );
 
+
+    document.getElementById(
+        "walletStatus"
+    ).innerHTML =
+        '<div class="success">✓ تم ربط المحفظة بنجاح</div>';
+
+
+    document.getElementById(
+        "homeWallet"
+    ).innerText =
+        "✓ تم الربط";
+
+
+    document.getElementById(
+        "statWallet"
+    ).innerText =
+        "✓ تم الربط";
+
+
+    input.value =
+        address;
+
+
+    const sent =
+        sendAction({
+
+            action:"link_wallet",
+
+            address:address
+
+        });
+
+
+    if(!sent){
+
+        document.getElementById(
+            "walletStatus"
+        ).innerHTML =
+            '<div class="error">❌ تعذر إرسال طلب الربط.</div>';
+    }
 }
 
 
@@ -1070,33 +1225,49 @@ function linkWallet(){
 
 function createDeposit(){
 
-    const amount =
-        Number(
-            document
-            .getElementById(
-                "depositAmount"
-            )
-            .value
+    const input =
+        document.getElementById(
+            "depositAmount"
         );
 
-    if(!amount || amount <= 0){
+    const amount =
+        Number(input.value);
+
+
+    if(
+        !amount ||
+        amount <= 0
+    ){
 
         alert(
-            "أدخل مبلغاً صحيحاً."
+            "❌ أدخل مبلغاً صحيحاً."
         );
 
-        return;
+        input.focus();
 
+        return;
     }
 
-    sendAction({
 
-        action:"create_deposit",
+    const sent =
+        sendAction({
 
-        amount:amount
+            action:"create_deposit",
 
-    });
+            amount:amount
 
+        });
+
+
+    if(sent){
+
+        document.getElementById(
+            "depositStatus"
+        ).innerHTML =
+            '<div class="success">✓ تم إرسال طلب الإيداع للإدارة.</div>';
+
+        input.value = "";
+    }
 }
 
 
@@ -1106,27 +1277,33 @@ function createDeposit(){
 
 function createWithdrawal(){
 
+    const input =
+        document.getElementById(
+            "withdrawAmount"
+        );
+
     const amount =
-        Number(
-            document
-            .getElementById(
-                "withdrawAmount"
-            )
-            .value
-        );
+        Number(input.value);
 
-    if(!amount || amount <= 0){
-
-        alert(
-            "أدخل مبلغاً صحيحاً."
-        );
-
-        return;
-
-    }
 
     if(
-        amount > Number(currentBalance)
+        !amount ||
+        amount <= 0
+    ){
+
+        alert(
+            "❌ أدخل مبلغ السحب."
+        );
+
+        input.focus();
+
+        return;
+    }
+
+
+    if(
+        amount >
+        Number(currentBalance)
     ){
 
         alert(
@@ -1134,8 +1311,8 @@ function createWithdrawal(){
         );
 
         return;
-
     }
+
 
     if(!currentWallet){
 
@@ -1143,23 +1320,49 @@ function createWithdrawal(){
             "❌ اربط محفظتك أولاً."
         );
 
-        return;
+        showPage("wallet");
 
+        return;
     }
 
-    sendAction({
 
-        action:"create_withdrawal",
+    const ok =
+        confirm(
+            "هل تريد إنشاء طلب سحب بقيمة " +
+            amount +
+            " GRAM؟"
+        );
 
-        amount:amount
 
-    });
+    if(!ok){
+        return;
+    }
 
+
+    const sent =
+        sendAction({
+
+            action:"create_withdrawal",
+
+            amount:amount
+
+        });
+
+
+    if(sent){
+
+        document.getElementById(
+            "withdrawStatus"
+        ).innerHTML =
+            '<div class="success">✓ تم إرسال طلب السحب للإدارة.</div>';
+
+        input.value = "";
+    }
 }
 
 
 // ============================================================
-// الإحالة
+// دعوة الأصدقاء
 // ============================================================
 
 function createReferralLink(){
@@ -1169,52 +1372,86 @@ function createReferralLink(){
             "refLink"
         );
 
+
+    if(!box){
+        return;
+    }
+
+
     if(!currentUserId){
 
         box.innerText =
             "افتح التطبيق من داخل Telegram.";
 
         return;
-
     }
 
+
     const link =
-        "https://t.me/GramMax1_Bot?start="
-        + currentUserId;
+        "https://t.me/GramMax1_Bot?start=" +
+        currentUserId;
 
-    box.innerText = link;
 
+    box.innerText =
+        link;
 }
 
 
-function copyReferral(){
+// مشاركة الرابط مباشرة
+function shareReferral(){
 
-    const box =
-        document.getElementById(
-            "refLink"
+    if(!currentUserId){
+
+        alert(
+            "❌ افتح التطبيق من داخل Telegram أولاً."
         );
 
-    const text =
-        box.innerText;
-
-    if(
-        navigator.clipboard
-    ){
-
-        navigator.clipboard
-        .writeText(text)
-        .then(
-            function(){
-
-                alert(
-                    "✓ تم نسخ رابط الإحالة"
-                );
-
-            }
-        );
-
+        return;
     }
 
+
+    const link =
+        "https://t.me/GramMax1_Bot?start=" +
+        currentUserId;
+
+
+    const text =
+        "🎁 انضم إلى GRAM MAX وابدأ الآن!";
+
+
+    const shareUrl =
+        "https://t.me/share/url?url=" +
+        encodeURIComponent(link) +
+        "&text=" +
+        encodeURIComponent(text);
+
+
+    try{
+
+        if(
+            tg &&
+            typeof tg.openTelegramLink === "function"
+        ){
+
+            tg.openTelegramLink(
+                shareUrl
+            );
+
+        }else{
+
+            window.open(
+                shareUrl,
+                "_blank"
+            );
+        }
+
+    }catch(error){
+
+        window.open(
+            shareUrl,
+            "_blank"
+        );
+    }
 }
 
 
@@ -1222,8 +1459,69 @@ function copyReferral(){
 // اللغة
 // ============================================================
 
+const translations = {
+
+    ar:{
+        subtitle:"منصة GRAM MAX",
+        balanceTitle:"رصيدك الحالي",
+        welcomeTitle:"👋 أهلاً بك في GRAM MAX",
+        welcomeText:"من هنا يمكنك الوصول إلى الاستثمار والمهام والمحفظة والإحصائيات والدعوات والدعم.",
+        accountInfoTitle:"📊 معلومات حسابك",
+        balanceLabel:"💰 الرصيد",
+        referralsLabel:"👥 الإحالات",
+        walletLabel:"👛 المحفظة"
+    },
+
+    en:{
+        subtitle:"GRAM MAX Platform",
+        balanceTitle:"Your Current Balance",
+        welcomeTitle:"👋 Welcome to GRAM MAX",
+        welcomeText:"From here you can access investments, tasks, wallet, statistics, referrals and support.",
+        accountInfoTitle:"📊 Account Information",
+        balanceLabel:"💰 Balance",
+        referralsLabel:"👥 Referrals",
+        walletLabel:"👛 Wallet"
+    },
+
+    ru:{
+        subtitle:"Платформа GRAM MAX",
+        balanceTitle:"Ваш текущий баланс",
+        welcomeTitle:"👋 Добро пожаловать в GRAM MAX",
+        welcomeText:"Здесь вы можете открыть инвестиции, задания, кошелёк, статистику, рефералы и поддержку.",
+        accountInfoTitle:"📊 Информация об аккаунте",
+        balanceLabel:"💰 Баланс",
+        referralsLabel:"👥 Рефералы",
+        walletLabel:"👛 Кошелёк"
+    }
+
+};
+
+
 function changeLanguage(lang){
 
+    if(
+        !["ar","en","ru"].includes(lang)
+    ){
+        lang = "ar";
+    }
+
+
+    currentLanguage =
+        lang;
+
+
+    localStorage.setItem(
+        "gram_max_language",
+        lang
+    );
+
+
+    applyLanguage();
+
+
+    /*
+     * نحاول حفظ اللغة في حساب المستخدم أيضاً.
+     */
     sendAction({
 
         action:"change_lang",
@@ -1231,7 +1529,153 @@ function changeLanguage(lang){
         lang:lang
 
     });
+}
 
+
+function applyLanguage(){
+
+    const t =
+        translations[currentLanguage];
+
+
+    document.documentElement.lang =
+        currentLanguage;
+
+
+    document.documentElement.dir =
+        currentLanguage === "ar"
+            ? "rtl"
+            : "ltr";
+
+
+    document.getElementById(
+        "subtitle"
+    ).innerText =
+        t.subtitle;
+
+
+    document.getElementById(
+        "balanceTitle"
+    ).innerText =
+        t.balanceTitle;
+
+
+    document.getElementById(
+        "welcomeTitle"
+    ).innerText =
+        t.welcomeTitle;
+
+
+    document.getElementById(
+        "welcomeText"
+    ).innerText =
+        t.welcomeText;
+
+
+    document.getElementById(
+        "accountInfoTitle"
+    ).innerText =
+        t.accountInfoTitle;
+
+
+    document.getElementById(
+        "balanceLabel"
+    ).innerText =
+        t.balanceLabel;
+
+
+    document.getElementById(
+        "referralsLabel"
+    ).innerText =
+        t.referralsLabel;
+
+
+    document.getElementById(
+        "walletLabel"
+    ).innerText =
+        t.walletLabel;
+
+
+    document.querySelectorAll(
+        "[data-ar]"
+    ).forEach(function(element){
+
+        const value =
+            element.getAttribute(
+                "data-" + currentLanguage
+            );
+
+        if(value){
+            element.innerText =
+                value;
+        }
+    });
+
+
+    document.querySelectorAll(
+        ".nav-text"
+    ).forEach(function(element){
+
+        const value =
+            element.getAttribute(
+                "data-" + currentLanguage
+            );
+
+        if(value){
+            element.innerText =
+                value;
+        }
+    });
+
+
+    document.querySelectorAll(
+        ".language-buttons button"
+    ).forEach(function(button){
+
+        button.classList.remove(
+            "active"
+        );
+    });
+
+
+    const selected =
+        document.getElementById(
+            "lang-" + currentLanguage
+        );
+
+
+    if(selected){
+
+        selected.classList.add(
+            "active"
+        );
+    }
+
+
+    const status =
+        document.getElementById(
+            "languageStatus"
+        );
+
+
+    if(status){
+
+        if(currentLanguage === "ar"){
+
+            status.innerHTML =
+                '<div class="success">✓ تم تغيير اللغة إلى العربية</div>';
+
+        }else if(currentLanguage === "en"){
+
+            status.innerHTML =
+                '<div class="success">✓ Language changed to English</div>';
+
+        }else{
+
+            status.innerHTML =
+                '<div class="success">✓ Язык изменён на русский</div>';
+        }
+    }
 }
 
 
@@ -1241,32 +1685,46 @@ function changeLanguage(lang){
 
 function sendSupport(){
 
-    const message =
-        document
-        .getElementById(
+    const textarea =
+        document.getElementById(
             "supportMessage"
-        )
-        .value
-        .trim();
+        );
+
+    const message =
+        textarea.value.trim();
+
 
     if(!message){
 
         alert(
-            "اكتب رسالة الدعم أولاً."
+            "❌ اكتب رسالة الدعم أولاً."
         );
 
-        return;
+        textarea.focus();
 
+        return;
     }
 
-    sendAction({
 
-        action:"support",
+    const sent =
+        sendAction({
 
-        message:message
+            action:"support",
 
-    });
+            message:message
 
+        });
+
+
+    if(sent){
+
+        document.getElementById(
+            "supportStatus"
+        ).innerHTML =
+            '<div class="success">✓ تم إرسال رسالتك للدعم.</div>';
+
+        textarea.value = "";
+    }
 }
 
 
@@ -1276,13 +1734,14 @@ function sendSupport(){
 
 function addChannel(){
 
-    const url =
-        document
-        .getElementById(
+    const input =
+        document.getElementById(
             "channelUrl"
-        )
-        .value
-        .trim();
+        );
+
+    const url =
+        input.value.trim();
+
 
     if(
         !url.startsWith(
@@ -1294,27 +1753,42 @@ function addChannel(){
             "❌ رابط القناة غير صحيح."
         );
 
-        return;
+        input.focus();
 
+        return;
     }
+
 
     const ok =
         confirm(
-            "سيتم خصم $1 حسب إعدادات البوت. هل تريد المتابعة؟"
+            "سيتم إرسال طلب إضافة القناة بسعر $1.\nهل تريد المتابعة؟"
         );
+
 
     if(!ok){
         return;
     }
 
-    sendAction({
 
-        action:"add_channel",
+    const sent =
+        sendAction({
 
-        channel_url:url
+            action:"add_channel",
 
-    });
+            channel_url:url
 
+        });
+
+
+    if(sent){
+
+        document.getElementById(
+            "channelStatus"
+        ).innerHTML =
+            '<div class="success">✓ تم إرسال طلب إضافة القناة.</div>';
+
+        input.value = "";
+    }
 }
 
 
@@ -1324,13 +1798,14 @@ function addChannel(){
 
 function addBot(){
 
-    const url =
-        document
-        .getElementById(
+    const input =
+        document.getElementById(
             "botUrl"
-        )
-        .value
-        .trim();
+        );
+
+    const url =
+        input.value.trim();
+
 
     if(
         !url.startsWith(
@@ -1342,54 +1817,108 @@ function addBot(){
             "❌ رابط البوت غير صحيح."
         );
 
-        return;
+        input.focus();
 
+        return;
     }
+
 
     const ok =
         confirm(
-            "سيتم خصم $0.30 حسب إعدادات البوت. هل تريد المتابعة؟"
+            "سيتم إرسال طلب إضافة البوت بسعر $0.30.\nهل تريد المتابعة؟"
         );
+
 
     if(!ok){
         return;
     }
 
-    sendAction({
 
-        action:"add_bot",
+    const sent =
+        sendAction({
 
-        bot_url:url
+            action:"add_bot",
 
-    });
+            bot_url:url
 
+        });
+
+
+    if(sent){
+
+        document.getElementById(
+            "botStatus"
+        ).innerHTML =
+            '<div class="success">✓ تم إرسال طلب إضافة البوت.</div>';
+
+        input.value = "";
+    }
 }
 
 
 // ============================================================
-// بداية التطبيق
+// تحميل البيانات المحفوظة على الجهاز
+// ============================================================
+
+function loadLocalData(){
+
+    const savedWallet =
+        localStorage.getItem(
+            "gram_max_wallet"
+        );
+
+
+    if(savedWallet){
+
+        currentWallet =
+            savedWallet;
+
+        const input =
+            document.getElementById(
+                "walletInput"
+            );
+
+        if(input){
+            input.value =
+                savedWallet;
+        }
+    }
+
+
+    const savedLanguage =
+        localStorage.getItem(
+            "gram_max_language"
+        );
+
+
+    if(
+        savedLanguage &&
+        ["ar","en","ru"].includes(
+            savedLanguage
+        )
+    ){
+
+        currentLanguage =
+            savedLanguage;
+    }
+}
+
+
+// ============================================================
+// البداية
 // ============================================================
 
 document.addEventListener(
     "DOMContentLoaded",
     function(){
 
-        if(!currentUserId){
+        loadLocalData();
 
-            console.warn(
-                "Telegram user not found."
-            );
-
-        }
+        applyLanguage();
 
         createReferralLink();
 
-        /*
-         * مهم:
-         * sendData يرسل البيانات للبوت.
-         * لا يمكن للصفحة الحالية قراءة رد البوت
-         * مباشرة لأن Bot.py لا يحتوي API HTTP.
-         */
+        updateUI();
 
     }
 );
