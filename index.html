@@ -13,20 +13,13 @@
         .card { background: #16213e; border-radius: 12px; padding: 15px; margin-bottom: 15px; }
         .card h3 { color: #f0b90b; margin-bottom: 10px; font-size: 18px; }
         .card p { font-size: 14px; color: #ccc; margin-bottom: 5px; }
-        .balance { font-size: 28px; color: #00ff88; font-weight: bold; text-align: center; }
-        .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
-        .menu-item { background: #0f3460; border-radius: 10px; padding: 20px 10px; text-align: center; cursor: pointer; }
-        .menu-item:hover { background: #1a1a5e; }
-        .menu-item span { font-size: 30px; display: block; margin-bottom: 5px; }
-        .menu-item small { font-size: 12px; }
         .btn { background: #f0b90b; color: #1a1a2e; border: none; padding: 15px; font-size: 16px; border-radius: 10px; width: 100%; margin-top: 10px; cursor: pointer; font-weight: bold; }
-        .btn-danger { background: #e74c3c; color: white; }
         .btn-success { background: #00ff88; color: #1a1a2e; }
+        .hidden { display: none; }
         .nav-bottom { position: fixed; bottom: 0; left: 0; right: 0; background: #16213e; display: flex; justify-content: space-around; padding: 10px; border-top: 1px solid #0f3460; }
         .nav-item { text-align: center; color: #888; font-size: 12px; cursor: pointer; }
         .nav-item.active { color: #f0b90b; }
         .nav-item span { font-size: 20px; display: block; }
-        .hidden { display: none; }
     </style>
 </head>
 <body>
@@ -38,22 +31,8 @@
     <div id="page-home">
         <div class="card">
             <p>💰 الرصيد الحالي</p>
-            <div class="balance" id="balance">0.00 GRAM</div>
+            <div style="font-size: 28px; color: #00ff88; font-weight: bold; text-align: center;" id="balance">0.00 GRAM</div>
         </div>
-        <div class="menu-grid">
-            <div class="menu-item" onclick="showPage('invest')"><span>💰</span><small>الاستثمار</small></div>
-            <div class="menu-item" onclick="showPage('invite')"><span>👥</span><small>دعوة الأصدقاء</small></div>
-            <div class="menu-item" onclick="showPage('levels')"><span>📊</span><small>المستويات</small></div>
-            <div class="menu-item" onclick="showPage('stats')"><span>📈</span><small>الإحصائيات</small></div>
-            <div class="menu-item" onclick="showPage('withdraw')"><span>💵</span><small>السحب</small></div>
-            <div class="menu-item" onclick="showPage('rewards')"><span>🎁</span><small>المكافآت</small></div>
-            <div class="menu-item" onclick="showPage('support')"><span>🆘</span><small>الدعم</small></div>
-            <div class="menu-item" onclick="showPage('settings')"><span>⚙️</span><small>الإعدادات</small></div>
-        </div>
-    </div>
-
-    <!-- صفحة الاستثمار -->
-    <div id="page-invest" class="hidden">
         <div class="card">
             <h3>💰 الاستثمار</h3>
             <p>1️⃣ 1 GRAM ➜ 1.15 GRAM (12 ساعة)</p>
@@ -61,82 +40,7 @@
             <p>3️⃣ 5 GRAM ➜ 5.70 GRAM (48 ساعة)</p>
             <p>4️⃣ 7 GRAM ➜ 8.30 GRAM (3 أيام)</p>
             <p>5️⃣ 10 GRAM ➜ 13 GRAM (5 أيام)</p>
-            <button class="btn" onclick="alert('قريباً')">استثمار</button>
-        </div>
-    </div>
-
-    <!-- صفحة دعوة الأصدقاء -->
-    <div id="page-invite" class="hidden">
-        <div class="card">
-            <h3>👥 دعوة الأصدقاء</h3>
-            <p>رابط الإحالة الخاص بك:</p>
-            <p style="color:#f0b90b; word-break: break-all;">https://t.me/YourBot?start=123</p>
-            <p>عدد المدعوين: 0</p>
-            <p>أرباح الإحالات: 5%</p>
-        </div>
-    </div>
-
-    <!-- صفحة المستويات -->
-    <div id="page-levels" class="hidden">
-        <div class="card">
-            <h3>📊 المستويات</h3>
-            <p>✅ المستوى 1: مفتوح</p>
-            <p>🔒 المستوى 2: مقفل</p>
-            <p>🔒 المستوى 3: مقفل</p>
-            <p>🔒 المستوى 4: مقفل</p>
-            <p>🔒 المستوى 5: مقفل</p>
-        </div>
-    </div>
-
-    <!-- صفحة الإحصائيات -->
-    <div id="page-stats" class="hidden">
-        <div class="card">
-            <h3>📈 الإحصائيات</h3>
-            <p>💰 الرصيد: 0.00</p>
-            <p>📈 إجمالي الأرباح: 0.00</p>
-            <p>👥 عدد الإحالات: 0</p>
-            <p>🎁 أرباح الإحالات: 0.00</p>
-            <p>🔄 الاستثمارات النشطة: 0</p>
-            <p>✅ الاستثمارات المنتهية: 0</p>
-        </div>
-    </div>
-
-    <!-- صفحة السحب -->
-    <div id="page-withdraw" class="hidden">
-        <div class="card">
-            <h3>💵 السحب</h3>
-            <p>الرصيد المتاح: 0.00 GRAM</p>
-            <button class="btn" onclick="alert('قريباً')">طلب سحب</button>
-        </div>
-    </div>
-
-    <!-- صفحة المكافآت -->
-    <div id="page-rewards" class="hidden">
-        <div class="card">
-            <h3>🎁 المكافآت</h3>
-            <p>مكافأة التسجيل: 0.10 GRAM</p>
-            <p>مكافآت الإحالات: 5%</p>
-            <p>المكافآت الإضافية: قريباً</p>
-        </div>
-    </div>
-
-    <!-- صفحة الدعم -->
-    <div id="page-support" class="hidden">
-        <div class="card">
-            <h3>🆘 الدعم</h3>
-            <p>للتواصل مع الدعم: @YourSupport</p>
-            <p>الأسئلة الشائعة: قريباً</p>
-            <p>الإبلاغ عن مشكلة: قريباً</p>
-        </div>
-    </div>
-
-    <!-- صفحة الإعدادات -->
-    <div id="page-settings" class="hidden">
-        <div class="card">
-            <h3>⚙️ الإعدادات</h3>
-            <p>🔔 الإشعارات: مفعلة</p>
-            <p>🌐 اللغة: العربية</p>
-            <p>ℹ️ معلومات الحساب: قريباً</p>
+            <button class="btn btn-success" onclick="sendDeposit()">✅ تم الإيداع</button>
         </div>
     </div>
 
@@ -149,16 +53,18 @@
     </div>
 
     <script>
-        // إخبار تيليجرام أن التطبيق جاهز
         window.Telegram.WebApp.ready();
         window.Telegram.WebApp.expand();
 
-        // دالة التنقل بين الصفحات
         function showPage(pageId) {
-            // إخفاء كل الصفحات
             document.querySelectorAll('[id^="page-"]').forEach(p => p.classList.add('hidden'));
-            // إظهار الصفحة المطلوبة
             document.getElementById('page-' + pageId).classList.remove('hidden');
+        }
+
+        function sendDeposit() {
+            // إرسال إشارة إلى البوت بأن المستخدم ضغط على زر "تم الإيداع"
+            window.Telegram.WebApp.sendData(JSON.stringify({ action: "deposit_confirmed" }));
+            window.Telegram.WebApp.close();
         }
     </script>
 </body>
