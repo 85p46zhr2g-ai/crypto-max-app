@@ -7,13 +7,14 @@ from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandl
 BOT_TOKEN = "8724497887:AAEmhudPVYMApgfakZT_T2X_r61dcTJuemc"
 ADMIN_ID = 8183652969
 WALLET_ADDRESS = "UQBrfxfxzB5-op8FGLs-BxnZg0Bv0CveJ8VJbC3Xc9pVXZ5X"
+BOT_USERNAME = "GramMax1_Bot"
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 
 def init_db():
     conn = sqlite3.connect("gram_max.db")
     cursor = conn.cursor()
-    cursor.execute("CREATE TABLE IF NOT EXISTS users (user_id INTEGER PRIMARY KEY, balance REAL DEFAULT 0.0)")
+    cursor.execute("CREATE TABLE IF NOT EXISTS users (user_id INTEGER PRIMARY KEY, balance REAL DEFAULT 0.0, referrals INTEGER DEFAULT 0, referrer_id INTEGER)")
     cursor.execute("CREATE TABLE IF NOT EXISTS deposits (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, amount REAL, status TEXT DEFAULT 'pending', created_at TEXT)")
     cursor.execute("CREATE TABLE IF NOT EXISTS withdrawals (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, amount REAL, wallet TEXT, status TEXT DEFAULT 'pending', created_at TEXT)")
     conn.commit()
@@ -22,19 +23,27 @@ def init_db():
 def get_user(user_id):
     conn = sqlite3.connect("gram_max.db")
     cursor = conn.cursor()
-    cursor.execute("SELECT balance FROM users WHERE user_id = ?", (user_id,))
+    cursor.execute("SELECT balance, referrals, referrer_id FROM users WHERE user_id = ?", (user_id,))
     result = cursor.fetchone()
     if not result:
-        cursor.execute("INSERT INTO users (user_id, balance) VALUES (?, 0)", (user_id,))
+        cursor.execute("INSERT INTO users (user_id, balance, referrals) VALUES (?, 0, 0)", (user_id,))
         conn.commit()
-        result = (0,)
+        result = (0, 0, None)
     conn.close()
-    return result[0]
+    return result
 
 def update_balance(user_id, amount):
     conn = sqlite3.connect("gram_max.db")
     cursor = conn.cursor()
     cursor.execute("UPDATE users SET balance = balance + ? WHERE user_id = ?", (amount, user_id))
+    conn.commit()
+    conn.close()
+
+def add_referral(user_id, referrer_id):
+    conn = sqlite3.connect("gram_max.db")
+    cursor = conn.cursor()
+    cursor.execute("UPDATE users SET referrals = referrals + 1 WHERE user_id = ?", (referrer_id,))
+    cursor.execute("UPDATE users SET referrer_id = ? WHERE user_id = ?", (referrer_id, user_id))
     conn.commit()
     conn.close()
 
@@ -59,6 +68,11 @@ def get_pending_withdrawals():
 # ==================== أوامر المستخدم ====================
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
+    args = context.args
+    if args and args[0].startswith("ref_"):
+        referrer_id = int(args[0].split("_")[1])
+        if referrer_id != user_id:
+            add_referral(user_id, referrer_id)
     get_user(user_id)
     keyboard = [["💰 الاستثمار", "👥 دعوة الأصدقاء"], ["📊 المستويات", "📈 الإحصائيات"], ["💵 السحب", "💳 الإيداع"], ["🎁 المكافآت", "🆘 الدعم"], ["⚙️ الإعدادات"]]
     await update.message.reply_text("مرحباً بك في GRAM MAX! 🤖", reply_markup=ReplyKeyboardMarkup(keyboard, resize_keyboard=True))
@@ -73,6 +87,13 @@ async def deposit_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [[InlineKeyboardButton("✅ تم الإيداع", callback_data="confirm_deposit")]]
     await update.message.reply_text(text, parse_mode='Markdown', reply_markup=InlineKeyboardMarkup(keyboard))
 
+async def referral_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
+    balance, referrals, referrer_id = get_user(user_id)
+    link = f"https://t.me/{BOT_USERNAME}?start=ref_{user_id}"
+    text = f"👥 **دعوة الأصدقاء**\n\nرابط الإحالة الخاص بك:\n`{link}`\n\nعدد المدعوين: {referrals}\nأرباح الإحالات: 5%"
+    await update.message.reply_text(text, parse_mode='Markdown')
+
 # ==================== قسم السحب ====================
 async def withdraw_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data['state'] = "WAITING_AMOUNT"
@@ -82,7 +103,7 @@ async def withdraw_amount(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         amount = float(update.message.text)
         user_id = update.effective_user.id
-        balance = get_user(user_id)
+        balance, _, _ = get_user(user_id)
         if amount > balance:
             await update.message.reply_text(f"❌ رصيدك غير كافٍ. رصيدك الحالي: {balance}")
             context.user_data['state'] = None
@@ -141,6 +162,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text
     if text == "💰 الاستثمار": await invest_menu(update, context)
     elif text == "💳 الإيداع": await deposit_menu(update, context)
+    elif text == "👥 دعوة الأصدقاء": await referral_menu(update, context)
     elif text == "💵 السحب": await withdraw_start(update, context)
     elif context.user_data.get('state') == "WAITING_AMOUNT": await withdraw_amount(update, context)
     elif context.user_data.get('state') == "WAITING_WALLET": await withdraw_wallet(update, context)
