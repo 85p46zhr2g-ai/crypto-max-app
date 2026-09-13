@@ -50,11 +50,6 @@
         .task-btn { background: linear-gradient(135deg, var(--gold-light), var(--gold)); color: #0a0e1a; border: none; padding: 8px 12px; font-size: 11px; font-weight: 700; border-radius: 10px; cursor: pointer; margin-top: 5px; margin-left: 3px; }
         .task-btn.check { background: #0088cc; color: #fff; }
         .task-btn.done { background: #30363d; color: #8b949e; cursor: not-allowed; }
-        .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 10000; padding: 20px; }
-        .modal-content { background: #111827; border-radius: 20px; padding: 25px; max-width: 400px; width: 100%; border: 1px solid rgba(212,175,55,0.3); }
-        .modal-title { font-size: 18px; font-weight: 700; color: var(--gold-light); margin-bottom: 15px; text-align: center; }
-        .conditions { font-size: 12px; color: var(--text-dim); margin: 15px 0; padding: 12px; background: rgba(0,0,0,0.3); border-radius: 10px; line-height: 1.8; }
-        .price-tag { font-size: 20px; font-weight: 800; color: var(--gold-light); text-align: center; margin: 15px 0; }
         .msg { text-align: center; margin-top: 10px; font-weight: 600; font-size: 13px; min-height: 20px; }
         .msg.success { color: var(--green); }
         .msg.error { color: var(--red); }
@@ -155,6 +150,7 @@
         let currentUserLang = 'ar';
         let currentInvestLevel = 1;
         let userData = { balance: 0, referrals: 0, wallet: null, completedTasks: [] };
+        let pendingTaskId = null;
 
         const LEVELS = { 1: { amount: 1, profit: 1.15, hours: 12 }, 2: { amount: 2, profit: 2.30, hours: 24 }, 3: { amount: 5, profit: 5.70, hours: 48 } };
 
@@ -223,10 +219,18 @@
         }
 
         function verifyTask(taskId) {
+            pendingTaskId = taskId;
             const taskEl = document.getElementById('task-' + taskId);
             const t = translations[currentUserLang];
             taskEl.innerHTML = `<div class="task-info"><span class="task-name">${t.checking}</span></div>`;
+            
+            // إرسال طلب التحقق
             window.Telegram.WebApp.sendData(JSON.stringify({ action: "verify_task", task_id: taskId }));
+            
+            // بعد 3 ثوانٍ، نطلب البيانات المحدثة
+            setTimeout(() => {
+                window.Telegram.WebApp.sendData(JSON.stringify({ action: "get_data" }));
+            }, 3000);
         }
 
         function openInvest(level) {
@@ -290,6 +294,12 @@
         const user = window.Telegram.WebApp.initDataUnsafe.user;
         if (user) { document.getElementById('ref-link').innerText = `https://t.me/GramMax1_Bot?start=ref_${user.id}`; }
         
+        // تحديث دوري كل 3 ثوانٍ
+        setInterval(() => {
+            window.Telegram.WebApp.sendData(JSON.stringify({ action: "get_data" }));
+        }, 3000);
+        
+        // تحديث أولي
         setTimeout(() => { window.Telegram.WebApp.sendData(JSON.stringify({ action: "get_data" })); }, 500);
     </script>
 </body>
