@@ -14,8 +14,9 @@
         .card h3 { color: #f0b90b; margin-bottom: 10px; font-size: 18px; }
         .card p { font-size: 14px; color: #ccc; margin-bottom: 5px; }
         .btn { background: #f0b90b; color: #1a1a2e; border: none; padding: 15px; font-size: 16px; border-radius: 10px; width: 100%; margin-top: 10px; cursor: pointer; font-weight: bold; }
-        .btn-success { background: #00ff88; color: #1a1a2e; }
+        .btn-deposit { background: #00ff88; color: #1a1a2e; }
         .hidden { display: none; }
+        #status-message { text-align: center; margin-top: 10px; color: #00ff88; font-weight: bold; }
         .nav-bottom { position: fixed; bottom: 0; left: 0; right: 0; background: #16213e; display: flex; justify-content: space-around; padding: 10px; border-top: 1px solid #0f3460; }
         .nav-item { text-align: center; color: #888; font-size: 12px; cursor: pointer; }
         .nav-item.active { color: #f0b90b; }
@@ -27,7 +28,6 @@
         <h1>🚀 GRAM MAX</h1>
     </div>
 
-    <!-- الصفحة الرئيسية -->
     <div id="page-home">
         <div class="card">
             <p>💰 الرصيد الحالي</p>
@@ -40,31 +40,32 @@
             <p>3️⃣ 5 GRAM ➜ 5.70 GRAM (48 ساعة)</p>
             <p>4️⃣ 7 GRAM ➜ 8.30 GRAM (3 أيام)</p>
             <p>5️⃣ 10 GRAM ➜ 13 GRAM (5 أيام)</p>
-            <button class="btn btn-success" onclick="sendDeposit()">✅ تم الإيداع</button>
+        </div>
+        <div class="card">
+            <h3>💳 الإيداع</h3>
+            <p>قم بالتحويل إلى المحفظة:</p>
+            <p style="color:#f0b90b; word-break: break-all;">UQBrfxfxzB5-op8FGLs-BxnZg0Bv0CveJ8VJbC3Xc9pVXZ5X</p>
+            <button class="btn btn-deposit" onclick="confirmDeposit()">إيداع</button>
+            <div id="status-message"></div>
         </div>
     </div>
 
-    <!-- شريط التنقل السفلي -->
     <div class="nav-bottom">
-        <div class="nav-item active" onclick="showPage('home')"><span>🏠</span>الرئيسية</div>
-        <div class="nav-item" onclick="showPage('invest')"><span>💰</span>استثمار</div>
-        <div class="nav-item" onclick="showPage('stats')"><span>📈</span>إحصائيات</div>
-        <div class="nav-item" onclick="showPage('settings')"><span>⚙️</span>إعدادات</div>
+        <div class="nav-item active"><span>🏠</span>الرئيسية</div>
+        <div class="nav-item"><span>💰</span>استثمار</div>
+        <div class="nav-item"><span>📈</span>إحصائيات</div>
+        <div class="nav-item"><span>⚙️</span>إعدادات</div>
     </div>
 
     <script>
         window.Telegram.WebApp.ready();
         window.Telegram.WebApp.expand();
 
-        function showPage(pageId) {
-            document.querySelectorAll('[id^="page-"]').forEach(p => p.classList.add('hidden'));
-            document.getElementById('page-' + pageId).classList.remove('hidden');
-        }
-
-        function sendDeposit() {
-            // إرسال إشارة إلى البوت بأن المستخدم ضغط على زر "تم الإيداع"
+        function confirmDeposit() {
+            // إرسال إشارة إلى البوت
             window.Telegram.WebApp.sendData(JSON.stringify({ action: "deposit_confirmed" }));
-            window.Telegram.WebApp.close();
+            // عرض رسالة التأكيد تحت الزر (دون تغيير الزر)
+            document.getElementById('status-message').innerText = "✅ تم استلام طلب الإيداع! سيتم مراجعته.";
         }
     </script>
 </body>
