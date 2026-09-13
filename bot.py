@@ -5,7 +5,7 @@ from telegram import Update, ReplyKeyboardMarkup, InlineKeyboardMarkup, InlineKe
 from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters, CallbackQueryHandler
 
 # ⚠️ التوكن الخاص بك
-BOT_TOKEN = "8724497887:AAFisRcMXDxN3xj7zcN5ssP2N_cmZOOXVB4"
+BOT_TOKEN = "8724497887:AAE02WdKwwMWaXzXmRlsVUiYjPqjVfVR5LI"
 
 # ⚠️ معرفك الرقمي كمدير
 ADMIN_ID = 8183652969
