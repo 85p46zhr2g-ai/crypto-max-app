@@ -38,7 +38,7 @@ def init_db():
     cursor.execute("CREATE TABLE IF NOT EXISTS withdrawals (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, amount REAL, fee REAL, wallet TEXT, status TEXT DEFAULT 'pending', created_at TEXT)")
     cursor.execute("CREATE TABLE IF NOT EXISTS settings (user_id INTEGER PRIMARY KEY, language TEXT DEFAULT 'ar', notifications INTEGER DEFAULT 1)")
     cursor.execute("CREATE TABLE IF NOT EXISTS task_channels (id INTEGER PRIMARY KEY AUTOINCREMENT, channel_link TEXT, channel_id TEXT, owner_id INTEGER, status TEXT DEFAULT 'active', created_at TEXT)")
-    cursor.execute("CREATE TABLE IF NOT EXISTS user_tasks (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, channel_id INTEGER, completed_at TEXT)")
+    cursor.execute("CREATE TABLE IF NOT EXISTS user_tasks (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, channel_id TEXT, completed_at TEXT)")
     cursor.execute("CREATE TABLE IF NOT EXISTS channel_requests (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, request_type TEXT, link TEXT, status TEXT DEFAULT 'pending', created_at TEXT)")
     conn.commit()
     conn.close()
@@ -78,14 +78,6 @@ def create_withdrawal(user_id, amount, fee, wallet):
     conn.commit()
     conn.close()
 
-def get_pending_withdrawals():
-    conn = sqlite3.connect("gram_max.db")
-    cursor = conn.cursor()
-    cursor.execute("SELECT id, user_id, amount, fee, wallet FROM withdrawals WHERE status = 'pending'")
-    rows = cursor.fetchall()
-    conn.close()
-    return rows
-
 def add_referral(user_id, referrer_id):
     conn = sqlite3.connect("gram_max.db")
     cursor = conn.cursor()
@@ -101,14 +93,6 @@ def update_wallet(user_id, address):
     conn.commit()
     conn.close()
 
-def get_wallet(user_id):
-    conn = sqlite3.connect("gram_max.db")
-    cursor = conn.cursor()
-    cursor.execute("SELECT wallet_address FROM users WHERE user_id = ?", (user_id,))
-    result = cursor.fetchone()
-    conn.close()
-    return result[0] if result else None
-
 def create_request(user_id, request_type, link):
     conn = sqlite3.connect("gram_max.db")
     cursor = conn.cursor()
@@ -116,14 +100,6 @@ def create_request(user_id, request_type, link):
                    (user_id, request_type, link, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
     conn.commit()
     conn.close()
-
-def get_pending_requests():
-    conn = sqlite3.connect("gram_max.db")
-    cursor = conn.cursor()
-    cursor.execute("SELECT id, user_id, request_type, link FROM channel_requests WHERE status = 'pending'")
-    rows = cursor.fetchall()
-    conn.close()
-    return rows
 
 def approve_request(req_id, link):
     conn = sqlite3.connect("gram_max.db")
@@ -147,6 +123,22 @@ def reject_request(req_id):
     conn.commit()
     conn.close()
 
+def is_task_completed(user_id, task_id):
+    conn = sqlite3.connect("gram_max.db")
+    cursor = conn.cursor()
+    cursor.execute("SELECT id FROM user_tasks WHERE user_id = ? AND channel_id = ?", (user_id, task_id))
+    result = cursor.fetchone()
+    conn.close()
+    return result is not None
+
+def mark_task_completed(user_id, task_id):
+    conn = sqlite3.connect("gram_max.db")
+    cursor = conn.cursor()
+    cursor.execute("INSERT INTO user_tasks (user_id, channel_id, completed_at) VALUES (?, ?, ?)", 
+                   (user_id, task_id, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+    conn.commit()
+    conn.close()
+
 # ==================== التحقق من الاشتراك ====================
 async def check_mandatory_subscription(user_id, context):
     try:
@@ -154,8 +146,8 @@ async def check_mandatory_subscription(user_id, context):
         member2 = await context.bot.get_chat_member(chat_id=MANDATORY_CHANNEL_2_ID, user_id=user_id)
         if member1.status in ['member', 'administrator', 'creator'] and member2.status in ['member', 'administrator', 'creator']:
             return True
-    except:
-        pass
+    except Exception as e:
+        print(f"Subscription check error: {e}")
     return False
 
 # ==================== أمر البدء ====================
@@ -247,21 +239,27 @@ async def web_app_data_handler(update: Update, context: ContextTypes.DEFAULT_TYP
                 "أرسل رابط البوت الآن:"
             )
         
-        elif action == "do_task":
+        elif action == "verify_task":
             task_id = req_data.get('task_id', '')
-            conn = sqlite3.connect("gram_max.db")
-            cursor = conn.cursor()
-            cursor.execute("SELECT id FROM user_tasks WHERE user_id = ? AND channel_id = ?", (user_id, task_id))
-            if not cursor.fetchone():
-                cursor.execute("INSERT INTO user_tasks (user_id, channel_id, completed_at) VALUES (?, ?, ?)", 
-                               (user_id, task_id, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
-                conn.commit()
-                conn.close()
-                update_balance(user_id, TASK_REWARD)
-                await update.message.reply_text(f"🎉 تم إكمال المهمة! حصلت على {TASK_REWARD} GRAM.")
-            else:
-                conn.close()
-                await update.message.reply_text("✅ لقد أكملت هذه المهمة مسبقاً.")
+            channel_map = {
+                'task1': MANDATORY_CHANNEL_1_ID,
+                'task2': MANDATORY_CHANNEL_2_ID
+            }
+            if task_id in channel_map:
+                channel_id = channel_map[task_id]
+                try:
+                    member = await context.bot.get_chat_member(chat_id=channel_id, user_id=user_id)
+                    if member.status in ['member', 'administrator', 'creator']:
+                        if not is_task_completed(user_id, task_id):
+                            mark_task_completed(user_id, task_id)
+                            update_balance(user_id, TASK_REWARD)
+                            await update.message.reply_text(f"🎉 تم التحقق! حصلت على {TASK_REWARD} GRAM.")
+                        else:
+                            await update.message.reply_text("✅ لقد أكملت هذه المهمة مسبقاً.")
+                    else:
+                        await update.message.reply_text("❌ لم تشترك في القناة بعد.")
+                except Exception as e:
+                    await update.message.reply_text(f"❌ خطأ في التحقق: {str(e)}")
         
         elif action == "change_lang":
             lang = req_data.get('lang', 'ar')
@@ -302,14 +300,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             if bot_member.status not in ['administrator', 'creator']:
                 await update.message.reply_text("❌ يجب إضافة البوت كمشرف في القناة أولاً.")
                 return
-            conn = sqlite3.connect("gram_max.db")
-            cursor = conn.cursor()
-            cursor.execute("SELECT id FROM task_channels WHERE channel_id = ?", (f"@{channel_username}",))
-            if cursor.fetchone():
-                conn.close()
-                await update.message.reply_text("❌ هذه القناة مضافة مسبقاً.")
-                return
-            conn.close()
             create_request(user_id, 'channel', text)
             context.user_data['state'] = None
             await update.message.reply_text(f"✅ تم استلام طلبك! سيتم مراجعته من قبل الإدارة.")
@@ -360,7 +350,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 reply_markup=InlineKeyboardMarkup(keyboard)
             )
         else:
-            await query.edit_message_text("❌ لم يتم التحقق. يرجى الاشتراك في القناتين أولاً.")
+            await query.edit_message_text("❌ لم يتم التحقق. يرجى التأكد من أنك مشترك في القناتين، وأن البوت مشرف فيهما.")
     
     elif data.startswith("approve_req_"):
         req_id = int(data.split("_")[2])
