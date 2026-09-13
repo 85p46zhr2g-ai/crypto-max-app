@@ -2,105 +2,316 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>GRAM MAX</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: Arial, sans-serif; }
-        body { background: #1a1a2e; color: white; padding: 20px; padding-bottom: 80px; }
-        .header { text-align: center; margin-bottom: 20px; }
-        .header h1 { color: #f0b90b; font-size: 24px; }
-        .card { background: #16213e; border-radius: 12px; padding: 15px; margin-bottom: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
-        .card h3 { color: #f0b90b; margin-bottom: 10px; font-size: 18px; border-bottom: 1px solid #0f3460; padding-bottom: 5px; }
-        .card p { font-size: 14px; color: #ccc; margin-bottom: 5px; }
-        .balance { font-size: 28px; color: #00ff88; font-weight: bold; text-align: center; }
-        .btn { background: #f0b90b; color: #1a1a2e; border: none; padding: 15px; font-size: 16px; border-radius: 10px; width: 100%; margin-top: 10px; cursor: pointer; font-weight: bold; }
-        .btn-success { background: #00ff88; color: #1a1a2e; }
-        .hidden { display: none; }
-        .nav-bottom { position: fixed; bottom: 0; left: 0; right: 0; background: #16213e; display: flex; justify-content: space-around; padding: 10px; border-top: 1px solid #0f3460; z-index: 100; }
-        .nav-item { text-align: center; color: #888; font-size: 12px; cursor: pointer; flex: 1; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        
+        body {
+            background-color: #0b0e14;
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(88, 86, 214, 0.08), transparent 40%),
+                radial-gradient(circle at 85% 30%, rgba(0, 150, 255, 0.05), transparent 40%);
+            color: #ffffff;
+            padding: 20px 15px 100px 15px;
+            min-height: 100vh;
+        }
+
+        .profile-card {
+            background: linear-gradient(145deg, #161b22, #0d1117);
+            border: 1px solid rgba(240, 185, 11, 0.15);
+            border-radius: 18px;
+            padding: 20px;
+            margin-bottom: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(240, 185, 11, 0.03);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .profile-card::before {
+            content: '';
+            position: absolute;
+            top: -50%; left: -50%;
+            width: 200%; height: 200%;
+            background: radial-gradient(circle, rgba(240, 185, 11, 0.05) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .balance-label { font-size: 13px; color: #8b949e; margin-bottom: 4px; display: block; }
+        .balance-amount { font-size: 32px; font-weight: 700; color: #f0b90b; text-shadow: 0 0 15px rgba(240, 185, 11, 0.4); letter-spacing: 1px; }
+        
+        .stats-row {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+            border-top: 1px solid rgba(255,255,255,0.05);
+            padding-top: 15px;
+        }
+        .stat-item { text-align: center; flex: 1; }
+        .stat-value { font-size: 16px; font-weight: 600; color: #ffffff; display: block; }
+        .stat-label { font-size: 11px; color: #8b949e; margin-top: 2px; display: block; }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .section-title span { color: #f0b90b; }
+
+        .invest-card {
+            background: #161b22;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .invest-card.available {
+            border-left: 4px solid #00ff88;
+            box-shadow: 0 4px 15px rgba(0, 255, 136, 0.05);
+        }
+
+        .invest-card.locked {
+            opacity: 0.6;
+            border-left: 4px solid #30363d;
+        }
+
+        .invest-info { display: flex; flex-direction: column; gap: 4px; }
+        .invest-level { font-size: 15px; font-weight: 700; color: #ffffff; }
+        .invest-return { font-size: 13px; color: #00ff88; font-weight: 600; }
+        .invest-time { font-size: 11px; color: #8b949e; }
+        
+        .invest-status {
+            font-size: 11px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            background: rgba(0, 255, 136, 0.1);
+            color: #00ff88;
+            font-weight: 600;
+        }
+        .invest-card.locked .invest-status {
+            background: rgba(139, 148, 158, 0.1);
+            color: #8b949e;
+        }
+
+        .btn-deposit {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+            background: linear-gradient(135deg, #f0b90b, #d4a017);
+            color: #0b0e14;
+            border: none;
+            padding: 16px;
+            font-size: 16px;
+            font-weight: 800;
+            border-radius: 14px;
+            margin-top: 20px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(240, 185, 11, 0.3);
+            transition: transform 0.1s;
+        }
+        .btn-deposit:active { transform: scale(0.98); }
+
+        .nav-bottom {
+            position: fixed;
+            bottom: 0; left: 0; right: 0;
+            background: rgba(13, 17, 23, 0.95);
+            backdrop-filter: blur(10px);
+            display: flex;
+            justify-content: space-around;
+            padding: 12px 5px;
+            border-top: 1px solid rgba(255,255,255,0.05);
+            z-index: 100;
+        }
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #8b949e;
+            font-size: 10px;
+            cursor: pointer;
+            flex: 1;
+            gap: 4px;
+            transition: color 0.2s;
+        }
         .nav-item.active { color: #f0b90b; }
-        .nav-item span { font-size: 20px; display: block; }
-        .invest-item { display: flex; justify-content: space-between; align-items: center; background: #0f3460; padding: 10px; border-radius: 8px; margin-bottom: 8px; font-size: 13px; }
-        .invest-item span { color: #00ff88; font-weight: bold; }
+        .nav-item span { font-size: 22px; }
+        .nav-item.active span { filter: drop-shadow(0 0 8px rgba(240, 185, 11, 0.5)); }
+
+        .hidden { display: none !important; }
+
+        .settings-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background: #161b22;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            border: 1px solid rgba(255,255,255,0.03);
+            cursor: pointer;
+        }
+        .settings-item span:first-child { display: flex; align-items: center; gap: 10px; font-size: 14px; }
+        .settings-item .arrow { color: #8b949e; font-size: 18px; }
+
+        #status-message {
+            text-align: center;
+            margin-top: 15px;
+            color: #00ff88;
+            font-weight: 600;
+            font-size: 14px;
+            text-shadow: 0 0 10px rgba(0,255,136,0.3);
+        }
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>🚀 GRAM MAX</h1>
-    </div>
-
     <!-- الصفحة الرئيسية -->
     <div id="page-home">
-        <div class="card">
-            <p>💰 الرصيد الحالي</p>
-            <div class="balance" id="balance">0.00 GRAM</div>
+        <div class="profile-card">
+            <div>
+                <span class="balance-label">💰 الرصيد الحالي</span>
+                <div class="balance-amount">0.00 <span style="font-size:16px; color:#8b949e;">GRAM</span></div>
+            </div>
+            <div class="stats-row">
+                <div class="stat-item">
+                    <span class="stat-value">0.00</span>
+                    <span class="stat-label">📈 الأرباح</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value">0</span>
+                    <span class="stat-label">👥 الإحالات</span>
+                </div>
+            </div>
         </div>
-        <div class="card">
-            <h3>💰 الاستثمار</h3>
-            <div class="invest-item"><span>المستوى 1</span> 1 GRAM ➜ 1.15 GRAM (12 ساعة)</div>
-            <div class="invest-item"><span>المستوى 2</span> 2 GRAM ➜ 2.20 GRAM (24 ساعة)</div>
-            <div class="invest-item"><span>المستوى 3</span> 5 GRAM ➜ 5.70 GRAM (48 ساعة)</div>
-            <div class="invest-item"><span>المستوى 4</span> 7 GRAM ➜ 8.30 GRAM (3 أيام)</div>
-            <div class="invest-item"><span>المستوى 5</span> 10 GRAM ➜ 13 GRAM (5 أيام)</div>
-        </div>
-        <div class="card">
-            <h3>💳 الإيداع</h3>
-            <p>قم بالتحويل إلى المحفظة:</p>
-            <p style="color:#f0b90b; word-break: break-all;">UQBrfxfxzB5-op8FGLs-BxnZg0Bv0CveJ8VJbC3Xc9pVXZ5X</p>
-            <button class="btn btn-success" onclick="confirmDeposit()">إيداع</button>
-            <div id="status-message" style="text-align: center; margin-top: 10px; color: #00ff88; font-weight: bold;"></div>
-        </div>
-    </div>
 
-    <!-- صفحة دعوة الأصدقاء -->
-    <div id="page-invite" class="hidden">
-        <div class="card">
-            <h3>👥 دعوة الأصدقاء</h3>
-            <p>رابط الإحالة الخاص بك:</p>
-            <p style="color:#f0b90b; word-break: break-all;" id="ref-link">https://t.me/GramMax1_Bot?start=ref_123</p>
-            <p>عدد المدعوين: <span id="ref-count">0</span></p>
-            <p>أرباح الإحالات: 5%</p>
+        <div class="section-title"><span>💰</span> الاستثمار</div>
+        
+        <div class="invest-card available">
+            <div class="invest-info">
+                <span class="invest-level">المستوى 1</span>
+                <span class="invest-return">1 GRAM ➜ 1.15 GRAM</span>
+                <span class="invest-time">⏱️ 12 ساعة</span>
+            </div>
+            <div class="invest-status">🔓 متاح</div>
         </div>
+
+        <div class="invest-card locked">
+            <div class="invest-info">
+                <span class="invest-level">المستوى 2</span>
+                <span class="invest-return">2 GRAM ➜ 2.30 GRAM</span>
+                <span class="invest-time">⏱️ 24 ساعة</span>
+            </div>
+            <div class="invest-status">🔒 مقفل</div>
+        </div>
+
+        <div class="invest-card locked">
+            <div class="invest-info">
+                <span class="invest-level">المستوى 3</span>
+                <span class="invest-return">5 GRAM ➜ 5.70 GRAM</span>
+                <span class="invest-time">⏱️ 48 ساعة</span>
+            </div>
+            <div class="invest-status">🔒 مقفل</div>
+        </div>
+
+        <div class="invest-card locked">
+            <div class="invest-info">
+                <span class="invest-level">المستوى 4</span>
+                <span class="invest-return">7 GRAM ➜ 8.30 GRAM</span>
+                <span class="invest-time">⏱️ 3 أيام</span>
+            </div>
+            <div class="invest-status">🔒 مقفل</div>
+        </div>
+
+        <div class="invest-card locked">
+            <div class="invest-info">
+                <span class="invest-level">المستوى 5</span>
+                <span class="invest-return">10 GRAM ➜ 13 GRAM</span>
+                <span class="invest-time">⏱️ 5 أيام</span>
+            </div>
+            <div class="invest-status">🔒 مقفل</div>
+        </div>
+
+        <button class="btn-deposit" onclick="confirmDeposit()">💳 الإيداع</button>
+        <div id="status-message"></div>
     </div>
 
     <!-- صفحة الإحصائيات -->
     <div id="page-stats" class="hidden">
-        <div class="card">
-            <h3>📈 الإحصائيات</h3>
-            <p>💰 الرصيد: <span id="stat-balance">0.00</span></p>
-            <p>📈 إجمالي الأرباح: <span id="stat-profit">0.00</span></p>
-            <p>👥 عدد الإحالات: <span id="stat-refs">0</span></p>
-            <p>🔄 الاستثمارات النشطة: <span id="stat-active">0</span></p>
-            <p>✅ الاستثمارات المنتهية: <span id="stat-done">0</span></p>
+        <div class="section-title"><span>📈</span> الإحصائيات</div>
+        <div class="settings-item"><span>💰 الرصيد</span><span style="color:#00ff88;">0.00 GRAM</span></div>
+        <div class="settings-item"><span>📈 إجمالي الأرباح</span><span style="color:#00ff88;">0.00 GRAM</span></div>
+        <div class="settings-item"><span>👥 عدد الإحالات</span><span>0</span></div>
+        <div class="settings-item"><span>🔄 الاستثمارات النشطة</span><span>0</span></div>
+        <div class="settings-item"><span>✅ الاستثمارات المنتهية</span><span>0</span></div>
+    </div>
+
+    <!-- صفحة الإحالات -->
+    <div id="page-invite" class="hidden">
+        <div class="section-title"><span>👥</span> دعوة الأصدقاء</div>
+        <div class="profile-card" style="text-align:center;">
+            <span class="balance-label">رابط الإحالة الخاص بك</span>
+            <div style="color:#f0b90b; font-size:13px; word-break:break-all; margin:10px 0; background:rgba(0,0,0,0.3); padding:10px; border-radius:8px;" id="ref-link">https://t.me/GramMax1_Bot?start=ref_0</div>
+            <div style="font-size:20px; font-weight:bold; color:#00ff88;">0</div>
+            <span class="balance-label">عدد المدعوين</span>
+            <div style="margin-top:15px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.05); font-size:14px; color:#ccc;">
+                💰 أرباح الإحالات: <span style="color:#00ff88; font-weight:bold;">5%</span>
+            </div>
         </div>
     </div>
 
     <!-- صفحة السحب -->
     <div id="page-withdraw" class="hidden">
-        <div class="card">
-            <h3>💵 السحب</h3>
-            <p>الرصيد المتاح: <span id="withdraw-balance">0.00</span></p>
-            <button class="btn" onclick="alert('انتقل إلى محادثة البوت لطلب السحب')">طلب سحب</button>
+        <div class="section-title"><span>💵</span> السحب</div>
+        <div class="profile-card">
+            <span class="balance-label">الرصيد المتاح للسحب</span>
+            <div class="balance-amount">0.00 <span style="font-size:16px; color:#8b949e;">GRAM</span></div>
+            <button class="btn-deposit" style="margin-top:15px;" onclick="alert('يرجى التوجه إلى محادثة البوت لطلب السحب')">📤 طلب سحب</button>
+            <p style="text-align:center; color:#8b949e; font-size:12px; margin-top:10px;">يتم معالجة طلبات السحب يدوياً خلال 24 ساعة</p>
         </div>
     </div>
 
     <!-- صفحة الإعدادات -->
     <div id="page-settings" class="hidden">
-        <div class="card">
-            <h3>⚙️ الإعدادات</h3>
-            <p>🔔 الإشعارات: مفعلة</p>
-            <p>🌐 اللغة: العربية</p>
+        <div class="section-title"><span>⚙️</span> الإعدادات</div>
+        
+        <div class="settings-item" onclick="toggleLanguageMenu()">
+            <span>🌐 اللغة</span>
+            <span class="arrow" id="current-lang">العربية ›</span>
         </div>
+        <div id="language-options" class="hidden" style="background: #0d1117; border-radius: 12px; padding: 10px; margin-bottom: 10px; border: 1px solid #f0b90b;">
+            <div class="settings-item" onclick="changeLanguage('ar')" style="margin-bottom:5px;">🇸🇦 العربية</div>
+            <div class="settings-item" onclick="changeLanguage('en')" style="margin-bottom:5px;">🇬🇧 English</div>
+            <div class="settings-item" onclick="changeLanguage('ru')" style="margin-bottom:0;">🇷🇺 Русский</div>
+        </div>
+
+        <div class="settings-item"><span>💰 الاستثمار</span><span class="arrow">›</span></div>
+        <div class="settings-item"><span>🔔 الإشعارات</span><span class="arrow" style="color:#00ff88;">مفعلة ›</span></div>
+        <div class="settings-item"><span>👤 الحساب</span><span class="arrow">›</span></div>
+        <div class="settings-item"><span>🆘 الدعم</span><span class="arrow">›</span></div>
+        <div class="settings-item"><span>ℹ️ معلومات البوت</span><span class="arrow">v1.0 ›</span></div>
     </div>
 
     <!-- شريط التنقل السفلي -->
     <div class="nav-bottom">
         <div class="nav-item active" onclick="showPage('home')"><span>🏠</span>الرئيسية</div>
-        <div class="nav-item" onclick="showPage('invite')"><span>👥</span>دعوة</div>
-        <div class="nav-item" onclick="showPage('withdraw')"><span>💵</span>سحب</div>
-        <div class="nav-item" onclick="showPage('stats')"><span>📈</span>إحصائيات</div>
-        <div class="nav-item" onclick="showPage('settings')"><span>⚙️</span>إعدادات</div>
+        <div class="nav-item" onclick="showPage('stats')"><span>📊</span>الإحصائيات</div>
+        <div class="nav-item" onclick="showPage('invite')"><span>👥</span>الإحالات</div>
+        <div class="nav-item" onclick="showPage('withdraw')"><span>💵</span>السحب</div>
+        <div class="nav-item" onclick="showPage('settings')"><span>⚙️</span>الإعدادات</div>
     </div>
 
     <script>
@@ -111,14 +322,32 @@
             document.querySelectorAll('[id^="page-"]').forEach(p => p.classList.add('hidden'));
             document.getElementById('page-' + pageId).classList.remove('hidden');
             document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+            event.currentTarget.classList.add('active');
         }
 
         function confirmDeposit() {
             window.Telegram.WebApp.sendData(JSON.stringify({ action: "deposit_confirmed" }));
-            document.getElementById('status-message').innerText = "✅ تم استلام طلب الإيداع! سيتم مراجعته.";
+            document.getElementById('status-message').innerText = "✅ تم استلام طلب الإيداع بنجاح!";
         }
 
-        // جلب بيانات المستخدم (سيتم ربطها بالبوت لاحقاً)
+        function toggleLanguageMenu() {
+            const menu = document.getElementById('language-options');
+            menu.classList.toggle('hidden');
+        }
+
+        function changeLanguage(lang) {
+            const currentLangText = { 'ar': 'العربية', 'en': 'English', 'ru': 'Русский' };
+            document.getElementById('current-lang').innerText = currentLangText[lang] + ' ›';
+            if (lang === 'en') {
+                alert("Language changed to English");
+            } else if (lang === 'ru') {
+                alert("Язык изменен на русский");
+            } else {
+                alert("تم تغيير اللغة إلى العربية");
+            }
+            document.getElementById('language-options').classList.add('hidden');
+        }
+
         const user = window.Telegram.WebApp.initDataUnsafe.user;
         if (user) {
             document.getElementById('ref-link').innerText = `https://t.me/GramMax1_Bot?start=ref_${user.id}`;
