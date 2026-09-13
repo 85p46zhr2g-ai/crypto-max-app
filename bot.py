@@ -15,6 +15,7 @@ def init_db():
     cursor = conn.cursor()
     cursor.execute("CREATE TABLE IF NOT EXISTS users (user_id INTEGER PRIMARY KEY, balance REAL DEFAULT 0.0)")
     cursor.execute("CREATE TABLE IF NOT EXISTS deposits (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, amount REAL, status TEXT DEFAULT 'pending', created_at TEXT)")
+    cursor.execute("CREATE TABLE IF NOT EXISTS withdrawals (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, amount REAL, wallet TEXT, status TEXT DEFAULT 'pending', created_at TEXT)")
     conn.commit()
     conn.close()
 
@@ -37,22 +38,25 @@ def update_balance(user_id, amount):
     conn.commit()
     conn.close()
 
-def create_deposit(user_id, amount):
+def create_withdrawal(user_id, amount, wallet):
     conn = sqlite3.connect("gram_max.db")
     cursor = conn.cursor()
-    cursor.execute("INSERT INTO deposits (user_id, amount, status, created_at) VALUES (?, ?, 'pending', ?)", 
-                   (user_id, amount, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+    cursor.execute("INSERT INTO withdrawals (user_id, amount, wallet, status, created_at) VALUES (?, ?, ?, 'pending', ?)", 
+                   (user_id, amount, wallet, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+    withdraw_id = cursor.lastrowid
     conn.commit()
     conn.close()
+    return withdraw_id
 
-def get_pending_deposits():
+def get_pending_withdrawals():
     conn = sqlite3.connect("gram_max.db")
     cursor = conn.cursor()
-    cursor.execute("SELECT id, user_id, amount, created_at FROM deposits WHERE status = 'pending'")
+    cursor.execute("SELECT id, user_id, amount, wallet, created_at FROM withdrawals WHERE status = 'pending'")
     rows = cursor.fetchall()
     conn.close()
     return rows
 
+# ==================== أوامر المستخدم ====================
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     get_user(user_id)
@@ -69,33 +73,88 @@ async def deposit_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [[InlineKeyboardButton("✅ تم الإيداع", callback_data="confirm_deposit")]]
     await update.message.reply_text(text, parse_mode='Markdown', reply_markup=InlineKeyboardMarkup(keyboard))
 
+# ==================== قسم السحب ====================
+async def withdraw_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    context.user_data['state'] = "WAITING_AMOUNT"
+    await update.message.reply_text("💵 السحب\n\nأرسل المبلغ الذي تريد سحبه (مثال: 5):")
+
+async def withdraw_amount(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    try:
+        amount = float(update.message.text)
+        user_id = update.effective_user.id
+        balance = get_user(user_id)
+        if amount > balance:
+            await update.message.reply_text(f"❌ رصيدك غير كافٍ. رصيدك الحالي: {balance}")
+            context.user_data['state'] = None
+            return
+        context.user_data['withdraw_amount'] = amount
+        context.user_data['state'] = "WAITING_WALLET"
+        await update.message.reply_text("الآن أرسل عنوان محفظتك:")
+    except ValueError:
+        await update.message.reply_text("❌ الرجاء إرسال رقم صحيح.")
+        context.user_data['state'] = None
+
+async def withdraw_wallet(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    wallet = update.message.text
+    amount = context.user_data.get('withdraw_amount')
+    user_id = update.effective_user.id
+    withdraw_id = create_withdrawal(user_id, amount, wallet)
+    context.user_data['state'] = None
+    await update.message.reply_text(f"✅ تم استلام طلب السحب رقم {withdraw_id}.\nسيتم مراجعته من قبل الإدارة.")
+    await context.bot.send_message(chat_id=ADMIN_ID, text=f"🔔 طلب سحب جديد رقم {withdraw_id}\n👤 المستخدم: `{user_id}`\n💰 المبلغ: {amount}\n🏦 المحفظة: `{wallet}`", parse_mode='Markdown')
+
+# ==================== لوحة تحكم المشرف ====================
 async def admin_panel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != ADMIN_ID: return
-    await update.message.reply_text("👑 لوحة التحكم\n/pending_deposits - طلبات الإيداع")
+    await update.message.reply_text("👑 لوحة التحكم\n/pending_deposits - طلبات الإيداع\n/pending_withdrawals - طلبات السحب")
 
 async def pending_deposits(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != ADMIN_ID: return
-    rows = get_pending_deposits()
+    conn = sqlite3.connect("gram_max.db")
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, user_id, amount FROM deposits WHERE status = 'pending'")
+    rows = cursor.fetchall()
+    conn.close()
     if not rows:
-        await update.message.reply_text("لا توجد طلبات.")
+        await update.message.reply_text("لا توجد طلبات إيداع.")
         return
     for row in rows:
-        dep_id, user_id, amount, created_at = row
-        text = f"📌 طلب إيداع رقم: {dep_id}\n👤 المستخدم: `{user_id}`\n💰 المبلغ: {amount}\n⏰ الوقت: {created_at}"
+        dep_id, user_id, amount = row
+        text = f"📌 إيداع رقم: {dep_id}\n👤 المستخدم: `{user_id}`\n💰 المبلغ: {amount}"
         keyboard = [[InlineKeyboardButton("✅ تأكيد", callback_data=f"confirm_dep_{dep_id}"), InlineKeyboardButton("❌ رفض", callback_data=f"reject_dep_{dep_id}")]]
         await update.message.reply_text(text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode='Markdown')
 
+async def pending_withdrawals(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.effective_user.id != ADMIN_ID: return
+    rows = get_pending_withdrawals()
+    if not rows:
+        await update.message.reply_text("لا توجد طلبات سحب.")
+        return
+    for row in rows:
+        w_id, user_id, amount, wallet, created_at = row
+        text = f"📌 سحب رقم: {w_id}\n👤 المستخدم: `{user_id}`\n💰 المبلغ: {amount}\n🏦 المحفظة: `{wallet}`"
+        keyboard = [[InlineKeyboardButton("✅ تأكيد", callback_data=f"confirm_wd_{w_id}"), InlineKeyboardButton("❌ رفض", callback_data=f"reject_wd_{w_id}")]]
+        await update.message.reply_text(text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode='Markdown')
+
+# ==================== معالجة الأزرار ====================
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text
     if text == "💰 الاستثمار": await invest_menu(update, context)
     elif text == "💳 الإيداع": await deposit_menu(update, context)
+    elif text == "💵 السحب": await withdraw_start(update, context)
+    elif context.user_data.get('state') == "WAITING_AMOUNT": await withdraw_amount(update, context)
+    elif context.user_data.get('state') == "WAITING_WALLET": await withdraw_wallet(update, context)
     else: await update.message.reply_text("هذا القسم قيد التطوير.")
 
 async def web_app_data_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     data = update.effective_message.web_app_data.data
     if "deposit_confirmed" in data:
         user_id = update.effective_user.id
-        create_deposit(user_id, 1.0) # مبلغ مؤقت
+        conn = sqlite3.connect("gram_max.db")
+        cursor = conn.cursor()
+        cursor.execute("INSERT INTO deposits (user_id, amount, status, created_at) VALUES (?, 1.0, 'pending', ?)", (user_id, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+        conn.commit()
+        conn.close()
         await update.message.reply_text("✅ تم استلام طلب الإيداع! سيتم مراجعته.")
         await context.bot.send_message(chat_id=ADMIN_ID, text=f"🔔 طلب إيداع جديد من `{user_id}`.")
 
@@ -104,9 +163,14 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
     data = query.data
     if data == "confirm_deposit":
-        create_deposit(query.from_user.id, 1.0)
-        await query.edit_message_text("✅ تم استلام الطلب! سيتم مراجعته.")
-        await context.bot.send_message(chat_id=ADMIN_ID, text=f"🔔 طلب إيداع جديد من `{query.from_user.id}`.")
+        user_id = query.from_user.id
+        conn = sqlite3.connect("gram_max.db")
+        cursor = conn.cursor()
+        cursor.execute("INSERT INTO deposits (user_id, amount, status, created_at) VALUES (?, 1.0, 'pending', ?)", (user_id, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+        conn.commit()
+        conn.close()
+        await query.edit_message_text("✅ تم استلام طلب الإيداع!")
+        await context.bot.send_message(chat_id=ADMIN_ID, text=f"🔔 طلب إيداع جديد من `{user_id}`.")
     elif data.startswith("confirm_dep_"):
         dep_id = int(data.split("_")[2])
         conn = sqlite3.connect("gram_max.db")
@@ -128,6 +192,27 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         conn.commit()
         conn.close()
         await query.edit_message_text(f"❌ تم رفض الإيداع {dep_id}.")
+    elif data.startswith("confirm_wd_"):
+        wd_id = int(data.split("_")[2])
+        conn = sqlite3.connect("gram_max.db")
+        cursor = conn.cursor()
+        cursor.execute("SELECT user_id, amount FROM withdrawals WHERE id = ?", (wd_id,))
+        row = cursor.fetchone()
+        if row:
+            update_balance(row[0], -row[1])
+            cursor.execute("UPDATE withdrawals SET status = 'completed' WHERE id = ?", (wd_id,))
+            conn.commit()
+            await context.bot.send_message(chat_id=row[0], text=f"🎉 تم تأكيد سحبك رقم {wd_id}.")
+        conn.close()
+        await query.edit_message_text(f"✅ تم تأكيد السحب {wd_id}.")
+    elif data.startswith("reject_wd_"):
+        wd_id = int(data.split("_")[2])
+        conn = sqlite3.connect("gram_max.db")
+        cursor = conn.cursor()
+        cursor.execute("UPDATE withdrawals SET status = 'rejected' WHERE id = ?", (wd_id,))
+        conn.commit()
+        conn.close()
+        await query.edit_message_text(f"❌ تم رفض السحب {wd_id}.")
 
 def main():
     init_db()
@@ -135,6 +220,7 @@ def main():
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("admin", admin_panel))
     app.add_handler(CommandHandler("pending_deposits", pending_deposits))
+    app.add_handler(CommandHandler("pending_withdrawals", pending_withdrawals))
     app.add_handler(MessageHandler(filters.StatusUpdate.WEB_APP_DATA, web_app_data_handler))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     app.add_handler(CallbackQueryHandler(button_handler))
