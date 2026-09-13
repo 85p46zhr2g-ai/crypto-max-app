@@ -295,4 +295,38 @@
             const statusEl = document.getElementById('notif-status');
             const t = translations[currentUserLang];
             const isEnabled = statusEl.innerText.includes('مفعلة') || statusEl.innerText.includes('Enabled') || statusEl.innerText.includes('Включено');
-            statusEl.inner
+            statusEl.innerText = isEnabled ? t.disabled : t.enabled;
+            statusEl.style.color = isEnabled ? '#8b949e' : '#00ff88';
+            window.Telegram.WebApp.sendData(JSON.stringify({ action: "toggle_notifications", enabled: !isEnabled }));
+        }
+
+        function openSupport() { showPage('support', event); }
+        function contactSupport() { window.Telegram.WebApp.openTelegramLink('https://t.me/FastHelp3'); }
+
+        function confirmDeposit() {
+            const amount = document.getElementById('deposit-amount').value;
+            if (!amount || parseFloat(amount) < 1) { alert("الحد الأدنى 1 GRAM"); return; }
+            window.Telegram.WebApp.sendData(JSON.stringify({ action: "deposit_confirmed", amount: amount }));
+            document.getElementById('status-message').innerText = "✅ تم استلام الطلب";
+        }
+
+        function requestWithdraw() {
+            const amount = document.getElementById('withdraw-amount').value;
+            const wallet = document.getElementById('withdraw-wallet').value;
+            if (!amount || !wallet) { alert("أدخل المبلغ والعنوان"); return; }
+            if (parseFloat(amount) < 1) { alert("الحد الأدنى 1 GRAM"); return; }
+            window.Telegram.WebApp.sendData(JSON.stringify({ action: "withdraw_request", amount: amount, wallet: wallet }));
+            alert("✅ تم استلام الطلب");
+        }
+
+        function shareLink() {
+            const refLink = document.getElementById('ref-link').innerText;
+            const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(refLink)}`;
+            window.Telegram.WebApp.openTelegramLink(shareUrl);
+        }
+
+        const user = window.Telegram.WebApp.initDataUnsafe.user;
+        if (user) { document.getElementById('ref-link').innerText = `https://t.me/GramMax1_Bot?start=ref_${user.id}`; }
+    </script>
+</body>
+</html>
