@@ -12,6 +12,9 @@ WALLET_ADDRESS = "UQBrfxfxzB5-op8FGLs-BxnZg0Bv0CveJ8VJbC3Xc9pVXZ5X"
 BOT_USERNAME = "GramMax1_Bot"
 SUPPORT_USERNAME = "SowzzFF"
 
+# رابط التطبيق المصغر
+WEBAPP_URL = "https://85p46zhr2g-ai.github.io/crypto-max-app/"
+
 # قنوات الاشتراك الإجباري
 CHANNEL_BOT = "https://t.me/GramMax1_Bot"
 CHANNEL_CHAT = "https://t.me/GramMaxChat"
@@ -152,7 +155,7 @@ async def check_subscription(user_id, context):
         pass
     return False
 
-# ==================== أوامر المستخدم ====================
+# ==================== أمر البدء (زر واحد فقط) ====================
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     args = context.args
@@ -185,88 +188,18 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     get_settings(user_id)
     get_ads(user_id)
     
+    # زر واحد فقط لفتح التطبيق المصغر
     keyboard = [
-        ["💰 الاستثمار", "👥 دعوة الأصدقاء"],
-        ["📊 المستويات", "📈 الإحصائيات"],
-        ["💵 السحب", "💳 الإيداع"],
-        ["🎁 المكافآت", "🆘 الدعم"],
-        ["⚙️ الإعدادات"]
+        [InlineKeyboardButton("🚀 دخول إلى التطبيق", web_app={"url": WEBAPP_URL})]
     ]
-    await update.message.reply_text("مرحباً بك في GRAM MAX! 🤖", reply_markup=ReplyKeyboardMarkup(keyboard, resize_keyboard=True))
-
-async def invest_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    text = "💰 الاستثمار\n\n1️⃣ 1 GRAM ➜ 1.15 (12 ساعة)\n2️⃣ 2 GRAM ➜ 2.20 (24 ساعة)\n3️⃣ 5 GRAM ➜ 5.70 (48 ساعة)\n4️⃣ 7 GRAM ➜ 8.30 (3 أيام)\n5️⃣ 10 GRAM ➜ 13 (5 أيام)\n\nقم بالتحويل إلى:\n`" + WALLET_ADDRESS + "`"
-    keyboard = [[InlineKeyboardButton("✅ تم الإيداع", callback_data="confirm_deposit")]]
-    await update.message.reply_text(text, parse_mode='Markdown', reply_markup=InlineKeyboardMarkup(keyboard))
-
-async def deposit_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    text = f"💳 الإيداع\n\nالحد الأدنى للإيداع: {MIN_DEPOSIT} GRAM\n\nقم بالتحويل إلى:\n`" + WALLET_ADDRESS + "`"
-    keyboard = [[InlineKeyboardButton("✅ تم الإيداع", callback_data="confirm_deposit")]]
-    await update.message.reply_text(text, parse_mode='Markdown', reply_markup=InlineKeyboardMarkup(keyboard))
-
-async def referral_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_id = update.effective_user.id
-    balance, referrals = get_user(user_id)
-    link = f"https://t.me/{BOT_USERNAME}?start=ref_{user_id}"
-    text = f"👥 **دعوة الأصدقاء**\n\nرابط الإحالة الخاص بك:\n`{link}`\n\nعدد المدعوين: {referrals}\nأرباح الإحالات: 5%"
-    await update.message.reply_text(text, parse_mode='Markdown')
+    await update.message.reply_text(
+        "مرحباً بك في GRAM MAX! 🤖\n\nاضغط على الزر أدناه لفتح التطبيق:",
+        reply_markup=InlineKeyboardMarkup(keyboard)
+    )
 
 async def support_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = f"🆘 **الدعم المباشر**\n\nللتواصل مع الدعم:\n@{SUPPORT_USERNAME}"
     await update.message.reply_text(text, parse_mode='Markdown')
-
-# ==================== قسم السحب مع شرط الإعلانات ====================
-async def withdraw_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_id = update.effective_user.id
-    ads_watched, unlocked = get_ads(user_id)
-    
-    if not unlocked:
-        text = (
-            f"🎬 **شاهد {ADS_REQUIRED} إعلاناً لفتح السحب**\n\n"
-            f"التقدم: {ads_watched} / {ADS_REQUIRED} إعلان\n\n"
-            "بعد كل إعلان مكتمل ومؤكد من شبكة الإعلانات، سيتم تحديث العداد."
-        )
-        keyboard = [[InlineKeyboardButton(f"🎬 مشاهدة إعلان ({ads_watched}/{ADS_REQUIRED})", callback_data="watch_ad")]]
-        await update.message.reply_text(text, parse_mode='Markdown', reply_markup=InlineKeyboardMarkup(keyboard))
-        return
-    
-    context.user_data['state'] = "WAITING_AMOUNT"
-    await update.message.reply_text(f"💵 السحب\n\nالحد الأدنى للسحب: {MIN_WITHDRAWAL} GRAM\nرسوم السحب: {WITHDRAWAL_FEE_PERCENT}%\n\nأرسل المبلغ الذي تريد سحبه:")
-
-async def withdraw_amount(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    try:
-        amount = float(update.message.text)
-        user_id = update.effective_user.id
-        balance, _ = get_user(user_id)
-        
-        if amount < MIN_WITHDRAWAL:
-            await update.message.reply_text(f"❌ الحد الأدنى للسحب هو {MIN_WITHDRAWAL} GRAM.")
-            context.user_data['state'] = None
-            return
-        
-        if amount > balance:
-            await update.message.reply_text(f"❌ رصيدك غير كافٍ. رصيدك الحالي: {balance}")
-            context.user_data['state'] = None
-            return
-        
-        fee = amount * (WITHDRAWAL_FEE_PERCENT / 100)
-        context.user_data['withdraw_amount'] = amount
-        context.user_data['withdraw_fee'] = fee
-        context.user_data['state'] = "WAITING_WALLET"
-        await update.message.reply_text(f"الرسوم: {fee:.2f} GRAM\nالمبلغ الصافي: {amount - fee:.2f} GRAM\n\nالآن أرسل عنوان محفظتك:")
-    except ValueError:
-        await update.message.reply_text("❌ الرجاء إرسال رقم صحيح.")
-        context.user_data['state'] = None
-
-async def withdraw_wallet(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    wallet = update.message.text
-    amount = context.user_data.get('withdraw_amount')
-    fee = context.user_data.get('withdraw_fee')
-    user_id = update.effective_user.id
-    withdraw_id = create_withdrawal(user_id, amount, fee, wallet)
-    context.user_data['state'] = None
-    await update.message.reply_text(f"✅ تم استلام طلب السحب رقم {withdraw_id}.\nسيتم مراجعته من قبل الإدارة.")
-    await context.bot.send_message(chat_id=ADMIN_ID, text=f"🔔 طلب سحب جديد رقم {withdraw_id}\n👤 المستخدم: `{user_id}`\n💰 المبلغ: {amount}\n💸 الرسوم: {fee}\n🏦 المحفظة: `{wallet}`", parse_mode='Markdown')
 
 # ==================== لوحة تحكم المشرف ====================
 async def admin_panel(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -302,17 +235,6 @@ async def pending_withdrawals(update: Update, context: ContextTypes.DEFAULT_TYPE
         await update.message.reply_text(text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode='Markdown')
 
 # ==================== معالجة الأزرار ====================
-async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    text = update.message.text
-    if text == "💰 الاستثمار": await invest_menu(update, context)
-    elif text == "💳 الإيداع": await deposit_menu(update, context)
-    elif text == "👥 دعوة الأصدقاء": await referral_menu(update, context)
-    elif text == "🆘 الدعم": await support_menu(update, context)
-    elif text == "💵 السحب": await withdraw_start(update, context)
-    elif context.user_data.get('state') == "WAITING_AMOUNT": await withdraw_amount(update, context)
-    elif context.user_data.get('state') == "WAITING_WALLET": await withdraw_wallet(update, context)
-    else: await update.message.reply_text("هذا القسم قيد التطوير.")
-
 async def web_app_data_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     data = update.effective_message.web_app_data.data
     user_id = update.effective_user.id
@@ -361,8 +283,6 @@ async def web_app_data_handler(update: Update, context: ContextTypes.DEFAULT_TYP
             update_notifications(user_id, enabled)
         
         elif action == "watch_ad_complete":
-            # هذا الإجراء يتم استدعاؤه فقط عند تأكيد مزود الإعلانات
-            # ⚠️ لا تستخدمه من التطبيق مباشرة، يجب أن يأتي من Webhook مزود الإعلانات
             new_count, unlocked = add_ad_watched(user_id)
             if unlocked:
                 await context.bot.send_message(chat_id=user_id, text="🎉 تم فتح السحب بنجاح!")
@@ -381,25 +301,23 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if data == "check_sub":
         is_subscribed = await check_subscription(user_id, context)
         if is_subscribed:
-            await query.edit_message_text("✅ تم التحقق من الاشتراك! يمكنك الآن استخدام البوت.\n\nأرسل /start للبدء.")
+            keyboard = [[InlineKeyboardButton("🚀 دخول إلى التطبيق", web_app={"url": WEBAPP_URL})]]
+            await query.edit_message_text(
+                "✅ تم التحقق من الاشتراك!\n\nاضغط على الزر أدناه لفتح التطبيق:",
+                reply_markup=InlineKeyboardMarkup(keyboard)
+            )
         else:
             await query.edit_message_text("❌ لم يتم التحقق. يرجى الاشتراك في جميع القنوات أولاً.")
     
     elif data == "watch_ad":
-        # ⚠️ هنا يجب استدعاء مزود الإعلانات الحقيقي
-        # مثال: AdsGram API
         ads_watched, unlocked = get_ads(user_id)
-        
         if unlocked:
             await query.edit_message_text("✅ السحب مفتوح بالفعل!")
             return
-        
-        # ⚠️ يجب استبدال هذا الجزء بكود مزود الإعلانات الحقيقي
         await query.edit_message_text(
             f"🎬 **مشاهدة إعلان**\n\n"
             f"التقدم: {ads_watched}/{ADS_REQUIRED}\n\n"
-            f"⚠️ يجب ربط مزود الإعلانات (AdsGram/Monetag) لتفعيل هذه الميزة.\n"
-            f"لا يمكن احتساب الإعلان دون تأكيد حقيقي من المزود."
+            f"⚠️ يجب ربط مزود الإعلانات (AdsGram/Monetag) لتفعيل هذه الميزة."
         )
     
     elif data == "confirm_deposit":
@@ -459,7 +377,6 @@ def main():
     app.add_handler(CommandHandler("pending_deposits", pending_deposits))
     app.add_handler(CommandHandler("pending_withdrawals", pending_withdrawals))
     app.add_handler(MessageHandler(filters.StatusUpdate.WEB_APP_DATA, web_app_data_handler))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     app.add_handler(CallbackQueryHandler(button_handler))
     print("البوت يعمل الآن...")
     app.run_polling()
