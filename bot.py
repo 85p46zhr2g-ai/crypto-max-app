@@ -211,6 +211,7 @@ async def web_app_data_handler(update: Update, context: ContextTypes.DEFAULT_TYP
         req_data = json.loads(data)
         action = req_data.get('action', '')
         
+        # كل إجراء يرد برسالة نصية، والتطبيق المصغر سيقرأها عبر get_data لاحقاً
         if action == "get_data":
             balance, referrals, wallet, lang, _ = get_user(user_id)
             completed = get_completed_tasks(user_id)
@@ -226,11 +227,9 @@ async def web_app_data_handler(update: Update, context: ContextTypes.DEFAULT_TYP
             if task_id not in channel_map:
                 await update.message.reply_text("TASK_FAIL:INVALID_TASK")
                 return
-            
             if is_task_completed(user_id, task_id):
                 await update.message.reply_text(f"TASK_DONE:{task_id}|ALREADY")
                 return
-            
             channel_id = channel_map[task_id]
             try:
                 member = await context.bot.get_chat_member(chat_id=channel_id, user_id=user_id)
