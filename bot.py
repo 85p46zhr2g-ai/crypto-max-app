@@ -14,8 +14,6 @@ WEBAPP_URL = "https://85p46zhr2g-ai.github.io/crypto-max-app/"
 
 CHANNEL_1_ID = "@CRYBTO_MAX_1"
 CHANNEL_2_ID = "@olka_ad"
-CHANNEL_1_URL = "https://t.me/CRYBTO_MAX_1"
-CHANNEL_2_URL = "https://t.me/olka_ad"
 
 MIN_DEPOSIT = 1.0
 MIN_WITHDRAWAL = 1.0
@@ -29,7 +27,7 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 def init_db():
     conn = sqlite3.connect("gram_max.db")
     cursor = conn.cursor()
-    cursor.execute("CREATE TABLE IF NOT EXISTS users (user_id INTEGER PRIMARY KEY, balance REAL DEFAULT 0.0, referrals INTEGER DEFAULT 0, referrer_id INTEGER, wallet_address TEXT, language TEXT DEFAULT 'ar', notifications INTEGER DEFAULT 1)")
+    cursor.execute("CREATE TABLE IF NOT EXISTS users (user_id INTEGER PRIMARY KEY, balance REAL DEFAULT 0.0, referrals INTEGER DEFAULT 0, referrer_id INTEGER, wallet_address TEXT, language TEXT DEFAULT 'ar', notifications INTEGER DEFAULT 1, notified INTEGER DEFAULT 0)")
     cursor.execute("CREATE TABLE IF NOT EXISTS deposits (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, amount REAL, status TEXT DEFAULT 'pending', created_at TEXT)")
     cursor.execute("CREATE TABLE IF NOT EXISTS withdrawals (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, amount REAL, fee REAL, wallet TEXT, status TEXT DEFAULT 'pending', created_at TEXT)")
     cursor.execute("CREATE TABLE IF NOT EXISTS user_tasks (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, task_id TEXT, completed_at TEXT)")
@@ -40,14 +38,21 @@ def init_db():
 def get_user(user_id):
     conn = sqlite3.connect("gram_max.db")
     cursor = conn.cursor()
-    cursor.execute("SELECT balance, referrals, wallet_address, language FROM users WHERE user_id = ?", (user_id,))
+    cursor.execute("SELECT balance, referrals, wallet_address, language, notified FROM users WHERE user_id = ?", (user_id,))
     result = cursor.fetchone()
     if not result:
-        cursor.execute("INSERT INTO users (user_id, balance, referrals) VALUES (?, 0, 0)", (user_id,))
+        cursor.execute("INSERT INTO users (user_id, balance, referrals, notified) VALUES (?, 0, 0, 0)", (user_id,))
         conn.commit()
-        result = (0, 0, None, 'ar')
+        result = (0, 0, None, 'ar', 0)
     conn.close()
     return result
+
+def mark_notified(user_id):
+    conn = sqlite3.connect("gram_max.db")
+    cursor = conn.cursor()
+    cursor.execute("UPDATE users SET notified = 1 WHERE user_id = ?", (user_id,))
+    conn.commit()
+    conn.close()
 
 def update_balance(user_id, amount):
     conn = sqlite3.connect("gram_max.db")
@@ -92,7 +97,7 @@ def update_language(user_id, lang):
     conn.commit()
     conn.close()
 
-def create_request(user_id, request_type, link, amount):
+def create_request(user_id, request_type, link):
     conn = sqlite3.connect("gram_max.db")
     cursor = conn.cursor()
     cursor.execute("INSERT INTO channel_requests (user_id, request_type, link, status, created_at) VALUES (?, ?, ?, 'pending', ?)", (user_id, request_type, link, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
@@ -100,14 +105,6 @@ def create_request(user_id, request_type, link, amount):
     conn.commit()
     conn.close()
     return req_id
-
-def get_pending_requests():
-    conn = sqlite3.connect("gram_max.db")
-    cursor = conn.cursor()
-    cursor.execute("SELECT id, user_id, request_type, link FROM channel_requests WHERE status = 'pending'")
-    rows = cursor.fetchall()
-    conn.close()
-    return rows
 
 def approve_request(req_id):
     conn = sqlite3.connect("gram_max.db")
@@ -166,8 +163,13 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 add_referral(user_id, referrer_id)
         except:
             pass
-    get_user(user_id)
-    await notify_admin(context, f"🔔 **مستخدم جديد**\n👤 {update.effective_user.full_name}\n🆔 `{user_id}`")
+    
+    balance, referrals, wallet, lang, notified = get_user(user_id)
+    
+    if not notified:
+        await notify_admin(context, f"🔔 **مستخدم جديد**\n👤 {update.effective_user.full_name}\n🆔 `{user_id}`")
+        mark_notified(user_id)
+    
     keyboard = [[InlineKeyboardButton("🚀 دخول إلى التطبيق", web_app={"url": WEBAPP_URL})]]
     await update.message.reply_text("مرحباً بك في GRAM MAX! 🤖", reply_markup=InlineKeyboardMarkup(keyboard))
 
@@ -188,7 +190,7 @@ async def web_app_data_handler(update: Update, context: ContextTypes.DEFAULT_TYP
         elif action == "withdraw_request":
             amount = float(req_data.get('amount', 0))
             wallet = req_data.get('wallet', '')
-            balance, _, _, _ = get_user(user_id)
+            balance, _, _, _, _ = get_user(user_id)
             if amount <= balance and amount >= MIN_WITHDRAWAL:
                 fee = amount * (WITHDRAWAL_FEE_PERCENT / 100)
                 create_withdrawal(user_id, amount, fee, wallet)
@@ -227,26 +229,36 @@ async def web_app_data_handler(update: Update, context: ContextTypes.DEFAULT_TYP
                     await update.message.reply_text(f"❌ خطأ في التحقق. تأكد أن البوت مشرف في القناة.")
         
         elif action == "add_channel_request":
-            balance, _, _, _ = get_user(user_id)
+            balance, _, _, _, _ = get_user(user_id)
             if balance < CHANNEL_ADD_FEE:
                 await update.message.reply_text(f"❌ رصيدك غير كافٍ. تحتاج {CHANNEL_ADD_FEE}$\nرصيدك: {balance} GRAM")
                 return
-            context.user_data['state'] = "WAITING_CHANNEL_LINK"
-            await update.message.reply_text(f"📢 **إضافة قناة**\n\n💵 الرسوم: {CHANNEL_ADD_FEE}$\n\n⚠️ الشروط:\n1. القناة عامة.\n2. البوت مشرف في القناة.\n\nأرسل رابط القناة:")
+            link = req_data.get('link', '')
+            if not link or not link.startswith("https://t.me/"):
+                await update.message.reply_text("❌ رابط غير صحيح.")
+                return
+            req_id = create_request(user_id, 'channel', link)
+            await update.message.reply_text(f"✅ تم استلام الطلب. سيتم مراجعته.")
+            await notify_admin(context, f"📢 **طلب إضافة قناة**\n👤 {user_name}\n🆔 `{user_id}`\n📢 {link}\n💵 {CHANNEL_ADD_FEE}$\n\nللقبول: /approve {req_id}\nللرفض: /reject {req_id}")
         
         elif action == "add_bot_request":
-            balance, _, _, _ = get_user(user_id)
+            balance, _, _, _, _ = get_user(user_id)
             if balance < BOT_ADD_FEE:
                 await update.message.reply_text(f"❌ رصيدك غير كافٍ. تحتاج {BOT_ADD_FEE}$\nرصيدك: {balance} GRAM")
                 return
-            context.user_data['state'] = "WAITING_BOT_LINK"
-            await update.message.reply_text(f"🤖 **إضافة بوت**\n\n💵 الرسوم: {BOT_ADD_FEE}$\n\nأرسل رابط البوت:")
+            link = req_data.get('link', '')
+            if not link or not link.startswith("https://t.me/"):
+                await update.message.reply_text("❌ رابط غير صحيح.")
+                return
+            req_id = create_request(user_id, 'bot', link)
+            await update.message.reply_text(f"✅ تم استلام الطلب. سيتم مراجعته.")
+            await notify_admin(context, f"🤖 **طلب إضافة بوت**\n👤 {user_name}\n🆔 `{user_id}`\n🤖 {link}\n💵 {BOT_ADD_FEE}$\n\nللقبول: /approve {req_id}\nللرفض: /reject {req_id}")
         
         elif action == "change_lang":
             update_language(user_id, req_data.get('lang', 'ar'))
         
         elif action == "get_data":
-            balance, referrals, wallet, lang = get_user(user_id)
+            balance, referrals, wallet, lang, _ = get_user(user_id)
             completed = get_completed_tasks(user_id)
             await update.message.reply_text(f"DATA:{balance}|{referrals}|{wallet}|{lang}|{','.join(completed)}")
     
@@ -254,42 +266,7 @@ async def web_app_data_handler(update: Update, context: ContextTypes.DEFAULT_TYP
         print(f"Error: {e}")
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    text = update.message.text
-    user_id = update.effective_user.id
-    user_name = update.effective_user.full_name
-    state = context.user_data.get('state')
-    
-    if state == "WAITING_CHANNEL_LINK":
-        if not text.startswith("https://t.me/"):
-            await update.message.reply_text("❌ رابط غير صحيح.")
-            return
-        channel_username = text.replace("https://t.me/", "").replace("@", "")
-        try:
-            chat = await context.bot.get_chat(chat_id=f"@{channel_username}")
-            if chat.username is None:
-                await update.message.reply_text("❌ يجب أن تكون القناة عامة.")
-                return
-            bot_member = await context.bot.get_chat_member(chat_id=chat.id, user_id=context.bot.id)
-            if bot_member.status not in ['administrator', 'creator']:
-                await update.message.reply_text("❌ البوت ليس مشرفاً في القناة.")
-                return
-            req_id = create_request(user_id, 'channel', text, CHANNEL_ADD_FEE)
-            context.user_data['state'] = None
-            await update.message.reply_text(f"✅ تم استلام الطلب. سيتم مراجعته.")
-            await notify_admin(context, f"📢 **طلب إضافة قناة**\n👤 {user_name}\n🆔 `{user_id}`\n📢 {text}\n💵 {CHANNEL_ADD_FEE}$\n\nللقبول: /approve {req_id}\nللرفض: /reject {req_id}")
-        except Exception as e:
-            await update.message.reply_text(f"❌ خطأ. تأكد من أن القناة موجودة والبوت مشرف فيها.")
-    
-    elif state == "WAITING_BOT_LINK":
-        if not text.startswith("https://t.me/"):
-            await update.message.reply_text("❌ رابط غير صحيح.")
-            return
-        req_id = create_request(user_id, 'bot', text, BOT_ADD_FEE)
-        context.user_data['state'] = None
-        await update.message.reply_text(f"✅ تم استلام الطلب. سيتم مراجعته.")
-        await notify_admin(context, f"🤖 **طلب إضافة بوت**\n👤 {user_name}\n🆔 `{user_id}`\n🤖 {text}\n💵 {BOT_ADD_FEE}$\n\nللقبول: /approve {req_id}\nللرفض: /reject {req_id}")
-    else:
-        await update.message.reply_text("استخدم الأزرار المتاحة.")
+    await update.message.reply_text("استخدم الأزرار المتاحة.")
 
 async def approve_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != ADMIN_ID: return
@@ -301,7 +278,7 @@ async def approve_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if row:
         user_id, req_type, link = row
         fee = CHANNEL_ADD_FEE if req_type == 'channel' else BOT_ADD_FEE
-        balance, _, _, _ = get_user(user_id)
+        balance, _, _, _, _ = get_user(user_id)
         if balance >= fee:
             update_balance(user_id, -fee)
             await context.bot.send_message(chat_id=user_id, text=f"🎉 تم قبول طلبك! تم خصم {fee}$ من رصيدك.")
