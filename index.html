@@ -136,22 +136,20 @@
     <div id="page-deposit" class="hidden">
         <div class="section-title"><span>💳</span> <span data-key="deposit_title">الإيداع والسحب</span></div>
         
-        <!-- أزرار التبديل -->
         <div style="display:flex; gap:10px; margin-bottom:15px;">
             <button id="tab-deposit" class="btn-deposit" style="flex:1; margin-top:0; padding:12px; font-size:14px;" onclick="switchTab('deposit')">💳 إيداع</button>
             <button id="tab-withdraw" class="btn-deposit" style="flex:1; margin-top:0; padding:12px; font-size:14px; opacity:0.5;" onclick="switchTab('withdraw')">💵 سحب</button>
         </div>
 
-        <!-- محتوى الإيداع -->
         <div id="content-deposit" class="profile-card">
             <p style="font-size:13px; color:#8b949e; margin-bottom:10px;" data-key="deposit_note">قم بالتحويل إلى المحفظة ثم أدخل المبلغ:</p>
-            <p style="color:var(--gold-light); font-size:11px; word-break:break-all; margin-bottom:10px;">UQBrfxfxzB5-op8FGLs-BxnZg0Bv0CveJ8VJbC3Xc9pVXZ5X</p>
+            <p style="color:var(--gold-light); font-size:11px; word-break:break-all; margin-bottom:10px;" id="wallet-address">UQBrfxfxzB5-op8FGLs-BxnZg0Bv0CveJ8VJbC3Xc9pVXZ5X</p>
+            <button class="btn-share" onclick="copyWallet()" style="margin-bottom:10px;" data-key="copy_wallet">📋 نسخ عنوان المحفظة</button>
             <input type="number" id="deposit-amount" placeholder="أدخل مبلغ الإيداع" data-key="deposit_placeholder">
             <button class="btn-deposit" onclick="confirmDeposit()" data-key="deposit_btn">💰 تأكيد الإيداع</button>
             <div id="status-message"></div>
         </div>
 
-        <!-- محتوى السحب -->
         <div id="content-withdraw" class="profile-card hidden">
             <span class="balance-label" data-key="withdraw_available">الرصيد المتاح للسحب</span>
             <div class="balance-amount">0.00 <span class="currency">GRAM</span></div>
@@ -223,9 +221,9 @@
         let currentUserLang = 'ar';
 
         const translations = {
-            ar: { balance_label: "💰 الرصيد الحالي", profit_label: "📈 الأرباح", refs_label: "👥 الإحالات", invest_title: "مستويات الاستثمار", hours: "ساعة", days: "أيام", available: "متاح", locked_text: "مقفل", deposit_title: "الإيداع والسحب", deposit_note: "قم بالتحويل إلى المحفظة ثم أدخل المبلغ:", deposit_placeholder: "أدخل مبلغ الإيداع", deposit_btn: "💰 تأكيد الإيداع", stats_title: "الإحصائيات", stats_balance: "💰 الرصيد", stats_profit: "📈 إجمالي الأرباح", stats_refs: "👥 عدد الإحالات", invite_title: "دعوة الأصدقاء", ref_link_label: "رابط الإحالة الخاص بك", share_btn: "📤 مشاركة الرابط", invited_label: "عدد المدعوين", withdraw_title: "السحب", withdraw_available: "الرصيد المتاح للسحب", withdraw_placeholder: "أدخل المبلغ", wallet_placeholder: "أدخل عنوان المحفظة", withdraw_btn: "📤 طلب سحب", withdraw_note: "الحد الأدنى: 1 GRAM | رسوم: 1%", settings_title: "الإعدادات", language_label: "🌐 اللغة", invest_label: "💰 الاستثمار", notifications: "🔔 الإشعارات", enabled: "مفعلة ›", disabled: "معطلة ›", support: "🆘 الدعم", support_title: "الدعم المباشر", contact_support: "💬 التواصل مع الدعم", faq: "❓ الأسئلة الشائعة", report_issue: "📝 إرسال مشكلة", back: "🔙 العودة", bot_info: "ℹ️ معلومات البوت", nav_home: "الرئيسية", nav_stats: "الإحصائيات", nav_invite: "الإحالات", nav_deposit: "الإيداع", nav_settings: "الإعدادات" },
-            en: { balance_label: "💰 Current Balance", profit_label: "📈 Profit", refs_label: "👥 Referrals", invest_title: "Investment Levels", hours: "hours", days: "days", available: "Available", locked_text: "Locked", deposit_title: "Deposit & Withdraw", deposit_note: "Transfer to wallet then enter amount:", deposit_placeholder: "Enter deposit amount", deposit_btn: "💰 Confirm Deposit", stats_title: "Statistics", stats_balance: "💰 Balance", stats_profit: "📈 Total Profit", stats_refs: "👥 Referrals", invite_title: "Invite Friends", ref_link_label: "Your referral link", share_btn: "📤 Share Link", invited_label: "Invited", withdraw_title: "Withdraw", withdraw_available: "Available Balance", withdraw_placeholder: "Enter amount", wallet_placeholder: "Enter wallet address", withdraw_btn: "📤 Request Withdrawal", withdraw_note: "Min: 1 GRAM | Fee: 1%", settings_title: "Settings", language_label: "🌐 Language", invest_label: "💰 Investment", notifications: "🔔 Notifications", enabled: "Enabled ›", disabled: "Disabled ›", support: "🆘 Support", support_title: "Live Support", contact_support: "💬 Contact Support", faq: "❓ FAQ", report_issue: "📝 Report Issue", back: "🔙 Back", bot_info: "ℹ️ Bot Info", nav_home: "Home", nav_stats: "Stats", nav_invite: "Invite", nav_deposit: "Deposit", nav_settings: "Settings" },
-            ru: { balance_label: "💰 Текущий баланс", profit_label: "📈 Прибыль", refs_label: "👥 Рефералы", invest_title: "Уровни инвестиций", hours: "часов", days: "дней", available: "Доступно", locked_text: "Закрыто", deposit_title: "Депозит и вывод", deposit_note: "Переведите на кошелек и введите сумму:", deposit_placeholder: "Введите сумму депозита", deposit_btn: "💰 Подтвердить депозит", stats_title: "Статистика", stats_balance: "💰 Баланс", stats_profit: "📈 Общая прибыль", stats_refs: "👥 Рефералы", invite_title: "Пригласить друзей", ref_link_label: "Ваша реферальная ссылка", share_btn: "📤 Поделиться", invited_label: "Приглашено", withdraw_title: "Вывод", withdraw_available: "Доступно для вывода", withdraw_placeholder: "Введите сумму", wallet_placeholder: "Введите адрес кошелька", withdraw_btn: "📤 Запросить вывод", withdraw_note: "Мин: 1 GRAM | Комиссия: 1%", settings_title: "Настройки", language_label: "🌐 Язык", invest_label: "💰 Инвестиции", notifications: "🔔 Уведомления", enabled: "Включено ›", disabled: "Отключено ›", support: "🆘 Поддержка", support_title: "Прямая поддержка", contact_support: "💬 Связаться с поддержкой", faq: "❓ Часто задаваемые вопросы", report_issue: "📝 Сообщить о проблеме", back: "🔙 Назад", bot_info: "ℹ️ О боте", nav_home: "Главная", nav_stats: "Статистика", nav_invite: "Рефералы", nav_deposit: "Депозит", nav_settings: "Настройки" }
+            ar: { balance_label: "💰 الرصيد الحالي", profit_label: "📈 الأرباح", refs_label: "👥 الإحالات", invest_title: "مستويات الاستثمار", hours: "ساعة", days: "أيام", available: "متاح", locked_text: "مقفل", deposit_title: "الإيداع والسحب", deposit_note: "قم بالتحويل إلى المحفظة ثم أدخل المبلغ:", copy_wallet: "📋 نسخ عنوان المحفظة", deposit_placeholder: "أدخل مبلغ الإيداع", deposit_btn: "💰 تأكيد الإيداع", stats_title: "الإحصائيات", stats_balance: "💰 الرصيد", stats_profit: "📈 إجمالي الأرباح", stats_refs: "👥 عدد الإحالات", invite_title: "دعوة الأصدقاء", ref_link_label: "رابط الإحالة الخاص بك", share_btn: "📤 مشاركة الرابط", invited_label: "عدد المدعوين", withdraw_title: "السحب", withdraw_available: "الرصيد المتاح للسحب", withdraw_placeholder: "أدخل المبلغ", wallet_placeholder: "أدخل عنوان المحفظة", withdraw_btn: "📤 طلب سحب", withdraw_note: "الحد الأدنى: 1 GRAM | رسوم: 1%", settings_title: "الإعدادات", language_label: "🌐 اللغة", invest_label: "💰 الاستثمار", notifications: "🔔 الإشعارات", enabled: "مفعلة ›", disabled: "معطلة ›", support: "🆘 الدعم", support_title: "الدعم المباشر", contact_support: "💬 التواصل مع الدعم", faq: "❓ الأسئلة الشائعة", report_issue: "📝 إرسال مشكلة", back: "🔙 العودة", bot_info: "ℹ️ معلومات البوت", nav_home: "الرئيسية", nav_stats: "الإحصائيات", nav_invite: "الإحالات", nav_deposit: "الإيداع", nav_settings: "الإعدادات" },
+            en: { balance_label: "💰 Current Balance", profit_label: "📈 Profit", refs_label: "👥 Referrals", invest_title: "Investment Levels", hours: "hours", days: "days", available: "Available", locked_text: "Locked", deposit_title: "Deposit & Withdraw", deposit_note: "Transfer to wallet then enter amount:", copy_wallet: "📋 Copy Wallet Address", deposit_placeholder: "Enter deposit amount", deposit_btn: "💰 Confirm Deposit", stats_title: "Statistics", stats_balance: "💰 Balance", stats_profit: "📈 Total Profit", stats_refs: "👥 Referrals", invite_title: "Invite Friends", ref_link_label: "Your referral link", share_btn: "📤 Share Link", invited_label: "Invited", withdraw_title: "Withdraw", withdraw_available: "Available Balance", withdraw_placeholder: "Enter amount", wallet_placeholder: "Enter wallet address", withdraw_btn: "📤 Request Withdrawal", withdraw_note: "Min: 1 GRAM | Fee: 1%", settings_title: "Settings", language_label: "🌐 Language", invest_label: "💰 Investment", notifications: "🔔 Notifications", enabled: "Enabled ›", disabled: "Disabled ›", support: "🆘 Support", support_title: "Live Support", contact_support: "💬 Contact Support", faq: "❓ FAQ", report_issue: "📝 Report Issue", back: "🔙 Back", bot_info: "ℹ️ Bot Info", nav_home: "Home", nav_stats: "Stats", nav_invite: "Invite", nav_deposit: "Deposit", nav_settings: "Settings" },
+            ru: { balance_label: "💰 Текущий баланс", profit_label: "📈 Прибыль", refs_label: "👥 Рефералы", invest_title: "Уровни инвестиций", hours: "часов", days: "дней", available: "Доступно", locked_text: "Закрыто", deposit_title: "Депозит и вывод", deposit_note: "Переведите на кошелек и введите сумму:", copy_wallet: "📋 Копировать адрес кошелька", deposit_placeholder: "Введите сумму депозита", deposit_btn: "💰 Подтвердить депозит", stats_title: "Статистика", stats_balance: "💰 Баланс", stats_profit: "📈 Общая прибыль", stats_refs: "👥 Рефералы", invite_title: "Пригласить друзей", ref_link_label: "Ваша реферальная ссылка", share_btn: "📤 Поделиться", invited_label: "Приглашено", withdraw_title: "Вывод", withdraw_available: "Доступно для вывода", withdraw_placeholder: "Введите сумму", wallet_placeholder: "Введите адрес кошелька", withdraw_btn: "📤 Запросить вывод", withdraw_note: "Мин: 1 GRAM | Комиссия: 1%", settings_title: "Настройки", language_label: "🌐 Язык", invest_label: "💰 Инвестиции", notifications: "🔔 Уведомления", enabled: "Включено ›", disabled: "Отключено ›", support: "🆘 Поддержка", support_title: "Прямая поддержка", contact_support: "💬 Связаться с поддержкой", faq: "❓ Часто задаваемые вопросы", report_issue: "📝 Сообщить о проблеме", back: "🔙 Назад", bot_info: "ℹ️ О боте", nav_home: "Главная", nav_stats: "Статистика", nav_invite: "Рефералы", nav_deposit: "Депозит", nav_settings: "Настройки" }
         };
 
         function showPage(pageId, e) {
@@ -253,6 +251,15 @@
                 tabDeposit.style.opacity = '0.5';
                 tabWithdraw.style.opacity = '1';
             }
+        }
+
+        function copyWallet() {
+            const wallet = document.getElementById('wallet-address').innerText;
+            navigator.clipboard.writeText(wallet).then(() => {
+                alert("✅ تم نسخ عنوان المحفظة!");
+            }).catch(() => {
+                alert("❌ فشل النسخ. يرجى النسخ يدوياً.");
+            });
         }
 
         function changeLanguage(lang) {
