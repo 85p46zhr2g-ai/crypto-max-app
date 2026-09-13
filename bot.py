@@ -1,11 +1,12 @@
 import logging
 import sqlite3
+import json
 from datetime import datetime
 from telegram import Update, ReplyKeyboardMarkup, InlineKeyboardMarkup, InlineKeyboardButton
 from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters, CallbackQueryHandler
 
 # ⚠️ الإعدادات
-BOT_TOKEN = "8724497887:AAEmhudPVYMApgfakZT_T2X_r61dcTJuemc"
+BOT_TOKEN = "8724497887:AAE02WdKwwMWaXzXmRlsVUiYjPqjVfVR5LI"
 ADMIN_ID = 8183652969
 WALLET_ADDRESS = "UQBrfxfxzB5-op8FGLs-BxnZg0Bv0CveJ8VJbC3Xc9pVXZ5X"
 BOT_USERNAME = "GramMax1_Bot"
@@ -50,12 +51,11 @@ def create_deposit(user_id, amount):
     conn = sqlite3.connect("gram_max.db")
     cursor = conn.cursor()
     cursor.execute("INSERT INTO deposits (user_id, amount, status, created_at) VALUES (?, ?, 'pending', ?)", 
-                   (usergram_id, amount, datetime.now().str_maxftime("%Y-%m-%.dbd %H:%M:%S")))
-")
+                   (user_id, amount, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
     conn.commit()
-       conn.close()
+    conn.close()
 
-def create_with cursordrawal(user_id, amount, fee, wallet):
+def create_withdrawal(user_id, amount, fee, wallet):
     conn = sqlite3.connect("gram_max.db")
     cursor = conn.cursor()
     cursor.execute("INSERT INTO withdrawals (user_id, amount, fee, wallet, status, created_at) VALUES (?, ?, ?, ?, 'pending', ?)", 
@@ -74,7 +74,8 @@ def get_pending_withdrawals():
     return rows
 
 def add_referral(user_id, referrer_id):
-    conn = sqlite3.connect(" = conn.cursor()
+    conn = sqlite3.connect("gram_max.db")
+    cursor = conn.cursor()
     cursor.execute("UPDATE users SET referrals = referrals + 1 WHERE user_id = ?", (referrer_id,))
     cursor.execute("UPDATE users SET referrer_id = ? WHERE user_id = ?", (referrer_id, user_id))
     conn.commit()
@@ -85,11 +86,20 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     args = context.args
     if args and args[0].startswith("ref_"):
-        referrer_id = int(args[0].split("_")[1])
-        if referrer_id != user_id:
-            add_referral(user_id, referrer_id)
+        try:
+            referrer_id = int(args[0].split("_")[1])
+            if referrer_id != user_id:
+                add_referral(user_id, referrer_id)
+        except:
+            pass
     get_user(user_id)
-    keyboard = [["💰 الاستثمار", "👥 دعوة الأصدقاء"], ["📊 المستويات", "📈 الإحصائيات"], ["💵 السحب", "💳 الإيداع"], ["🎁 المكافآت", "🆘 الدعم"], ["⚙️ الإعدادات"]]
+    keyboard = [
+        ["💰 الاستثمار", "👥 دعوة الأصدقاء"],
+        ["📊 المستويات", "📈 الإحصائيات"],
+        ["💵 السحب", "💳 الإيداع"],
+        ["🎁 المكافآت", "🆘 الدعم"],
+        ["⚙️ الإعدادات"]
+    ]
     await update.message.reply_text("مرحباً بك في GRAM MAX! 🤖", reply_markup=ReplyKeyboardMarkup(keyboard, resize_keyboard=True))
 
 async def invest_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -185,13 +195,20 @@ async def pending_withdrawals(update: Update, context: ContextTypes.DEFAULT_TYPE
 # ==================== معالجة الأزرار ====================
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text
-    if text == "💰 الاستثمار": await invest_menu(update, context)
-    elif text == "💳 الإيداع": await deposit_menu(update, context)
-    elif text == "👥 دعوة الأصدقاء": await referral_menu(update, context)
-    elif text == "💵 السحب": await withdraw_start(update, context)
-    elif context.user_data.get('state') == "WAITING_AMOUNT": await withdraw_amount(update, context)
-    elif context.user_data.get('state') == "WAITING_WALLET": await withdraw_wallet(update, context)
-    else: await update.message.reply_text("هذا القسم قيد التطوير.")
+    if text == "💰 الاستثمار":
+        await invest_menu(update, context)
+    elif text == "💳 الإيداع":
+        await deposit_menu(update, context)
+    elif text == "👥 دعوة الأصدقاء":
+        await referral_menu(update, context)
+    elif text == "💵 السحب":
+        await withdraw_start(update, context)
+    elif context.user_data.get('state') == "WAITING_AMOUNT":
+        await withdraw_amount(update, context)
+    elif context.user_data.get('state') == "WAITING_WALLET":
+        await withdraw_wallet(update, context)
+    else:
+        await update.message.reply_text("هذا القسم قيد التطوير.")
 
 async def web_app_data_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     data = update.effective_message.web_app_data.data
@@ -199,11 +216,10 @@ async def web_app_data_handler(update: Update, context: ContextTypes.DEFAULT_TYP
     
     if "deposit_confirmed" in data:
         create_deposit(user_id, MIN_DEPOSIT)
-        await update.message.reply_text(f"✅ تم استلام طلب الإيداع! سيتم مراجعته.")
+        await update.message.reply_text("✅ تم استلام طلب الإيداع! سيتم مراجعته.")
         await context.bot.send_message(chat_id=ADMIN_ID, text=f"🔔 طلب إيداع جديد من `{user_id}`. المبلغ: {MIN_DEPOSIT}")
     
     elif "withdraw_request" in data:
-        import json
         try:
             req_data = json.loads(data)
             amount = float(req_data.get('amount', 0))
