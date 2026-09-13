@@ -19,8 +19,8 @@ MIN_DEPOSIT = 1.0
 MIN_WITHDRAWAL = 1.0
 WITHDRAWAL_FEE_PERCENT = 1.0
 TASK_REWARD = 0.01
-CHANNEL_ADD_FEE_GRAM = 1.00
-BOT_ADD_FEE_GRAM = 0.30
+CHANNEL_ADD_FEE = 1.00
+BOT_ADD_FEE = 0.30
 
 LEVELS = {
     1: {"amount": 1, "profit": 1.15, "hours": 12},
@@ -217,7 +217,8 @@ async def web_app_data_handler(update: Update, context: ContextTypes.DEFAULT_TYP
             active_inv = get_active_investments(user_id)
             inv_str = ';'.join([f"{i[0]},{i[1]},{i[2]},{i[3]},{i[4]}" for i in active_inv])
             wallet_str = wallet if wallet else "None"
-            await update.message.reply_text(f"DATA:{balance}|{referrals}|{wallet_str}|{lang}|{','.join(completed)}|{inv_str}")
+            response = f"DATA:{balance}|{referrals}|{wallet_str}|{lang}|{','.join(completed)}|{inv_str}"
+            await update.message.reply_text(response)
         
         elif action == "verify_task":
             task_id = req_data.get('task_id', '')
@@ -257,7 +258,7 @@ async def web_app_data_handler(update: Update, context: ContextTypes.DEFAULT_TYP
         elif action == "add_request":
             req_type = req_data.get('type', '')
             link = req_data.get('link', '')
-            fee = CHANNEL_ADD_FEE_GRAM if req_type == 'channel' else BOT_ADD_FEE_GRAM
+            fee = CHANNEL_ADD_FEE if req_type == 'channel' else BOT_ADD_FEE
             balance, _, _, _, _ = get_user(user_id)
             if balance < fee:
                 await update.message.reply_text(f"ADD_FAIL:INSUFFICIENT|{balance}")
@@ -302,7 +303,7 @@ async def web_app_data_handler(update: Update, context: ContextTypes.DEFAULT_TYP
             inv_id = create_investment(user_id, level, amount, lvl['profit'], lvl['hours'])
             new_balance, _, _, _, _ = get_user(user_id)
             await update.message.reply_text(f"INVEST_SUCCESS:{inv_id}|{new_balance}")
-            await notify_admin(context, f"📈 **استثمار جديد**\n👤 {user_name}\n🆔 `{user_id}`\n📊 المستوى: {level}\n💵 {amount} GRAM\n💰 العائد: {lvl['profit']} GRAM")
+            await notify_admin(context, f"📈 **استثمار جديد**\n👤 {user_name}\n🆔 `{user_id}`\n📊 المستوى: {level}\n💵 {amount} GRAM")
         
         elif action == "change_lang":
             update_language(user_id, req_data.get('lang', 'ar'))
@@ -319,7 +320,7 @@ async def approve_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     row = approve_request(req_id)
     if row:
         user_id, req_type, link = row
-        fee = CHANNEL_ADD_FEE_GRAM if req_type == 'channel' else BOT_ADD_FEE_GRAM
+        fee = CHANNEL_ADD_FEE if req_type == 'channel' else BOT_ADD_FEE
         balance, _, _, _, _ = get_user(user_id)
         if balance >= fee:
             update_balance(user_id, -fee)
