@@ -1,9 +1,10 @@
 import logging
 import sqlite3
 import json
+import asyncio
 from datetime import datetime, timedelta
 from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton
-from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters
+from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters, CallbackQueryHandler
 
 BOT_TOKEN = "8724497887:AAE02WdKwwMWaXzXmRlsVUiYjPqjVfVR5LI"
 ADMIN_ID = 8183652969
@@ -212,9 +213,7 @@ async def web_app_data_handler(update: Update, context: ContextTypes.DEFAULT_TYP
         action = req_data.get('action', '')
         query_id = req_data.get('query_id', '')
         
-        # بناء النتيجة
         result_text = ""
-        button_text = ""
         
         if action == "get_data":
             balance, referrals, wallet, lang, _ = get_user(user_id)
@@ -223,17 +222,15 @@ async def web_app_data_handler(update: Update, context: ContextTypes.DEFAULT_TYP
             inv_str = ';'.join([f"{i[0]},{i[1]},{i[2]},{i[3]},{i[4]}" for i in active_inv])
             wallet_str = wallet if wallet else "None"
             result_text = f"DATA:{balance}|{referrals}|{wallet_str}|{lang}|{','.join(completed)}|{inv_str}"
-            button_text = "تحديث"
         
         elif action == "verify_task":
             task_id = req_data.get('task_id', '')
             channel_map = {'task1': CHANNEL_1_ID, 'task2': CHANNEL_2_ID}
             if task_id not in channel_map:
                 result_text = "TASK_FAIL:INVALID_TASK"
-                button_text = "❌ مهمة غير صحيحة"
             elif is_task_completed(user_id, task_id):
-                result_text = f"TASK_DONE:{task_id}|ALREADY"
-                button_text = "☑️ تمت المهمة مسبقاً"
+                balance, _, _, _, _ = get_user(user_id)
+                result_text = f"TASK_DONE:{task_id}|ALREADY|{balance}"
             else:
                 channel_id = channel_map[task_id]
                 try:
@@ -242,27 +239,22 @@ async def web_app_data_handler(update: Update, context: ContextTypes.DEFAULT_TYP
                         mark_task_completed(user_id, task_id, TASK_REWARD)
                         update_balance(user_id, TASK_REWARD)
                         new_balance, _, _, _, _ = get_user(user_id)
-                        result_text = f"TASK_DONE:{task_id}|{new_balance}"
-                        button_text = f"✅ تم التحقق! +{TASK_REWARD} GRAM"
+                        result_text = f"TASK_DONE:{task_id}|SUCCESS|{new_balance}"
                         await notify_admin(context, f"✅ **إتمام مهمة**\n👤 {user_name}\n🆔 `{user_id}`\n📋 {task_id}\n💰 {TASK_REWARD} GRAM")
                     else:
                         result_text = "TASK_FAIL:NOT_SUBSCRIBED"
-                        button_text = "❌ لم تشترك بعد"
                 except Exception as e:
                     print(f"Verify error: {e}")
                     result_text = "TASK_FAIL:ERROR"
-                    button_text = "⚠️ تعذر التحقق"
         
         elif action == "link_wallet":
             address = req_data.get('address', '')
             if address and (address.startswith('UQ') or address.startswith('EQ')):
                 update_wallet(user_id, address)
                 result_text = f"WALLET_LINKED:{address}"
-                button_text = "✅ تم الربط"
                 await notify_admin(context, f"💳 **ربط محفظة**\n👤 {user_name}\n🆔 `{user_id}`\n💳 `{address}`")
             else:
                 result_text = "WALLET_FAIL"
-                button_text = "❌ عنوان غير صحيح"
         
         elif action == "add_request":
             req_type = req_data.get('type', '')
@@ -271,18 +263,15 @@ async def web_app_data_handler(update: Update, context: ContextTypes.DEFAULT_TYP
             balance, _, _, _, _ = get_user(user_id)
             if balance < fee:
                 result_text = f"ADD_FAIL:INSUFFICIENT|{balance}"
-                button_text = "❌ رصيدك غير كافٍ"
             else:
                 req_id = create_request(user_id, req_type, link)
                 result_text = f"ADD_SUCCESS:{req_id}"
-                button_text = "✅ تم إرسال الطلب"
                 await notify_admin(context, f"📢 **طلب إضافة {req_type}**\n👤 {user_name}\n🆔 `{user_id}`\n🔗 {link}\n💵 {fee} GRAM\n\nللقبول: /approve {req_id}")
         
         elif action == "deposit_confirmed":
             amount = float(req_data.get('amount', MIN_DEPOSIT))
             create_deposit(user_id, amount)
             result_text = f"DEPOSIT_OK:{amount}"
-            button_text = "✅ تم إرسال طلب الإيداع"
             await notify_admin(context, f"💰 **إيداع**\n👤 {user_name}\n🆔 `{user_id}`\n💵 {amount} GRAM")
         
         elif action == "withdraw_request":
@@ -293,41 +282,34 @@ async def web_app_data_handler(update: Update, context: ContextTypes.DEFAULT_TYP
                 fee = amount * (WITHDRAWAL_FEE_PERCENT / 100)
                 create_withdrawal(user_id, amount, fee, wallet)
                 result_text = f"WITHDRAW_OK:{amount}"
-                button_text = "✅ تم إرسال طلب السحب"
                 await notify_admin(context, f"💸 **طلب سحب**\n👤 {user_name}\n🆔 `{user_id}`\n💵 {amount} GRAM\n💳 `{wallet}`")
             else:
                 result_text = f"WITHDRAW_FAIL:INSUFFICIENT|{balance}"
-                button_text = "❌ رصيدك غير كافٍ"
         
         elif action == "invest_start":
             level = int(req_data.get('level', 1))
             amount = float(req_data.get('amount', 0))
             if level not in LEVELS:
                 result_text = "INVEST_FAIL:INVALID_LEVEL"
-                button_text = "❌ مستوى غير صحيح"
             else:
                 lvl = LEVELS[level]
                 balance, _, _, _, _ = get_user(user_id)
                 if amount < lvl['amount']:
                     result_text = f"INVEST_FAIL:MIN|{lvl['amount']}"
-                    button_text = f"❌ الحد الأدنى {lvl['amount']} GRAM"
                 elif amount > balance:
                     result_text = f"INVEST_FAIL:INSUFFICIENT|{balance}"
-                    button_text = "❌ رصيدك غير كافٍ"
                 else:
                     update_balance(user_id, -amount)
                     inv_id = create_investment(user_id, level, amount, lvl['profit'], lvl['hours'])
                     new_balance, _, _, _, _ = get_user(user_id)
                     result_text = f"INVEST_SUCCESS:{inv_id}|{new_balance}"
-                    button_text = "✅ تم بدء الاستثمار"
                     await notify_admin(context, f"📈 **استثمار جديد**\n👤 {user_name}\n🆔 `{user_id}`\n📊 المستوى: {level}\n💵 {amount} GRAM")
         
         elif action == "change_lang":
             update_language(user_id, req_data.get('lang', 'ar'))
             result_text = "LANG_OK"
-            button_text = "✅ تم تغيير اللغة"
         
-        # الرد عبر answerWebAppQuery إذا كان query_id موجوداً
+        # إرسال النتيجة إلى الدردشة (سيقرأها التطبيق عند إعادة الفتح)
         if query_id:
             await context.bot.answer_web_app_query(
                 web_app_query_id=query_id,
@@ -340,11 +322,7 @@ async def web_app_data_handler(update: Update, context: ContextTypes.DEFAULT_TYP
                     }
                 }
             )
-            # إرسال رسالة منفصلة للدردشة لتحديث البيانات
-            await update.message.reply_text(result_text)
-        else:
-            # إذا لم يكن هناك query_id، نرسل الرسالة في الدردشة
-            await update.message.reply_text(result_text)
+        await update.message.reply_text(result_text)
     
     except Exception as e:
         print(f"Error: {e}")
