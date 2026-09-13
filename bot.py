@@ -105,7 +105,7 @@ async def invest_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"`{WALLET_ADDRESS}`\n\n"
         "بعد التحويل، اضغط على زر (✅ لقد قمت بالتحويل) وسيتم مراجعة طلبك."
     )
-    keyboard = [[InlineKeyboardButton("✅ لقد قمت بالتحويل", callback_data="confirm_payment")]]
+    keyboard = [[InlineKeyboardButton("✅  تم الإيداع  ", callback_data="confirm_payment")]]
     reply_markup = InlineKeyboardMarkup(keyboard)
     await update.message.reply_text(text, parse_mode='Markdown', reply_markup=reply_markup)
 
