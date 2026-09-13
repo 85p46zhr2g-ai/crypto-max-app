@@ -19,10 +19,9 @@ MIN_DEPOSIT = 1.0
 MIN_WITHDRAWAL = 1.0
 WITHDRAWAL_FEE_PERCENT = 1.0
 TASK_REWARD = 0.01
-CHANNEL_ADD_FEE = 1.00
-BOT_ADD_FEE = 0.30
+CHANNEL_ADD_FEE_GRAM = 1.00
+BOT_ADD_FEE_GRAM = 0.30
 
-# مستويات الاستثمار
 LEVELS = {
     1: {"amount": 1, "profit": 1.15, "hours": 12},
     2: {"amount": 2, "profit": 2.30, "hours": 24},
@@ -39,7 +38,7 @@ def init_db():
     cursor.execute("CREATE TABLE IF NOT EXISTS users (user_id INTEGER PRIMARY KEY, balance REAL DEFAULT 0.0, referrals INTEGER DEFAULT 0, referrer_id INTEGER, wallet_address TEXT, language TEXT DEFAULT 'ar', notified INTEGER DEFAULT 0)")
     cursor.execute("CREATE TABLE IF NOT EXISTS deposits (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, amount REAL, status TEXT DEFAULT 'pending', created_at TEXT)")
     cursor.execute("CREATE TABLE IF NOT EXISTS withdrawals (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, amount REAL, fee REAL, wallet TEXT, status TEXT DEFAULT 'pending', created_at TEXT)")
-    cursor.execute("CREATE TABLE IF NOT EXISTS user_tasks (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, task_id TEXT, completed_at TEXT)")
+    cursor.execute("CREATE TABLE IF NOT EXISTS user_tasks (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, task_id TEXT, reward REAL DEFAULT 0, completed_at TEXT)")
     cursor.execute("CREATE TABLE IF NOT EXISTS channel_requests (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, request_type TEXT, link TEXT, status TEXT DEFAULT 'pending', created_at TEXT)")
     cursor.execute("CREATE TABLE IF NOT EXISTS investments (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, level INTEGER, amount REAL, profit REAL, start_time TEXT, end_time TEXT, status TEXT DEFAULT 'active')")
     conn.commit()
@@ -142,10 +141,10 @@ def is_task_completed(user_id, task_id):
     conn.close()
     return result is not None
 
-def mark_task_completed(user_id, task_id):
+def mark_task_completed(user_id, task_id, reward):
     conn = sqlite3.connect("gram_max.db")
     cursor = conn.cursor()
-    cursor.execute("INSERT INTO user_tasks (user_id, task_id, completed_at) VALUES (?, ?, ?)", (user_id, task_id, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+    cursor.execute("INSERT INTO user_tasks (user_id, task_id, reward, completed_at) VALUES (?, ?, ?, ?)", (user_id, task_id, reward, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
     conn.commit()
     conn.close()
 
@@ -217,28 +216,34 @@ async def web_app_data_handler(update: Update, context: ContextTypes.DEFAULT_TYP
             completed = get_completed_tasks(user_id)
             active_inv = get_active_investments(user_id)
             inv_str = ';'.join([f"{i[0]},{i[1]},{i[2]},{i[3]},{i[4]}" for i in active_inv])
-            await update.message.reply_text(f"DATA:{balance}|{referrals}|{wallet}|{lang}|{','.join(completed)}|{inv_str}")
+            wallet_str = wallet if wallet else "None"
+            await update.message.reply_text(f"DATA:{balance}|{referrals}|{wallet_str}|{lang}|{','.join(completed)}|{inv_str}")
         
         elif action == "verify_task":
             task_id = req_data.get('task_id', '')
             channel_map = {'task1': CHANNEL_1_ID, 'task2': CHANNEL_2_ID}
-            if task_id in channel_map:
-                channel_id = channel_map[task_id]
-                try:
-                    member = await context.bot.get_chat_member(chat_id=channel_id, user_id=user_id)
-                    if member.status in ['member', 'administrator', 'creator']:
-                        if not is_task_completed(user_id, task_id):
-                            mark_task_completed(user_id, task_id)
-                            update_balance(user_id, TASK_REWARD)
-                            balance, _, _, _, _ = get_user(user_id)
-                            await update.message.reply_text(f"TASK_DONE:{task_id}|{balance}")
-                            await notify_admin(context, f"✅ **إتمام مهمة**\n👤 {user_name}\n🆔 `{user_id}`\n📋 {task_id}\n💰 {TASK_REWARD}")
-                        else:
-                            await update.message.reply_text(f"TASK_DONE:{task_id}|ALREADY")
-                    else:
-                        await update.message.reply_text("TASK_FAIL:NOT_SUBSCRIBED")
-                except Exception as e:
-                    await update.message.reply_text(f"TASK_FAIL:ERROR")
+            if task_id not in channel_map:
+                await update.message.reply_text("TASK_FAIL:INVALID_TASK")
+                return
+            
+            if is_task_completed(user_id, task_id):
+                await update.message.reply_text(f"TASK_DONE:{task_id}|ALREADY")
+                return
+            
+            channel_id = channel_map[task_id]
+            try:
+                member = await context.bot.get_chat_member(chat_id=channel_id, user_id=user_id)
+                if member.status in ['member', 'administrator', 'creator']:
+                    mark_task_completed(user_id, task_id, TASK_REWARD)
+                    update_balance(user_id, TASK_REWARD)
+                    new_balance, _, _, _, _ = get_user(user_id)
+                    await update.message.reply_text(f"TASK_DONE:{task_id}|{new_balance}")
+                    await notify_admin(context, f"✅ **إتمام مهمة**\n👤 {user_name}\n🆔 `{user_id}`\n📋 {task_id}\n💰 {TASK_REWARD} GRAM")
+                else:
+                    await update.message.reply_text("TASK_FAIL:NOT_SUBSCRIBED")
+            except Exception as e:
+                print(f"Verify error: {e}")
+                await update.message.reply_text("TASK_FAIL:ERROR")
         
         elif action == "link_wallet":
             address = req_data.get('address', '')
@@ -252,20 +257,20 @@ async def web_app_data_handler(update: Update, context: ContextTypes.DEFAULT_TYP
         elif action == "add_request":
             req_type = req_data.get('type', '')
             link = req_data.get('link', '')
-            fee = CHANNEL_ADD_FEE if req_type == 'channel' else BOT_ADD_FEE
-            balance **, _, _, _, _ = get_user(user_id)
+            fee = CHANNEL_ADD_FEE_GRAM if req_type == 'channel' else BOT_ADD_FEE_GRAM
+            balance, _, _, _, _ = get_user(user_id)
             if balance < fee:
                 await update.message.reply_text(f"ADD_FAIL:INSUFFICIENT|{balance}")
                 return
             req_id = create_request(user_id, req_type, link)
             await update.message.reply_text(f"ADD_SUCCESS:{req_id}")
-            await notify_admin(context, f"📢 **طلب إضافة {req_type}**\n👤 {user_name}\n🆔 `{user_id}`\n🔗 {link}\n💵 {fee}$\n\nللقبول: /approve {req_id}\nللرفض: /reject {req_id}")
+            await notify_admin(context, f"📢 **طلب إضافة {req_type}**\n👤 {user_name}\n🆔 `{user_id}`\n🔗 {link}\n💵 {fee} GRAM\n\nللقبول: /approve {req_id}")
         
         elif action == "deposit_confirmed":
             amount = float(req_data.get('amount', MIN_DEPOSIT))
             create_deposit(user_id, amount)
-            await update.message.reply_text(f"✅ تم استلام طلب الإيداع.")
-            await notify_admin(context, f"💰 **إيداع**\n👤 {user_name}\n🆔 `{user_id}`\n💵 {amount}$")
+            await update.message.reply_text(f"DEPOSIT_OK:{amount}")
+            await notify_admin(context, f"💰 **إيداع**\n👤 {user_name}\n🆔 `{user_id}`\n💵 {amount} GRAM")
         
         elif action == "withdraw_request":
             amount = float(req_data.get('amount', 0))
@@ -274,27 +279,30 @@ async def web_app_data_handler(update: Update, context: ContextTypes.DEFAULT_TYP
             if amount <= balance and amount >= MIN_WITHDRAWAL:
                 fee = amount * (WITHDRAWAL_FEE_PERCENT / 100)
                 create_withdrawal(user_id, amount, fee, wallet)
-                await update.message.reply_text(f"✅ تم استلام طلب السحب.")
-                await notify_admin(context, f"💸طلب سحب**\n👤 {user_name}\n🆔 `{user_id}`\n💵 {amount}$\n💳 `{wallet}`")
+                await update.message.reply_text(f"WITHDRAW_OK:{amount}")
+                await notify_admin(context, f"💸 **طلب سحب**\n👤 {user_name}\n🆔 `{user_id}`\n💵 {amount} GRAM\n💳 `{wallet}`")
             else:
-                await update.message.reply_text("WITHDRAW_FAIL")
+                await update.message.reply_text(f"WITHDRAW_FAIL:INSUFFICIENT|{balance}")
         
         elif action == "invest_start":
             level = int(req_data.get('level', 1))
             amount = float(req_data.get('amount', 0))
             if level not in LEVELS:
-                await update.message.reply_text("INVEST_FAIL")
+                await update.message.reply_text("INVEST_FAIL:INVALID_LEVEL")
                 return
             lvl = LEVELS[level]
             balance, _, _, _, _ = get_user(user_id)
-            if amount < lvl['amount'] or amount > balance:
+            if amount < lvl['amount']:
+                await update.message.reply_text(f"INVEST_FAIL:MIN|{lvl['amount']}")
+                return
+            if amount > balance:
                 await update.message.reply_text(f"INVEST_FAIL:INSUFFICIENT|{balance}")
                 return
             update_balance(user_id, -amount)
             inv_id = create_investment(user_id, level, amount, lvl['profit'], lvl['hours'])
             new_balance, _, _, _, _ = get_user(user_id)
             await update.message.reply_text(f"INVEST_SUCCESS:{inv_id}|{new_balance}")
-            await notify_admin(context, f"📈 **استثمار جديد**\n👤 {user_name}\n🆔 `{user_id}`\n📊 المستوى: {level}\n💵 {amount}$\n💰 العائد: {lvl['profit']}")
+            await notify_admin(context, f"📈 **استثمار جديد**\n👤 {user_name}\n🆔 `{user_id}`\n📊 المستوى: {level}\n💵 {amount} GRAM\n💰 العائد: {lvl['profit']} GRAM")
         
         elif action == "change_lang":
             update_language(user_id, req_data.get('lang', 'ar'))
@@ -311,11 +319,11 @@ async def approve_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     row = approve_request(req_id)
     if row:
         user_id, req_type, link = row
-        fee = CHANNEL_ADD_FEE if req_type == 'channel' else BOT_ADD_FEE
+        fee = CHANNEL_ADD_FEE_GRAM if req_type == 'channel' else BOT_ADD_FEE_GRAM
         balance, _, _, _, _ = get_user(user_id)
         if balance >= fee:
             update_balance(user_id, -fee)
-            await context.bot.send_message(chat_id=user_id, text=f"🎉 تم قبول طلبك! تم خصم {fee}$")
+            await context.bot.send_message(chat_id=user_id, text=f"🎉 تم قبول طلبك! تم خصم {fee} GRAM")
         await update.message.reply_text(f"✅ تم القبول.")
     else:
         await update.message.reply_text("❌ الطلب غير موجود.")
