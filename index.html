@@ -1,342 +1,63 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>GRAM MAX</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        :root {
-            --navy-dark: #0a0e1a; --navy-mid: #111827; --gold: #d4af37; --gold-light: #f0d060;
-            --gold-glow: rgba(212, 175, 55, 0.4); --text-dim: #8b949e; --green: #00ff88;
-        }
-        html, body { width: 100%; overflow-x: hidden; -webkit-text-size-adjust: 100%; }
-        body {
-            background: var(--navy-dark);
-            background-image: radial-gradient(circle at 20% 30%, rgba(212, 175, 55, 0.06), transparent 50%),
-                              radial-gradient(circle at 80% 70%, rgba(212, 175, 55, 0.04), transparent 50%);
-            color: #fff; padding: 20px 16px 100px 16px; min-height: 100vh; position: relative;
-        }
-        body::before {
-            content: ''; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background-image: radial-gradient(1px 1px at 20% 30%, rgba(212,175,55,0.3), transparent),
-                              radial-gradient(1px 1px at 60% 70%, rgba(212,175,55,0.2), transparent),
-                              radial-gradient(1px 1px at 80% 20%, rgba(212,175,55,0.25), transparent);
-            pointer-events: none; z-index: 0;
-        }
-        .profile-card {
-            background: linear-gradient(145deg, #111827, #0a0e1a); border: 1px solid rgba(212, 175, 55, 0.25);
-            border-radius: 20px; padding: 22px; margin-bottom: 28px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.03);
-            position: relative; overflow: hidden; z-index: 1;
-        }
-        .profile-card::before {
-            content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
-            background: radial-gradient(circle, var(--gold-glow) 0%, transparent 60%); opacity: 0.08; pointer-events: none;
-        }
-        .balance-label { font-size: 12px; color: var(--text-dim); margin-bottom: 6px; display: block; letter-spacing: 1px; }
-        .balance-amount {
-            font-size: 34px; font-weight: 800; background: linear-gradient(135deg, var(--gold-light), var(--gold));
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-            text-shadow: 0 0 30px var(--gold-glow); letter-spacing: 1px; line-height: 1.2;
-        }
-        .balance-amount .currency { font-size: 16px; -webkit-text-fill-color: var(--text-dim); font-weight: 500; }
-        .stats-row { display: flex; justify-content: space-around; margin-top: 18px; border-top: 1px solid rgba(212,175,55,0.15); padding-top: 18px; }
-        .stat-item { text-align: center; flex: 1; }
-        .stat-value { font-size: 18px; font-weight: 700; color: #fff; display: block; }
-        .stat-label { font-size: 10px; color: var(--text-dim); margin-top: 4px; display: block; }
-        .section-title { font-size: 17px; font-weight: 700; color: #fff; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
-        .section-title span { color: var(--gold); font-size: 20px; }
-        .invest-card {
-            background: linear-gradient(135deg, #111827 0%, #0d1220 100%); border: 1px solid rgba(212,175,55,0.15);
-            border-radius: 16px; padding: 16px 18px; margin-bottom: 12px; display: flex;
-            justify-content: space-between; align-items: center; position: relative; overflow: hidden;
-            transition: all 0.3s ease; z-index: 1;
-        }
-        .invest-card::before { content: ''; position: absolute; top: 0; left: 0; width: 3px; height: 100%; }
-        .invest-card.available::before { background: linear-gradient(180deg, var(--gold), transparent); box-shadow: 0 0 10px var(--gold-glow); }
-        .invest-card.locked { opacity: 0.55; border-color: rgba(139,148,158,0.15); }
-        .invest-card.locked::before { background: #30363d; }
-        .invest-info { display: flex; flex-direction: column; gap: 5px; }
-        .invest-level { font-size: 14px; font-weight: 700; color: #fff; }
-        .invest-return { font-size: 14px; color: var(--gold-light); font-weight: 700; }
-        .invest-time { font-size: 11px; color: var(--text-dim); }
-        .invest-status { font-size: 10px; padding: 5px 12px; border-radius: 20px; background: rgba(212,175,55,0.1); color: var(--gold-light); font-weight: 700; border: 1px solid rgba(212,175,55,0.3); }
-        .invest-card.locked .invest-status { background: rgba(139,148,158,0.08); color: var(--text-dim); border-color: rgba(139,148,158,0.15); }
-        .btn-deposit {
-            display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%;
-            background: linear-gradient(135deg, var(--gold-light) 0%, var(--gold) 50%, #b8941f 100%);
-            color: #0a0e1a; border: none; padding: 18px; font-size: 17px; font-weight: 800;
-            border-radius: 16px; margin-top: 24px; cursor: pointer; box-shadow: 0 6px 20px rgba(212,175,55,0.35);
-        }
-        .btn-deposit:active { transform: scale(0.97); }
-        .btn-share {
-            display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%;
-            background: linear-gradient(135deg, #1a3a5c, #0f2740); color: #fff; border: 1px solid rgba(212,175,55,0.3);
-            padding: 15px; font-size: 15px; font-weight: 700; border-radius: 14px; margin-top: 18px; cursor: pointer;
-        }
-        .btn-share:active { transform: scale(0.97); }
-        .btn-connect {
-            display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%;
-            background: linear-gradient(135deg, #0088cc, #006699); color: #fff; border: none;
-            padding: 15px; font-size: 15px; font-weight: 700; border-radius: 14px; margin-top: 12px; cursor: pointer;
-        }
-        .btn-connect:active { transform: scale(0.97); }
-        .nav-bottom {
-            position: fixed; bottom: 0; left: 0; right: 0;
-            background: linear-gradient(180deg, rgba(10,14,26,0.95), rgba(6,8,16,0.98));
-            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-            display: flex; justify-content: space-around; padding: 8px 5px 12px 5px;
-            border-top: 1px solid rgba(212,175,55,0.2); z-index: 100;
-        }
-        .nav-item {
-            display: flex; flex-direction: column; align-items: center; color: var(--text-dim);
-            font-size: 8px; cursor: pointer; flex: 1; gap: 3px; transition: color 0.2s; padding: 4px 0;
-            -webkit-tap-highlight-color: transparent;
-        }
-        .nav-item.active { color: var(--gold-light); }
-        .nav-item.active span { filter: drop-shadow(0 0 10px var(--gold-glow)); transform: translateY(-2px); }
-        .nav-item span { font-size: 20px; display: block; transition: transform 0.2s; }
-        .hidden { display: none !important; }
-        .settings-item {
-            display: flex; justify-content: space-between; align-items: center; padding: 16px;
-            background: linear-gradient(135deg, #111827, #0d1220); border-radius: 14px; margin-bottom: 10px;
-            border: 1px solid rgba(212,175,55,0.1); cursor: pointer; transition: all 0.2s;
-            -webkit-tap-highlight-color: transparent;
-        }
-        .settings-item:active { background: linear-gradient(135deg, #1a2437, #111827); border-color: rgba(212,175,55,0.3); }
-        .settings-item span:first-child { display: flex; align-items: center; gap: 12px; font-size: 14px; color: #e6e6e6; }
-        .settings-item .arrow { color: var(--text-dim); font-size: 18px; }
-        #status-message { text-align: center; margin-top: 16px; color: var(--green); font-weight: 600; font-size: 14px; }
-        input {
-            width: 100%; padding: 14px; margin-top: 12px; border-radius: 12px;
-            border: 1px solid rgba(212,175,55,0.2); background: rgba(10,14,26,0.6);
-            color: #fff; font-size: 14px; outline: none; transition: border-color 0.2s;
-        }
-        input:focus { border-color: var(--gold); }
-        input::placeholder { color: var(--text-dim); }
-        .lang-option { padding: 14px; text-align: center; background: linear-gradient(135deg, #111827, #0d1220); border-radius: 12px; margin-bottom: 8px; border: 1px solid rgba(212,175,55,0.15); cursor: pointer; font-size: 14px; }
-        .lang-option:active { background: rgba(212,175,55,0.15); border-color: var(--gold); }
-        #ton-connect { margin-top: 10px; }
-    </style>
-</head>
-<body>
-    <!-- الصفحة الرئيسية -->
-    <div id="page-home">
-        <div class="profile-card">
-            <div><span class="balance-label" data-key="balance_label">💰 الرصيد الحالي</span><div class="balance-amount">0.00 <span class="currency">GRAM</span></div></div>
-            <div class="stats-row">
-                <div class="stat-item"><span class="stat-value">0.00</span><span class="stat-label" data-key="profit_label">📈 الأرباح</span></div>
-                <div class="stat-item"><span class="stat-value">0</span><span class="stat-label" data-key="refs_label">👥 الإحالات</span></div>
-            </div>
-        </div>
-        <div class="section-title"><span>💎</span> <span data-key="invest_title">مستويات الاستثمار</span></div>
-        <div class="invest-card available"><div class="invest-info"><span class="invest-level">LEVEL 1</span><span class="invest-return">1 GRAM ➜ 1.15 GRAM</span><span class="invest-time">⏱️ 12 <span data-key="hours">ساعة</span></span></div><div class="invest-status">🔓 <span data-key="available">متاح</span></div></div>
-        <div class="invest-card locked"><div class="invest-info"><span class="invest-level">LEVEL 2</span><span class="invest-return">2 GRAM ➜ 2.30 GRAM</span><span class="invest-time">⏱️ 24 <span data-key="hours">ساعة</span></span></div><div class="invest-status">🔒 <span data-key="locked_text">مقفل</span></div></div>
-        <div class="invest-card locked"><div class="invest-info"><span class="invest-level">LEVEL 3</span><span class="invest-return">5 GRAM ➜ 5.70 GRAM</span><span class="invest-time">⏱️ 48 <span data-key="hours">ساعة</span></span></div><div class="invest-status">🔒 <span data-key="locked_text">مقفل</span></div></div>
-        <div class="invest-card locked"><div class="invest-info"><span class="invest-level">LEVEL 4</span><span class="invest-return">7 GRAM ➜ 8.30 GRAM</span><span class="invest-time">⏱️ 3 <span data-key="days">أيام</span></span></div><div class="invest-status">🔒 <span data-key="locked_text">مقفل</span></div></div>
-        <div class="invest-card locked"><div class="invest-info"><span class="invest-level">LEVEL 5</span><span class="invest-return">10 GRAM ➜ 13 GRAM</span><span class="invest-time">⏱️ 5 <span data-key="days">أيام</span></span></div><div class="invest-status">🔒 <span data-key="locked_text">مقفل</span></div></div>
-    </div>
-
-    <!-- صفحة الإيداع والسحب -->
-    <div id="page-deposit" class="hidden">
-        <div class="section-title"><span>💳</span> <span data-key="deposit_title">الإيداع والسحب</span></div>
+async def handle_channel_link(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    channel_link = update.message.text
+    user_id = update.effective_user.id
+    
+    if not channel_link.startswith("https://t.me/"):
+        await update.message.reply_text("❌ الرجاء إرسال رابط قناة صحيح (يبدأ بـ https://t.me/).")
+        return
+    
+    # استخراج اسم القناة من الرابط
+    channel_username = channel_link.replace("https://t.me/", "").replace("@", "")
+    
+    # التحقق من أن القناة عامة والبوت مشرف فيها
+    try:
+        chat = await context.bot.get_chat(chat_id=f"@{channel_username}")
         
-        <div style="display:flex; gap:10px; margin-bottom:15px;">
-            <button id="tab-deposit" class="btn-deposit" style="flex:1; margin-top:0; padding:12px; font-size:14px;" onclick="switchTab('deposit')">💳 إيداع</button>
-            <button id="tab-withdraw" class="btn-deposit" style="flex:1; margin-top:0; padding:12px; font-size:14px; opacity:0.5;" onclick="switchTab('withdraw')">💵 سحب</button>
-        </div>
-
-        <div id="content-deposit" class="profile-card">
-            <p style="font-size:13px; color:#8b949e; margin-bottom:10px;" data-key="deposit_note">قم بالتحويل إلى المحفظة ثم أدخل المبلغ:</p>
-            <p style="color:var(--gold-light); font-size:11px; word-break:break-all; margin-bottom:10px;" id="wallet-address">UQBrfxfxzB5-op8FGLs-BxnZg0Bv0CveJ8VJbC3Xc9pVXZ5X</p>
-            <button class="btn-share" onclick="copyWallet()" style="margin-bottom:10px;" data-key="copy_wallet">📋 نسخ عنوان المحفظة</button>
-            <div id="ton-connect"></div>
-            <button class="btn-connect" onclick="connectWallet()" style="margin-bottom:10px;">🔗 ربط المحفظة</button>
-            <input type="number" id="deposit-amount" placeholder="أدخل مبلغ الإيداع" data-key="deposit_placeholder">
-            <button class="btn-deposit" onclick="confirmDeposit()" data-key="deposit_btn">💰 تأكيد الإيداع</button>
-            <div id="status-message"></div>
-        </div>
-
-        <div id="content-withdraw" class="profile-card hidden">
-            <span class="balance-label" data-key="withdraw_available">الرصيد المتاح للسحب</span>
-            <div class="balance-amount">0.00 <span class="currency">GRAM</span></div>
-            <input type="number" id="withdraw-amount" placeholder="أدخل المبلغ" data-key="withdraw_placeholder">
-            <input type="text" id="withdraw-wallet" placeholder="أدخل عنوان المحفظة" data-key="wallet_placeholder">
-            <button class="btn-deposit" style="margin-top:18px;" onclick="requestWithdraw()" data-key="withdraw_btn">📤 طلب سحب</button>
-            <p style="text-align:center; color:var(--text-dim); font-size:11px; margin-top:12px;" data-key="withdraw_note">الحد الأدنى: 1 GRAM | رسوم: 1%</p>
-        </div>
-    </div>
-
-    <!-- صفحة المهام -->
-    <div id="page-tasks" class="hidden">
-        <div class="section-title"><span>📋</span> <span data-key="tasks_title">المهام</span></div>
-        <div class="profile-card">
-            <p style="font-size:13px; color:#8b949e; margin-bottom:10px;">اشترك في القنوات التالية واحصل على 0.01 GRAM لكل قناة:</p>
-            <div id="tasks-list"></div>
-            <button class="btn-share" onclick="addChannel()" style="margin-top:15px;">➕ إضافة قناتي</button>
-        </div>
-    </div>
-
-    <!-- صفحة الإحصائيات -->
-    <div id="page-stats" class="hidden">
-        <div class="section-title"><span>📊</span> <span data-key="stats_title">الإحصائيات</span></div>
-        <div class="settings-item"><span data-key="stats_balance">💰 الرصيد</span><span style="color:var(--gold-light);">0.00 GRAM</span></div>
-        <div class="settings-item"><span data-key="stats_profit">📈 إجمالي الأرباح</span><span style="color:var(--gold-light);">0.00 GRAM</span></div>
-        <div class="settings-item"><span data-key="stats_refs">👥 عدد الإحالات</span><span>0</span></div>
-    </div>
-
-    <!-- صفحة الإحالات -->
-    <div id="page-invite" class="hidden">
-        <div class="section-title"><span>👥</span> <span data-key="invite_title">دعوة الأصدقاء</span></div>
-        <div class="profile-card" style="text-align:center;">
-            <span class="balance-label" data-key="ref_link_label">رابط الإحالة الخاص بك</span>
-            <div style="color:var(--gold-light); font-size:12px; word-break:break-all; margin:12px 0; background:rgba(0,0,0,0.4); padding:12px; border-radius:10px; border:1px solid rgba(212,175,55,0.2);" id="ref-link"></div>
-            <button class="btn-share" onclick="shareLink()" data-key="share_btn">📤 مشاركة الرابط</button>
-            <div style="font-size:24px; font-weight:bold; color:var(--gold-light); margin-top:22px;">0</div>
-            <span class="balance-label" data-key="invited_label">عدد المدعوين</span>
-        </div>
-    </div>
-
-    <!-- صفحة الإعدادات -->
-    <div id="page-settings" class="hidden">
-        <div class="section-title"><span>⚙️</span> <span data-key="settings_title">الإعدادات</span></div>
-        <div class="settings-item" onclick="toggleLanguageMenu()"><span data-key="language_label">🌐 اللغة</span><span class="arrow" id="current-lang">العربية ›</span></div>
-        <div id="language-options" class="hidden" style="margin-bottom:10px;">
-            <div class="lang-option" onclick="changeLanguage('ar')">🇸🇦 العربية</div>
-            <div class="lang-option" onclick="changeLanguage('en')">🇬🇧 English</div>
-            <div class="lang-option" onclick="changeLanguage('ru')">🇷🇺 Русский</div>
-        </div>
-        <div class="settings-item" onclick="toggleNotifications()"><span data-key="notifications">🔔 الإشعارات</span><span class="arrow" id="notif-status" style="color:var(--green);" data-key="enabled">مفعلة ›</span></div>
-        <div class="settings-item"><span data-key="invest_label">💰 الاستثمار</span><span class="arrow">›</span></div>
-        <div class="settings-item" onclick="openSupport()"><span data-key="support">🆘 الدعم</span><span class="arrow">›</span></div>
-        <div class="settings-item"><span data-key="bot_info">ℹ️ معلومات البوت</span><span class="arrow">v1.0 ›</span></div>
-    </div>
-
-    <!-- صفحة الدعم -->
-    <div id="page-support" class="hidden">
-        <div class="section-title"><span>🆘</span> <span data-key="support_title">الدعم المباشر</span></div>
-        <div class="settings-item" onclick="contactSupport()"><span data-key="contact_support">💬 التواصل مع الدعم</span><span class="arrow">›</span></div>
-        <div class="settings-item"><span data-key="faq">❓ الأسئلة الشائعة</span><span class="arrow">›</span></div>
-        <div class="settings-item"><span data-key="report_issue">📝 إرسال مشكلة</span><span class="arrow">›</span></div>
-        <div class="settings-item" onclick="showPage('settings', event)"><span data-key="back">🔙 العودة</span><span class="arrow">›</span></div>
-    </div>
-
-    <!-- شريط التنقل السفلي -->
-    <div class="nav-bottom">
-        <div class="nav-item active" onclick="showPage('home', event)"><span>🏠</span><span data-key="nav_home">الرئيسية</span></div>
-        <div class="nav-item" onclick="showPage('tasks', event)"><span>📋</span><span data-key="nav_tasks">المهام</span></div>
-        <div class="nav-item" onclick="showPage('invite', event)"><span>👥</span><span data-key="nav_invite">الإحالات</span></div>
-        <div class="nav-item" onclick="showPage('deposit', event)"><span>💳</span><span data-key="nav_deposit">الإيداع</span></div>
-        <div class="nav-item" onclick="showPage('settings', event)"><span>⚙️</span><span data-key="nav_settings">الإعدادات</span></div>
-    </div>
-
-    <script>
-        window.Telegram.WebApp.ready();
-        window.Telegram.WebApp.expand();
-
-        let notifEnabled = true;
-        let currentUserLang = 'ar';
-
-        const translations = {
-            ar: { balance_label: "💰 الرصيد الحالي", profit_label: "📈 الأرباح", refs_label: "👥 الإحالات", invest_title: "مستويات الاستثمار", hours: "ساعة", days: "أيام", available: "متاح", locked_text: "مقفل", deposit_title: "الإيداع والسحب", deposit_note: "قم بالتحويل إلى المحفظة ثم أدخل المبلغ:", copy_wallet: "📋 نسخ عنوان المحفظة", deposit_placeholder: "أدخل مبلغ الإيداع", deposit_btn: "💰 تأكيد الإيداع", stats_title: "الإحصائيات", stats_balance: "💰 الرصيد", stats_profit: "📈 إجمالي الأرباح", stats_refs: "👥 عدد الإحالات", invite_title: "دعوة الأصدقاء", ref_link_label: "رابط الإحالة الخاص بك", share_btn: "📤 مشاركة الرابط", invited_label: "عدد المدعوين", withdraw_title: "السحب", withdraw_available: "الرصيد المتاح للسحب", withdraw_placeholder: "أدخل المبلغ", wallet_placeholder: "أدخل عنوان المحفظة", withdraw_btn: "📤 طلب سحب", withdraw_note: "الحد الأدنى: 1 GRAM | رسوم: 1%", settings_title: "الإعدادات", language_label: "🌐 اللغة", invest_label: "💰 الاستثمار", notifications: "🔔 الإشعارات", enabled: "مفعلة ›", disabled: "معطلة ›", support: "🆘 الدعم", support_title: "الدعم المباشر", contact_support: "💬 التواصل مع الدعم", faq: "❓ الأسئلة الشائعة", report_issue: "📝 إرسال مشكلة", back: "🔙 العودة", bot_info: "ℹ️ معلومات البوت", nav_home: "الرئيسية", nav_tasks: "المهام", nav_invite: "الإحالات", nav_deposit: "الإيداع", nav_settings: "الإعدادات" },
-            en: { balance_label: "💰 Current Balance", profit_label: "📈 Profit", refs_label: "👥 Referrals", invest_title: "Investment Levels", hours: "hours", days: "days", available: "Available", locked_text: "Locked", deposit_title: "Deposit & Withdraw", deposit_note: "Transfer to wallet then enter amount:", copy_wallet: "📋 Copy Wallet Address", deposit_placeholder: "Enter deposit amount", deposit_btn: "💰 Confirm Deposit", stats_title: "Statistics", stats_balance: "💰 Balance", stats_profit: "📈 Total Profit", stats_refs: "👥 Referrals", invite_title: "Invite Friends", ref_link_label: "Your referral link", share_btn: "📤 Share Link", invited_label: "Invited", withdraw_title: "Withdraw", withdraw_available: "Available Balance", withdraw_placeholder: "Enter amount", wallet_placeholder: "Enter wallet address", withdraw_btn: "📤 Request Withdrawal", withdraw_note: "Min: 1 GRAM | Fee: 1%", settings_title: "Settings", language_label: "🌐 Language", invest_label: "💰 Investment", notifications: "🔔 Notifications", enabled: "Enabled ›", disabled: "Disabled ›", support: "🆘 Support", support_title: "Live Support", contact_support: "💬 Contact Support", faq: "❓ FAQ", report_issue: "📝 Report Issue", back: "🔙 Back", bot_info: "ℹ️ Bot Info", nav_home: "Home", nav_tasks: "Tasks", nav_invite: "Invite", nav_deposit: "Deposit", nav_settings: "Settings" },
-            ru: { balance_label: "💰 Текущий баланс", profit_label: "📈 Прибыль", refs_label: "👥 Рефералы", invest_title: "Уровни инвестиций", hours: "часов", days: "дней", available: "Доступно", locked_text: "Закрыто", deposit_title: "Депозит и вывод", deposit_note: "Переведите на кошелек и введите сумму:", copy_wallet: "📋 Копировать адрес кошелька", deposit_placeholder: "Введите сумму депозита", deposit_btn: "💰 Подтвердить депозит", stats_title: "Статистика", stats_balance: "💰 Баланс", stats_profit: "📈 Общая прибыль", stats_refs: "👥 Рефералы", invite_title: "Пригласить друзей", ref_link_label: "Ваша реферальная ссылка", share_btn: "📤 Поделиться", invited_label: "Приглашено", withdraw_title: "Вывод", withdraw_available: "Доступно для вывода", withdraw_placeholder: "Введите сумму", wallet_placeholder: "Введите адрес кошелька", withdraw_btn: "📤 Запросить вывод", withdraw_note: "Мин: 1 GRAM | Комиссия: 1%", settings_title: "Настройки", language_label: "🌐 Язык", invest_label: "💰 Инвестиции", notifications: "🔔 Уведомления", enabled: "Включено ›", disabled: "Отключено ›", support: "🆘 Поддержка", support_title: "Прямая поддержка", contact_support: "💬 Связаться с поддержкой", faq: "❓ Часто задаваемые вопросы", report_issue: "📝 Сообщить о проблеме", back: "🔙 Назад", bot_info: "ℹ️ О боте", nav_home: "Главная", nav_tasks: "Задания", nav_invite: "Рефералы", nav_deposit: "Депозит", nav_settings: "Настройки" }
-        };
-
-        // ==================== TON Connect ====================
-        const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
-            manifestUrl: 'https://85p46zhr2g-ai.github.io/crypto-max-app/tonconnect-manifest.json',
-            buttonRootId: 'ton-connect'
-        });
-
-        tonConnectUI.onStatusChange(wallet => {
-            if (wallet) {
-                const address = wallet.account.address;
-                window.Telegram.WebApp.sendData(JSON.stringify({ action: "connect_wallet", address: address }));
-                alert("✅ تم ربط المحفظة: " + address.substring(0, 10) + "...");
-            }
-        });
-
-        // ==================== الدوال ====================
-        function showPage(pageId, e) {
-            if (e) e.stopPropagation();
-            document.querySelectorAll('[id^="page-"]').forEach(p => p.classList.add('hidden'));
-            document.getElementById('page-' + pageId).classList.remove('hidden');
-            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
-            if (e) e.currentTarget.classList.add('active');
-        }
-
-        function switchTab(tab) {
-            const depositContent = document.getElementById('content-deposit');
-            const withdrawContent = document.getElementById('content-withdraw');
-            const tabDeposit = document.getElementById('tab-deposit');
-            const tabWithdraw = document.getElementById('tab-withdraw');
-            
-            if (tab === 'deposit') {
-                depositContent.classList.remove('hidden');
-                withdrawContent.classList.add('hidden');
-                tabDeposit.style.opacity = '1';
-                tabWithdraw.style.opacity = '0.5';
-            } else {
-                depositContent.classList.add('hidden');
-                withdrawContent.classList.remove('hidden');
-                tabDeposit.style.opacity = '0.5';
-                tabWithdraw.style.opacity = '1';
-            }
-        }
-
-        function copyWallet() {
-            const wallet = document.getElementById('wallet-address').innerText;
-            navigator.clipboard.writeText(wallet).then(() => {
-                alert("✅ تم نسخ عنوان المحفظة!");
-            }).catch(() => {
-                alert("❌ فشل النسخ. يرجى النسخ يدوياً.");
-            });
-        }
-
-        function connectWallet() {
-            tonConnectUI.openModal();
-        }
-
-        function addChannel() {
-            window.Telegram.WebApp.sendData(JSON.stringify({ action: "add_channel_request" }));
-        }
-
-        function changeLanguage(lang) {
-            currentUserLang = lang;
-            const t = translations[lang];
-            document.querySelectorAll('[data-key]').forEach(el => {
-                const key = el.getAttribute('data-key');
-                if (t[key]) el.innerText = t[key];
-            });
-            document.getElementById('current-lang').innerText = { 'ar': 'العربية', 'en': 'English', 'ru': 'Русский' }[lang] + ' ›';
-            document.documentElement.lang = lang;
-            document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
-            document.getElementById('language-options').classList.add('hidden');
-            window.Telegram.WebApp.sendData(JSON.stringify({ action: "change_lang", lang: lang }));
-        }
-
-        function toggleLanguageMenu() { document.getElementById('language-options').classList.toggle('hidden'); }
-
-        function toggleNotifications() {
-            notifEnabled = !notifEnabled;
-            const statusEl = document.getElementById('notif-status');
-            const t = translations[currentUserLang];
-            statusEl.innerText = notifEnabled ? t.enabled : t.disabled;
-            statusEl.style.color = notifEnabled ? 'var(--green)' : 'var(--text-dim)';
-            window.Telegram.WebApp.sendData(JSON.stringify({ action: "toggle_notifications", enabled: notifEnabled }));
-        }
-
-        function openSupport() { showPage('support', event); }
-
-        function contactSupport() {
-            window.Telegram.WebApp.openTelegramLink('https://t.me/SowzzFF');
-        }
-
-        function confirmDeposit() {
-            const amount = document.getElementById('deposit-amount').value;
-            if (!amount || parseFloat(amount) < 1) { alert("الحد الأدنى للإيداع هو 1 GRAM"); return; }
-            window.Telegram.WebApp.sendData(JSON.stringify({ action: "deposit_confirmed",
+        # التحقق من أن القناة عامة
+        if chat.username is None:
+            await update.message.reply_text("❌ يجب أن تكون القناة عامة (Public) وليست خاصة.")
+            return
+        
+        # التحقق من أن البوت مشرف في القناة
+        bot_member = await context.bot.get_chat_member(chat_id=chat.id, user_id=context.bot.id)
+        if bot_member.status not in ['administrator', 'creator']:
+            await update.message.reply_text("❌ يجب إضافة البوت كمشرف في القناة أولاً.")
+            return
+        
+        # التحقق من أن القناة ليست مضافة مسبقاً
+        conn = sqlite3.connect("gram_max.db")
+        cursor = conn.cursor()
+        cursor.execute("SELECT id FROM task_channels WHERE channel_id = ?", (f"@{channel_username}",))
+        if cursor.fetchone():
+            conn.close()
+            await update.message.reply_text("❌ هذه القناة مضافة مسبقاً.")
+            return
+        conn.close()
+        
+        # إذا نجحت كل الشروط، ننشئ الطلب
+        create_channel_request(user_id, channel_link, f"@{channel_username}")
+        context.user_data['state'] = None
+        
+        await update.message.reply_text(
+            f"✅ تم استلام طلبك!\n\n"
+            f"📢 رابط القناة: {channel_link}\n"
+            f"💵 المبلغ: {CHANNEL_ADD_FEE}$\n\n"
+            f"سيتم مراجعة طلبك من قبل الإدارة."
+        )
+        
+        await context.bot.send_message(
+            chat_id=ADMIN_ID,
+            text=f"🔔 **طلب إضافة قناة**\n\n"
+                 f"👤 صاحب الطلب: {update.effective_user.full_name}\n"
+                 f"🆔 ID: `{user_id}`\n"
+                 f"📢 رابط القناة: {channel_link}\n"
+                 f"💵 المبلغ: {CHANNEL_ADD_FEE}$",
+            parse_mode='Markdown',
+            reply_markup=InlineKeyboardMarkup([[
+                InlineKeyboardButton("✅ قبول وإضافة القناة", callback_data=f"approve_channel_{user_id}"),
+                InlineKeyboardButton("❌ رفض الطلب", callback_data=f"reject_channel_{user_id}")
+            ]])
+        )
+    
+    except Exception as e:
+        await update.message.reply_text(f"❌ حدث خطأ: تأكد من أن القناة موجودة والبوت مشرف فيها.\n\nالخطأ: {str(e)}")
