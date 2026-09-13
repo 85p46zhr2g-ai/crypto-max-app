@@ -1847,4 +1847,1003 @@ async def web_app_data_handler(
         ).strip()
 
         if not channel_url.startswith(
-           
+            "https://t.me/"
+        ):
+
+            await update.message.reply_text(
+                "❌ رابط القناة غير صحيح."
+            )
+
+            return
+
+        price = CHANNEL_ADD_PRICE_GRAM
+
+        balance = get_balance(
+            user.id
+        )
+
+        if balance < price:
+
+            await update.message.reply_text(
+                f"❌ رصيدك غير كافٍ.\n"
+                f"💰 المطلوب: {price:.2f} GRAM"
+            )
+
+            return
+
+        connection = db()
+
+        connection.execute(
+            """
+            UPDATE users
+            SET balance = balance - ?
+            WHERE user_id = ?
+            AND balance >= ?
+            """,
+            (
+                price,
+                user.id,
+                price,
+            ),
+        )
+
+        cursor = connection.execute(
+            """
+            INSERT INTO channel_requests
+            (
+                user_id,
+                channel_url,
+                price,
+                status,
+                created_at
+            )
+            VALUES (?, ?, ?, 'pending', ?)
+            """,
+            (
+                user.id,
+                channel_url,
+                price,
+                datetime.now().isoformat(),
+            ),
+        )
+
+        request_id = cursor.lastrowid
+
+        connection.commit()
+        connection.close()
+
+        keyboard = InlineKeyboardMarkup(
+            [
+                [
+                    InlineKeyboardButton(
+                        "✅ قبول القناة",
+                        callback_data=f"ch_approve_{request_id}",
+                    ),
+                    InlineKeyboardButton(
+                        "❌ رفض وإرجاع",
+                        callback_data=f"ch_reject_{request_id}",
+                    ),
+                ]
+            ]
+        )
+
+        await context.bot.send_message(
+            chat_id=ADMIN_ID,
+            text=(
+                "📢 طلب إضافة قناة\n\n"
+                f"🔢 الطلب: CH-{request_id:06d}\n"
+                f"👤 المستخدم: `{user.id}`\n"
+                f"🔗 القناة:\n{channel_url}\n"
+                f"💰 السعر: {price:.2f} GRAM"
+            ),
+            parse_mode="Markdown",
+            reply_markup=keyboard,
+        )
+
+        await update.message.reply_text(
+            f"✅ تم إرسال طلب القناة.\n"
+            f"💰 تم حجز {price:.2f} GRAM من الرصيد."
+        )
+
+        return
+
+    # ========================================================
+    # ADD BOT
+    # ========================================================
+
+    if action == "add_bot":
+
+        bot_url = str(
+            data.get(
+                "bot_url",
+                ""
+            )
+        ).strip()
+
+        if not bot_url.startswith(
+            "https://t.me/"
+        ):
+
+            await update.message.reply_text(
+                "❌ رابط البوت غير صحيح."
+            )
+
+            return
+
+        price = BOT_ADD_PRICE_GRAM
+
+        balance = get_balance(
+            user.id
+        )
+
+        if balance < price:
+
+            await update.message.reply_text(
+                f"❌ رصيدك غير كافٍ.\n"
+                f"💰 المطلوب: {price:.2f} GRAM"
+            )
+
+            return
+
+        connection = db()
+
+        connection.execute(
+            """
+            UPDATE users
+            SET balance = balance - ?
+            WHERE user_id = ?
+            AND balance >= ?
+            """,
+            (
+                price,
+                user.id,
+                price,
+            ),
+        )
+
+        cursor = connection.execute(
+            """
+            INSERT INTO bot_requests
+            (
+                user_id,
+                bot_url,
+                price,
+                status,
+                created_at
+            )
+            VALUES (?, ?, ?, 'pending', ?)
+            """,
+            (
+                user.id,
+                bot_url,
+                price,
+                datetime.now().isoformat(),
+            ),
+        )
+
+        request_id = cursor.lastrowid
+
+        connection.commit()
+        connection.close()
+
+        keyboard = InlineKeyboardMarkup(
+            [
+                [
+                    InlineKeyboardButton(
+                        "✅ قبول البوت",
+                        callback_data=f"bot_approve_{request_id}",
+                    ),
+                    InlineKeyboardButton(
+                        "❌ رفض وإرجاع",
+                        callback_data=f"bot_reject_{request_id}",
+                    ),
+                ]
+            ]
+        )
+
+        await context.bot.send_message(
+            chat_id=ADMIN_ID,
+            text=(
+                "🤖 طلب إضافة بوت\n\n"
+                f"🔢 الطلب: BOT-{request_id:06d}\n"
+                f"👤 المستخدم: `{user.id}`\n"
+                f"🔗 البوت:\n{bot_url}\n"
+                f"💰 السعر: {price:.2f} GRAM"
+            ),
+            parse_mode="Markdown",
+            reply_markup=keyboard,
+        )
+
+        await update.message.reply_text(
+            f"✅ تم إرسال طلب البوت.\n"
+            f"💰 تم حجز {price:.2f} GRAM من الرصيد."
+        )
+
+        return
+
+    await update.message.reply_text(
+        "❌ الأمر غير معروف."
+    )
+
+
+# ============================================================
+# Admin Callback
+# ============================================================
+
+async def callback_handler(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+):
+
+    query = update.callback_query
+
+    await query.answer()
+
+    if query.from_user.id != ADMIN_ID:
+
+        await query.answer(
+            "❌ غير مسموح.",
+            show_alert=True,
+        )
+
+        return
+
+    data = query.data
+
+    # ========================================================
+    # DEPOSIT APPROVE
+    # ========================================================
+
+    if data.startswith("dep_approve_"):
+
+        deposit_id = int(
+            data.split("_")[-1]
+        )
+
+        connection = db()
+
+        row = connection.execute(
+            """
+            SELECT *
+            FROM deposits
+            WHERE id = ?
+            """,
+            (deposit_id,),
+        ).fetchone()
+
+        if not row:
+
+            connection.close()
+
+            await query.edit_message_text(
+                "❌ طلب الإيداع غير موجود."
+            )
+
+            return
+
+        if row["status"] != "pending":
+
+            connection.close()
+
+            await query.answer(
+                "⚠️ تمت معالجة الطلب مسبقاً.",
+                show_alert=True,
+            )
+
+            return
+
+        connection.execute(
+            """
+            UPDATE deposits
+            SET status = 'approved',
+                processed_at = ?
+            WHERE id = ?
+            AND status = 'pending'
+            """,
+            (
+                datetime.now().isoformat(),
+                deposit_id,
+            ),
+        )
+
+        connection.execute(
+            """
+            UPDATE users
+            SET balance = balance + ?
+            WHERE user_id = ?
+            """,
+            (
+                float(row["amount"]),
+                int(row["user_id"]),
+            ),
+        )
+
+        connection.commit()
+        connection.close()
+
+        await query.edit_message_text(
+            query.message.text
+            + "\n\n✅ تم قبول الإيداع وإضافة الرصيد."
+        )
+
+        try:
+
+            await context.bot.send_message(
+                chat_id=int(row["user_id"]),
+                text=(
+                    "✅ تم قبول طلب الإيداع.\n\n"
+                    f"💰 تمت إضافة "
+                    f"{float(row['amount']):.2f} GRAM "
+                    "إلى رصيدك."
+                ),
+            )
+
+        except Exception:
+            pass
+
+        return
+
+    # ========================================================
+    # DEPOSIT REJECT
+    # ========================================================
+
+    if data.startswith("dep_reject_"):
+
+        deposit_id = int(
+            data.split("_")[-1]
+        )
+
+        connection = db()
+
+        row = connection.execute(
+            """
+            SELECT *
+            FROM deposits
+            WHERE id = ?
+            """,
+            (deposit_id,),
+        ).fetchone()
+
+        if not row:
+
+            connection.close()
+
+            return
+
+        if row["status"] != "pending":
+
+            connection.close()
+
+            await query.answer(
+                "⚠️ تمت معالجة الطلب مسبقاً.",
+                show_alert=True,
+            )
+
+            return
+
+        connection.execute(
+            """
+            UPDATE deposits
+            SET status = 'rejected',
+                processed_at = ?
+            WHERE id = ?
+            AND status = 'pending'
+            """,
+            (
+                datetime.now().isoformat(),
+                deposit_id,
+            ),
+        )
+
+        connection.commit()
+        connection.close()
+
+        await query.edit_message_text(
+            query.message.text
+            + "\n\n❌ تم رفض الإيداع."
+        )
+
+        try:
+
+            await context.bot.send_message(
+                chat_id=int(row["user_id"]),
+                text=(
+                    "❌ تم رفض طلب الإيداع.\n\n"
+                    "لم تتم إضافة أي رصيد."
+                ),
+            )
+
+        except Exception:
+            pass
+
+        return
+
+    # ========================================================
+    # WITHDRAW PAID
+    # ========================================================
+
+    if data.startswith("wd_paid_"):
+
+        withdrawal_id = int(
+            data.split("_")[-1]
+        )
+
+        connection = db()
+
+        row = connection.execute(
+            """
+            SELECT *
+            FROM withdrawals
+            WHERE id = ?
+            """,
+            (withdrawal_id,),
+        ).fetchone()
+
+        if not row:
+
+            connection.close()
+
+            return
+
+        if row["status"] != "pending":
+
+            connection.close()
+
+            await query.answer(
+                "⚠️ تمت معالجة الطلب مسبقاً.",
+                show_alert=True,
+            )
+
+            return
+
+        connection.execute(
+            """
+            UPDATE withdrawals
+            SET status = 'paid',
+                processed_at = ?
+            WHERE id = ?
+            AND status = 'pending'
+            """,
+            (
+                datetime.now().isoformat(),
+                withdrawal_id,
+            ),
+        )
+
+        connection.commit()
+        connection.close()
+
+        await query.edit_message_text(
+            query.message.text
+            + "\n\n💸 تم تسجيل السحب كمدفوع."
+        )
+
+        try:
+
+            await context.bot.send_message(
+                chat_id=int(row["user_id"]),
+                text=(
+                    "💸 تم دفع طلب السحب.\n\n"
+                    f"💰 المبلغ: "
+                    f"{float(row['amount']):.2f} GRAM"
+                ),
+            )
+
+        except Exception:
+            pass
+
+        return
+
+    # ========================================================
+    # WITHDRAW REJECT + REFUND
+    # ========================================================
+
+    if data.startswith("wd_reject_"):
+
+        withdrawal_id = int(
+            data.split("_")[-1]
+        )
+
+        connection = db()
+
+        row = connection.execute(
+            """
+            SELECT *
+            FROM withdrawals
+            WHERE id = ?
+            """,
+            (withdrawal_id,),
+        ).fetchone()
+
+        if not row:
+
+            connection.close()
+
+            return
+
+        if row["status"] != "pending":
+
+            connection.close()
+
+            await query.answer(
+                "⚠️ تمت معالجة الطلب مسبقاً.",
+                show_alert=True,
+            )
+
+            return
+
+        # تحديث الحالة أولاً داخل نفس العملية
+        # لمنع إعادة الرصيد مرتين.
+
+        connection.execute(
+            """
+            UPDATE withdrawals
+            SET status = 'rejected',
+                processed_at = ?
+            WHERE id = ?
+            AND status = 'pending'
+            """,
+            (
+                datetime.now().isoformat(),
+                withdrawal_id,
+            ),
+        )
+
+        connection.execute(
+            """
+            UPDATE users
+            SET balance = balance + ?
+            WHERE user_id = ?
+            """,
+            (
+                float(row["amount"]),
+                int(row["user_id"]),
+            ),
+        )
+
+        connection.commit()
+        connection.close()
+
+        await query.edit_message_text(
+            query.message.text
+            + "\n\n❌ تم رفض السحب وإرجاع الرصيد."
+        )
+
+        try:
+
+            await context.bot.send_message(
+                chat_id=int(row["user_id"]),
+                text=(
+                    "❌ تم رفض طلب السحب.\n\n"
+                    f"↩️ تمت إعادة "
+                    f"{float(row['amount']):.2f} GRAM "
+                    "إلى رصيدك."
+                ),
+            )
+
+        except Exception:
+            pass
+
+        return
+
+    # ========================================================
+    # CHANNEL APPROVE
+    # ========================================================
+
+    if data.startswith("ch_approve_"):
+
+        request_id = int(
+            data.split("_")[-1]
+        )
+
+        connection = db()
+
+        row = connection.execute(
+            """
+            SELECT *
+            FROM channel_requests
+            WHERE id = ?
+            """,
+            (request_id,),
+        ).fetchone()
+
+        if not row:
+
+            connection.close()
+
+            return
+
+        if row["status"] != "pending":
+
+            connection.close()
+
+            await query.answer(
+                "⚠️ تمت معالجة الطلب مسبقاً.",
+                show_alert=True,
+            )
+
+            return
+
+        connection.execute(
+            """
+            UPDATE channel_requests
+            SET status = 'approved'
+            WHERE id = ?
+            AND status = 'pending'
+            """,
+            (request_id,),
+        )
+
+        connection.commit()
+        connection.close()
+
+        await query.edit_message_text(
+            query.message.text
+            + "\n\n✅ تم قبول القناة."
+        )
+
+        try:
+
+            await context.bot.send_message(
+                chat_id=int(row["user_id"]),
+                text=(
+                    "✅ تم قبول طلب إضافة القناة."
+                ),
+            )
+
+        except Exception:
+            pass
+
+        return
+
+    # ========================================================
+    # CHANNEL REJECT + REFUND
+    # ========================================================
+
+    if data.startswith("ch_reject_"):
+
+        request_id = int(
+            data.split("_")[-1]
+        )
+
+        connection = db()
+
+        row = connection.execute(
+            """
+            SELECT *
+            FROM channel_requests
+            WHERE id = ?
+            """,
+            (request_id,),
+        ).fetchone()
+
+        if not row:
+
+            connection.close()
+
+            return
+
+        if row["status"] != "pending":
+
+            connection.close()
+
+            await query.answer(
+                "⚠️ تمت معالجة الطلب مسبقاً.",
+                show_alert=True,
+            )
+
+            return
+
+        connection.execute(
+            """
+            UPDATE channel_requests
+            SET status = 'rejected'
+            WHERE id = ?
+            AND status = 'pending'
+            """,
+            (request_id,),
+        )
+
+        connection.execute(
+            """
+            UPDATE users
+            SET balance = balance + ?
+            WHERE user_id = ?
+            """,
+            (
+                float(row["price"]),
+                int(row["user_id"]),
+            ),
+        )
+
+        connection.commit()
+        connection.close()
+
+        await query.edit_message_text(
+            query.message.text
+            + "\n\n❌ تم رفض القناة وإرجاع الرصيد."
+        )
+
+        try:
+
+            await context.bot.send_message(
+                chat_id=int(row["user_id"]),
+                text=(
+                    "❌ تم رفض طلب إضافة القناة.\n\n"
+                    f"↩️ تمت إعادة "
+                    f"{float(row['price']):.2f} GRAM."
+                ),
+            )
+
+        except Exception:
+            pass
+
+        return
+
+    # ========================================================
+    # BOT APPROVE
+    # ========================================================
+
+    if data.startswith("bot_approve_"):
+
+        request_id = int(
+            data.split("_")[-1]
+        )
+
+        connection = db()
+
+        row = connection.execute(
+            """
+            SELECT *
+            FROM bot_requests
+            WHERE id = ?
+            """,
+            (request_id,),
+        ).fetchone()
+
+        if not row:
+
+            connection.close()
+
+            return
+
+        if row["status"] != "pending":
+
+            connection.close()
+
+            await query.answer(
+                "⚠️ تمت معالجة الطلب مسبقاً.",
+                show_alert=True,
+            )
+
+            return
+
+        connection.execute(
+            """
+            UPDATE bot_requests
+            SET status = 'approved'
+            WHERE id = ?
+            AND status = 'pending'
+            """,
+            (request_id,),
+        )
+
+        connection.commit()
+        connection.close()
+
+        await query.edit_message_text(
+            query.message.text
+            + "\n\n✅ تم قبول البوت."
+        )
+
+        try:
+
+            await context.bot.send_message(
+                chat_id=int(row["user_id"]),
+                text=(
+                    "✅ تم قبول طلب إضافة البوت."
+                ),
+            )
+
+        except Exception:
+            pass
+
+        return
+
+    # ========================================================
+    # BOT REJECT + REFUND
+    # ========================================================
+
+    if data.startswith("bot_reject_"):
+
+        request_id = int(
+            data.split("_")[-1]
+        )
+
+        connection = db()
+
+        row = connection.execute(
+            """
+            SELECT *
+            FROM bot_requests
+            WHERE id = ?
+            """,
+            (request_id,),
+        ).fetchone()
+
+        if not row:
+
+            connection.close()
+
+            return
+
+        if row["status"] != "pending":
+
+            connection.close()
+
+            await query.answer(
+                "⚠️ تمت معالجة الطلب مسبقاً.",
+                show_alert=True,
+            )
+
+            return
+
+        connection.execute(
+            """
+            UPDATE bot_requests
+            SET status = 'rejected'
+            WHERE id = ?
+            AND status = 'pending'
+            """,
+            (request_id,),
+        )
+
+        connection.execute(
+            """
+            UPDATE users
+            SET balance = balance + ?
+            WHERE user_id = ?
+            """,
+            (
+                float(row["price"]),
+                int(row["user_id"]),
+            ),
+        )
+
+        connection.commit()
+        connection.close()
+
+        await query.edit_message_text(
+            query.message.text
+            + "\n\n❌ تم رفض البوت وإرجاع الرصيد."
+        )
+
+        try:
+
+            await context.bot.send_message(
+                chat_id=int(row["user_id"]),
+                text=(
+                    "❌ تم رفض طلب إضافة البوت.\n\n"
+                    f"↩️ تمت إعادة "
+                    f"{float(row['price']):.2f} GRAM."
+                ),
+            )
+
+        except Exception:
+            pass
+
+        return
+
+
+# ============================================================
+# تشغيل البوت
+# ============================================================
+
+def main():
+
+    # Backup فقط إذا كانت قاعدة البيانات موجودة
+    # ولا ننشئ Backup كل مرة بلا داعٍ.
+
+    if os.path.exists(DB_FILE):
+        backup_database()
+
+    init_db()
+
+    if (
+        not BOT_TOKEN
+        or BOT_TOKEN == "PUT_YOUR_NEW_BOT_TOKEN_HERE"
+    ):
+
+        print(
+            "❌ ضع Bot Token الجديد داخل BOT_TOKEN أولاً."
+        )
+
+        return
+
+    application = (
+        Application.builder()
+        .token(BOT_TOKEN)
+        .build()
+    )
+
+    application.add_handler(
+        CommandHandler(
+            "start",
+            start_command,
+        )
+    )
+
+    application.add_handler(
+        CommandHandler(
+            "admin",
+            admin_command,
+        )
+    )
+
+    application.add_handler(
+        CommandHandler(
+            "user",
+            user_command,
+        )
+    )
+
+    application.add_handler(
+        CommandHandler(
+            "add_balance",
+            add_balance_command,
+        )
+    )
+
+    application.add_handler(
+        CommandHandler(
+            "remove_balance",
+            remove_balance_command,
+        )
+    )
+
+    application.add_handler(
+        CommandHandler(
+            "set_channel",
+            set_channel_command,
+        )
+    )
+
+    application.add_handler(
+        CommandHandler(
+            "set_welcome_image",
+            set_welcome_image_command,
+        )
+    )
+
+    application.add_handler(
+        CommandHandler(
+            "set_bot_name",
+            set_bot_name_command,
+        )
+    )
+
+    application.add_handler(
+        CallbackQueryHandler(
+            callback_handler
+        )
+    )
+
+    application.add_handler(
+        MessageHandler(
+            filters.StatusUpdate.WEB_APP_DATA,
+            web_app_data_handler,
+        )
+    )
+
+    print("===================================")
+    print("GRAM MAX BOT STARTED")
+    print("Withdrawal tasks:", MIN_TASKS_FOR_WITHDRAWAL)
+    print("===================================")
+
+    application.run_polling(
+        allowed_updates=Update.ALL_TYPES
+    )
+
+
+if __name__ == "__main__":
+    main()
