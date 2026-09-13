@@ -1,13 +1,13 @@
 import logging
 import os
-from telegram import Update, ReplyKeyboardMarkup, InlineKeyboardMarkup, InlineKeyboardButton
-from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters, CallbackQueryHandler
+from telegram import Update, ReplyKeyboardMarkup
+from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters
 
-# ⚠️ ضع التوكن الخاص بك هنا بين علامات التنصيص
+# التوكن الجديد
 BOT_TOKEN = "8724497887:AAGj-Sfd6ID2vdu_4mbnOQ3E8yJqbZ5zMRA"
 
-# ⚠️ ضع عنوان محفظتك هنا
-WALLET_ADDRESS = "UQBrfxfxzB5-op8FGLs-BxnZgOBv0CveJ8VJbC3Xc9pVXZ5X"
+# عنوان محفظتك
+WALLET_ADDRESS = "UQBrfxfxzB5-op8FGLs-BxnZg0Bv0CveJ8VJbC3Xc9pVXZ5X"
 
 # القائمة الرئيسية
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -63,4 +63,3 @@ def main():
 
 if __name__ == "__main__":
     main()
- 
