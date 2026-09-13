@@ -15,12 +15,7 @@
     padding:0;
     -webkit-tap-highlight-color:transparent;
 }
-
-html,body{
-    width:100%;
-    min-height:100%;
-}
-
+html,body{width:100%;min-height:100%;}
 body{
     background:#090909;
     color:#fff;
@@ -28,33 +23,15 @@ body{
     min-height:100vh;
     padding-bottom:90px;
 }
-
-button,input,textarea{
-    font-family:inherit;
-}
-
+button,input,textarea{font-family:inherit;}
 button{
     -webkit-appearance:none;
     appearance:none;
     touch-action:manipulation;
 }
-
-.header{
-    padding:20px 16px 10px;
-    text-align:center;
-}
-
-.logo{
-    font-size:30px;
-    font-weight:900;
-    letter-spacing:2px;
-}
-
-.subtitle{
-    color:#999;
-    margin-top:6px;
-    font-size:13px;
-}
+.header{padding:20px 16px 10px;text-align:center;}
+.logo{font-size:30px;font-weight:900;letter-spacing:2px;}
+.subtitle{color:#999;margin-top:6px;font-size:13px;}
 
 .balance-card{
     margin:15px;
@@ -64,40 +41,14 @@ button{
     border:1px solid #292929;
     text-align:center;
 }
+.balance-title{color:#aaa;font-size:14px;}
+.balance{font-size:36px;font-weight:900;margin:8px 0;}
+.currency{color:#ff9d00;font-weight:bold;}
 
-.balance-title{
-    color:#aaa;
-    font-size:14px;
-}
-
-.balance{
-    font-size:36px;
-    font-weight:900;
-    margin:8px 0;
-}
-
-.currency{
-    color:#ff9d00;
-    font-weight:bold;
-}
-
-.container{
-    padding:0 15px;
-}
-
-.page{
-    display:none;
-}
-
-.page.active{
-    display:block;
-}
-
-.section-title{
-    font-size:21px;
-    font-weight:800;
-    margin:18px 0 12px;
-}
+.container{padding:0 15px;}
+.page{display:none;}
+.page.active{display:block;}
+.section-title{font-size:21px;font-weight:800;margin:18px 0 12px;}
 
 .card{
     background:#151515;
@@ -106,17 +57,8 @@ button{
     padding:16px;
     margin-bottom:12px;
 }
-
-.card h3{
-    font-size:17px;
-    margin-bottom:8px;
-}
-
-.card p{
-    color:#aaa;
-    font-size:13px;
-    line-height:1.7;
-}
+.card h3{font-size:17px;margin-bottom:8px;}
+.card p{color:#aaa;font-size:13px;line-height:1.7;}
 
 .btn{
     display:block;
@@ -135,30 +77,11 @@ button{
     position:relative;
     z-index:5;
 }
-
-.btn:active{
-    transform:scale(.98);
-}
-
-.btn:disabled{
-    opacity:.55;
-    cursor:not-allowed;
-}
-
-.btn.secondary{
-    background:#242424;
-    color:#fff;
-}
-
-.btn.green{
-    background:#22c55e;
-    color:#000;
-}
-
-.btn.red{
-    background:#ef4444;
-    color:#fff;
-}
+.btn:active{transform:scale(.98);}
+.btn:disabled{opacity:.55;cursor:not-allowed;}
+.btn.secondary{background:#242424;color:#fff;}
+.btn.green{background:#22c55e;color:#000;}
+.btn.red{background:#ef4444;color:#fff;}
 
 input,textarea{
     width:100%;
@@ -171,16 +94,8 @@ input,textarea{
     margin-top:8px;
     font-size:15px;
 }
-
-input:focus,
-textarea:focus{
-    border-color:#ff9500;
-}
-
-textarea{
-    min-height:110px;
-    resize:none;
-}
+input:focus,textarea:focus{border-color:#ff9500;}
+textarea{min-height:110px;resize:none;}
 
 .task{
     display:flex;
@@ -188,27 +103,10 @@ textarea{
     justify-content:space-between;
     gap:10px;
 }
-
-.task-info{
-    flex:1;
-}
-
-.task-name{
-    font-weight:800;
-    margin-bottom:5px;
-}
-
-.reward{
-    color:#22c55e;
-    font-size:13px;
-}
-
-.task .btn{
-    width:auto;
-    min-width:90px;
-    margin:0;
-    padding:11px;
-}
+.task-info{flex:1;}
+.task-name{font-weight:800;margin-bottom:5px;}
+.reward{color:#22c55e;font-size:13px;}
+.task .btn{width:auto;min-width:90px;margin:0;padding:11px;}
 
 .stat{
     display:flex;
@@ -218,15 +116,8 @@ textarea{
     padding:12px 0;
     border-bottom:1px solid #292929;
 }
-
-.stat:last-child{
-    border-bottom:0;
-}
-
-.stat span:first-child{
-    color:#999;
-}
-
+.stat:last-child{border-bottom:0;}
+.stat span:first-child{color:#999;}
 .stat span:last-child{
     font-weight:bold;
     text-align:left;
@@ -246,7 +137,6 @@ textarea{
     align-items:center;
     z-index:9999;
 }
-
 .nav button{
     flex:1;
     height:75px;
@@ -261,14 +151,8 @@ textarea{
     gap:5px;
     cursor:pointer;
 }
-
-.nav button.active{
-    color:#ff9500;
-}
-
-.nav-icon{
-    font-size:22px;
-}
+.nav button.active{color:#ff9500;}
+.nav-icon{font-size:22px;}
 
 .level{
     border:1px solid #303030;
@@ -277,38 +161,17 @@ textarea{
     margin-bottom:10px;
     background:#121212;
 }
-
 .level-top{
     display:flex;
     justify-content:space-between;
     align-items:center;
 }
+.level-name{font-weight:900;}
+.level-return{color:#22c55e;font-weight:bold;}
+.level-info{margin-top:8px;color:#aaa;font-size:13px;line-height:1.8;}
 
-.level-name{
-    font-weight:900;
-}
-
-.level-return{
-    color:#22c55e;
-    font-weight:bold;
-}
-
-.level-info{
-    margin-top:8px;
-    color:#aaa;
-    font-size:13px;
-    line-height:1.8;
-}
-
-.success{
-    color:#22c55e;
-    margin-top:10px;
-}
-
-.error{
-    color:#ef4444;
-    margin-top:10px;
-}
+.success{color:#22c55e;margin-top:10px;}
+.error{color:#ef4444;margin-top:10px;}
 
 .ref-box{
     background:#0d0d0d;
@@ -326,7 +189,6 @@ textarea{
     gap:8px;
     margin-top:12px;
 }
-
 .language-buttons button{
     flex:1;
     background:#242424;
@@ -337,7 +199,6 @@ textarea{
     min-height:45px;
     cursor:pointer;
 }
-
 .language-buttons button.active{
     background:#ff8a00;
     color:#000;
@@ -355,10 +216,7 @@ textarea{
     line-height:1.7;
     margin-bottom:12px;
 }
-
-.hidden{
-    display:none !important;
-}
+.hidden{display:none!important;}
 </style>
 </head>
 
@@ -377,10 +235,12 @@ textarea{
 
 <div class="container">
 
-<!-- الرئيسية -->
 <section id="home" class="page active">
 
-    <div class="section-title" data-ar="🏠 الرئيسية" data-en="🏠 Home" data-ru="🏠 Главная">
+    <div class="section-title"
+         data-ar="🏠 الرئيسية"
+         data-en="🏠 Home"
+         data-ru="🏠 Главная">
         🏠 الرئيسية
     </div>
 
@@ -413,15 +273,16 @@ textarea{
 
 </section>
 
-
-<!-- الاستثمار -->
 <section id="investment" class="page">
 
-    <div class="section-title" data-ar="📈 الاستثمار" data-en="📈 Investment" data-ru="📈 Инвестиции">
+    <div class="section-title"
+         data-ar="📈 الاستثمار"
+         data-en="📈 Investment"
+         data-ru="📈 Инвестиции">
         📈 الاستثمار
     </div>
 
-    <div class="notice" id="investmentNotice">
+    <div class="notice">
         اختر المستوى المناسب لك. سيتم خصم المبلغ من رصيد GRAM عند تنفيذ الاستثمار.
     </div>
 
@@ -430,13 +291,11 @@ textarea{
             <span class="level-name">المستوى 1</span>
             <span class="level-return">1.15 GRAM</span>
         </div>
-
         <div class="level-info">
             الاستثمار: 1 GRAM<br>
             العائد: 1.15 GRAM<br>
             المدة: 12 ساعة
         </div>
-
         <button class="btn" onclick="invest(1,1)">
             استثمار 1 GRAM
         </button>
@@ -447,13 +306,11 @@ textarea{
             <span class="level-name">المستوى 2</span>
             <span class="level-return">2.30 GRAM</span>
         </div>
-
         <div class="level-info">
             الاستثمار: 2 GRAM<br>
             العائد: 2.30 GRAM<br>
             المدة: 24 ساعة
         </div>
-
         <button class="btn" onclick="invest(2,2)">
             استثمار 2 GRAM
         </button>
@@ -464,13 +321,11 @@ textarea{
             <span class="level-name">المستوى 3</span>
             <span class="level-return">5.70 GRAM</span>
         </div>
-
         <div class="level-info">
             الاستثمار: 5 GRAM<br>
             العائد: 5.70 GRAM<br>
             المدة: 48 ساعة
         </div>
-
         <button class="btn" onclick="invest(3,5)">
             استثمار 5 GRAM
         </button>
@@ -478,14 +333,12 @@ textarea{
 
 </section>
 
-
-<!-- المهام -->
 <section id="tasks" class="page">
 
     <div class="section-title">🎯 المهام</div>
 
     <div class="notice">
-        اشترك بالقناة ثم اضغط تحقق للحصول على مكافأة المهمة.
+        اشترك بالقناة ثم اضغط تحقق للحصول على 0.01 GRAM.
     </div>
 
     <div class="card">
@@ -518,17 +371,15 @@ textarea{
 
 </section>
 
-
-<!-- المحفظة -->
 <section id="wallet" class="page">
 
     <div class="section-title">👛 المحفظة</div>
 
     <div class="card">
-        <h3>ربط محفظة TON</h3>
+        <h3>🔗 ربط محفظة TON</h3>
 
         <p>
-            أدخل عنوان محفظتك ليتم حفظه في حسابك.
+            اربط محفظتك ليتم حفظها على حسابك واستخدامها في عمليات السحب.
         </p>
 
         <input
@@ -545,13 +396,12 @@ textarea{
         <div id="walletStatus"></div>
     </div>
 
-
     <div class="card">
 
         <h3>💰 الإيداع</h3>
 
         <p>
-            أرسل طلب إيداع ليتم مراجعته من الإدارة.
+            أرسل المبلغ ثم أدخل Tx Hash لإرسال طلب الإيداع إلى الإدارة للمراجعة.
         </p>
 
         <input
@@ -562,6 +412,13 @@ textarea{
             placeholder="مبلغ الإيداع بالـ GRAM"
         >
 
+        <input
+            id="depositTxHash"
+            type="text"
+            autocomplete="off"
+            placeholder="Tx Hash / معرف المعاملة"
+        >
+
         <button class="btn green" onclick="createDeposit()">
             إنشاء طلب إيداع
         </button>
@@ -570,13 +427,12 @@ textarea{
 
     </div>
 
-
     <div class="card">
 
         <h3>💵 السحب</h3>
 
-        <p>
-            يجب ربط محفظتك أولاً قبل إنشاء طلب السحب.
+        <p id="withdrawInfo">
+            السحب متاح بعد إكمال 5 مهام وربط محفظة TON.
         </p>
 
         <input
@@ -597,8 +453,6 @@ textarea{
 
 </section>
 
-
-<!-- الإحصائيات -->
 <section id="stats" class="page">
 
     <div class="section-title">📊 الإحصائيات</div>
@@ -647,8 +501,6 @@ textarea{
 
 </section>
 
-
-<!-- الإعدادات -->
 <section id="settings" class="page">
 
     <div class="section-title">⚙️ الإعدادات</div>
@@ -658,7 +510,6 @@ textarea{
         <h3>🌐 اللغة</h3>
 
         <div class="language-buttons">
-
             <button id="lang-ar" onclick="changeLanguage('ar')">
                 🇸🇦 العربية
             </button>
@@ -670,13 +521,11 @@ textarea{
             <button id="lang-ru" onclick="changeLanguage('ru')">
                 🇷🇺 Русский
             </button>
-
         </div>
 
         <div id="languageStatus"></div>
 
     </div>
-
 
     <div class="card">
 
@@ -695,13 +544,12 @@ textarea{
 
     </div>
 
-
     <div class="card">
 
         <h3>📢 إضافة قناة</h3>
 
         <p>
-            سعر إضافة القناة: $1
+            سعر إضافة القناة: <b>1 GRAM</b>
         </p>
 
         <input
@@ -718,13 +566,12 @@ textarea{
 
     </div>
 
-
     <div class="card">
 
         <h3>🤖 إضافة بوت</h3>
 
         <p>
-            سعر إضافة البوت: $0.30
+            سعر إضافة البوت: <b>0.30 GRAM</b>
         </p>
 
         <input
@@ -745,8 +592,6 @@ textarea{
 
 </div>
 
-
-<!-- القائمة السفلية -->
 <div class="nav">
 
     <button class="active" onclick="showPage('home',this)">
@@ -799,18 +644,12 @@ textarea{
 
 </div>
 
-
 <script>
 
 const tg = window.Telegram.WebApp;
 
 tg.ready();
 tg.expand();
-
-
-// ============================================================
-// بيانات المستخدم
-// ============================================================
 
 const tgUser =
     tg.initDataUnsafe &&
@@ -819,9 +658,7 @@ const tgUser =
         : null;
 
 let currentUserId =
-    tgUser
-        ? tgUser.id
-        : null;
+    tgUser ? tgUser.id : null;
 
 let currentBalance = 0;
 let currentReferrals = 0;
@@ -832,27 +669,16 @@ let currentLanguage =
     localStorage.getItem("gram_max_language") || "ar";
 
 
-// ============================================================
-// حماية الأزرار من مشاكل اللمس
-// ============================================================
-
-document.addEventListener("touchstart", function(){}, {
-    passive:true
-});
+document.addEventListener("touchstart",function(){},{passive:true});
 
 
-// ============================================================
-// التنقل
-// ============================================================
-
-function showPage(pageId, button){
+function showPage(pageId,button){
 
     document.querySelectorAll(".page").forEach(function(page){
         page.classList.remove("active");
     });
 
-    const page =
-        document.getElementById(pageId);
+    const page = document.getElementById(pageId);
 
     if(page){
         page.classList.add("active");
@@ -873,26 +699,16 @@ function showPage(pageId, button){
 }
 
 
-// ============================================================
-// إرسال البيانات للبوت
-// ============================================================
-
 function sendAction(data){
 
     if(!tg || typeof tg.sendData !== "function"){
-
-        alert(
-            "❌ يجب فتح التطبيق من داخل Telegram."
-        );
-
+        alert("❌ يجب فتح التطبيق من داخل Telegram.");
         return false;
     }
 
     try{
 
-        tg.sendData(
-            JSON.stringify(data)
-        );
+        tg.sendData(JSON.stringify(data));
 
         return true;
 
@@ -900,18 +716,12 @@ function sendAction(data){
 
         console.error(error);
 
-        alert(
-            "❌ حدث خطأ أثناء إرسال الطلب."
-        );
+        alert("❌ حدث خطأ أثناء إرسال الطلب.");
 
         return false;
     }
 }
 
-
-// ============================================================
-// تحديث الواجهة
-// ============================================================
 
 function updateUI(){
 
@@ -946,7 +756,7 @@ function updateUI(){
             "✓ تم الربط";
 
         document.getElementById("walletStatus").innerHTML =
-            '<div class="success">✓ تم ربط المحفظة بنجاح</div>';
+            '<div class="success">✓ تم ربط المحفظة وحفظ طلب الربط</div>';
 
     }else{
 
@@ -955,17 +765,12 @@ function updateUI(){
 
         document.getElementById("statWallet").innerText =
             "غير مربوطة";
-
     }
 
     updateTaskButtons();
     createReferralLink();
 }
 
-
-// ============================================================
-// المهام
-// ============================================================
 
 function updateTaskButtons(){
 
@@ -980,16 +785,12 @@ function updateTaskButtons(){
 
         if(completedTasks.includes("task1")){
 
-            task1.innerText =
-                "✓ مكتملة";
-
+            task1.innerText = "✓ مكتملة";
             task1.disabled = true;
 
         }else{
 
-            task1.innerText =
-                "فتح";
-
+            task1.innerText = "فتح";
             task1.disabled = false;
         }
     }
@@ -999,16 +800,12 @@ function updateTaskButtons(){
 
         if(completedTasks.includes("task2")){
 
-            task2.innerText =
-                "✓ مكتملة";
-
+            task2.innerText = "✓ مكتملة";
             task2.disabled = true;
 
         }else{
 
-            task2.innerText =
-                "فتح";
-
+            task2.innerText = "فتح";
             task2.disabled = false;
         }
     }
@@ -1023,15 +820,9 @@ function openTask(taskId,url){
 
     try{
 
-        if(
-            tg &&
-            typeof tg.openTelegramLink === "function"
-        ){
-
+        if(tg && typeof tg.openTelegramLink === "function"){
             tg.openTelegramLink(url);
-
         }else{
-
             window.open(url,"_blank");
         }
 
@@ -1044,12 +835,9 @@ function openTask(taskId,url){
     setTimeout(function(){
 
         const confirmed =
-            confirm(
-                "بعد الاشتراك بالقناة اضغط موافق للتحقق."
-            );
+            confirm("بعد الاشتراك بالقناة اضغط موافق للتحقق.");
 
         if(confirmed){
-
             verifyTask(taskId);
         }
 
@@ -1060,33 +848,19 @@ function openTask(taskId,url){
 function verifyTask(taskId){
 
     sendAction({
-
         action:"verify_task",
-
         task_id:taskId
-
     });
 }
 
 
-// ============================================================
-// الاستثمار
-// ============================================================
-
 function invest(level,amount){
 
-    if(
-        Number(currentBalance) <
-        Number(amount)
-    ){
+    if(Number(currentBalance) < Number(amount)){
 
-        alert(
-            "❌ رصيدك غير كافٍ."
-        );
-
+        alert("❌ رصيدك غير كافٍ.");
         return;
     }
-
 
     const ok =
         confirm(
@@ -1099,38 +873,23 @@ function invest(level,amount){
         return;
     }
 
-
     const sent =
         sendAction({
-
             action:"invest_start",
-
             level:level,
-
             amount:amount
-
         });
 
-
     if(sent){
-
-        alert(
-            "✅ تم إرسال طلب الاستثمار."
-        );
+        alert("✅ تم إرسال طلب الاستثمار.");
     }
 }
 
 
-// ============================================================
-// المحفظة
-// ============================================================
-
 function linkWallet(){
 
     const input =
-        document.getElementById(
-            "walletInput"
-        );
+        document.getElementById("walletInput");
 
     const address =
         input.value.trim();
@@ -1138,12 +897,8 @@ function linkWallet(){
 
     if(!address){
 
-        alert(
-            "❌ أدخل عنوان المحفظة أولاً."
-        );
-
+        alert("❌ أدخل عنوان المحفظة أولاً.");
         input.focus();
-
         return;
     }
 
@@ -1158,18 +913,11 @@ function linkWallet(){
         );
 
         input.focus();
-
         return;
     }
 
 
-    /*
-     * نحفظ المحفظة فوراً داخل الواجهة
-     * حتى لا تختفي حالة الربط عند إعادة فتح الصفحة.
-     */
-
-    currentWallet =
-        address;
+    currentWallet = address;
 
     localStorage.setItem(
         "gram_max_wallet",
@@ -1177,74 +925,73 @@ function linkWallet(){
     );
 
 
-    document.getElementById(
-        "walletStatus"
-    ).innerHTML =
-        '<div class="success">✓ تم ربط المحفظة بنجاح</div>';
+    document.getElementById("walletStatus").innerHTML =
+        '<div class="success">✓ تم إرسال المحفظة للحساب</div>';
 
-
-    document.getElementById(
-        "homeWallet"
-    ).innerText =
+    document.getElementById("homeWallet").innerText =
         "✓ تم الربط";
 
-
-    document.getElementById(
-        "statWallet"
-    ).innerText =
+    document.getElementById("statWallet").innerText =
         "✓ تم الربط";
-
-
-    input.value =
-        address;
 
 
     const sent =
         sendAction({
-
             action:"link_wallet",
-
             address:address
-
         });
 
 
     if(!sent){
 
-        document.getElementById(
-            "walletStatus"
-        ).innerHTML =
-            '<div class="error">❌ تعذر إرسال طلب الربط.</div>';
+        document.getElementById("walletStatus").innerHTML =
+            '<div class="error">❌ تعذر إرسال المحفظة للبوت.</div>';
     }
 }
 
 
-// ============================================================
-// الإيداع
-// ============================================================
-
 function createDeposit(){
 
-    const input =
-        document.getElementById(
-            "depositAmount"
-        );
+    const amountInput =
+        document.getElementById("depositAmount");
+
+    const txInput =
+        document.getElementById("depositTxHash");
 
     const amount =
-        Number(input.value);
+        Number(amountInput.value);
+
+    const txHash =
+        txInput.value.trim();
 
 
-    if(
-        !amount ||
-        amount <= 0
-    ){
+    if(!amount || amount <= 0){
 
-        alert(
-            "❌ أدخل مبلغاً صحيحاً."
+        alert("❌ أدخل مبلغ إيداع صحيح.");
+        amountInput.focus();
+        return;
+    }
+
+
+    if(!txHash){
+
+        alert("❌ أدخل Tx Hash / معرف المعاملة.");
+        txInput.focus();
+        return;
+    }
+
+
+    const ok =
+        confirm(
+            "سيتم إرسال طلب الإيداع إلى الإدارة للمراجعة.\n\n" +
+            "المبلغ: " +
+            amount +
+            " GRAM\n\n" +
+            "هل تريد المتابعة؟"
         );
 
-        input.focus();
 
+    if(!ok){
         return;
     }
 
@@ -1254,74 +1001,66 @@ function createDeposit(){
 
             action:"create_deposit",
 
-            amount:amount
+            amount:amount,
+
+            tx_hash:txHash,
+
+            wallet:currentWallet
 
         });
 
 
     if(sent){
 
-        document.getElementById(
-            "depositStatus"
-        ).innerHTML =
-            '<div class="success">✓ تم إرسال طلب الإيداع للإدارة.</div>';
+        document.getElementById("depositStatus").innerHTML =
+            '<div class="success">✓ تم إرسال طلب الإيداع للإدارة للمراجعة.</div>';
 
-        input.value = "";
+        amountInput.value = "";
+        txInput.value = "";
     }
 }
 
 
-// ============================================================
-// السحب
-// ============================================================
-
 function createWithdrawal(){
 
     const input =
-        document.getElementById(
-            "withdrawAmount"
-        );
+        document.getElementById("withdrawAmount");
 
     const amount =
         Number(input.value);
 
 
-    if(
-        !amount ||
-        amount <= 0
-    ){
+    if(completedTasks.length < 5){
 
         alert(
-            "❌ أدخل مبلغ السحب."
+            "❌ السحب متاح بعد إكمال 5 مهام.\n\n" +
+            "المهام المكتملة حالياً: " +
+            completedTasks.length
         );
-
-        input.focus();
 
         return;
     }
 
 
-    if(
-        amount >
-        Number(currentBalance)
-    ){
+    if(!amount || amount <= 0){
 
-        alert(
-            "❌ الرصيد غير كافٍ."
-        );
+        alert("❌ أدخل مبلغ السحب.");
+        input.focus();
+        return;
+    }
 
+
+    if(amount > Number(currentBalance)){
+
+        alert("❌ الرصيد غير كافٍ.");
         return;
     }
 
 
     if(!currentWallet){
 
-        alert(
-            "❌ اربط محفظتك أولاً."
-        );
-
+        alert("❌ اربط محفظتك أولاً.");
         showPage("wallet");
-
         return;
     }
 
@@ -1330,7 +1069,8 @@ function createWithdrawal(){
         confirm(
             "هل تريد إنشاء طلب سحب بقيمة " +
             amount +
-            " GRAM؟"
+            " GRAM؟\n\n" +
+            "سيتم استخدام المحفظة المرتبطة بحسابك."
         );
 
 
@@ -1344,16 +1084,16 @@ function createWithdrawal(){
 
             action:"create_withdrawal",
 
-            amount:amount
+            amount:amount,
+
+            wallet:currentWallet
 
         });
 
 
     if(sent){
 
-        document.getElementById(
-            "withdrawStatus"
-        ).innerHTML =
+        document.getElementById("withdrawStatus").innerHTML =
             '<div class="success">✓ تم إرسال طلب السحب للإدارة.</div>';
 
         input.value = "";
@@ -1361,16 +1101,10 @@ function createWithdrawal(){
 }
 
 
-// ============================================================
-// دعوة الأصدقاء
-// ============================================================
-
 function createReferralLink(){
 
     const box =
-        document.getElementById(
-            "refLink"
-        );
+        document.getElementById("refLink");
 
 
     if(!box){
@@ -1392,12 +1126,10 @@ function createReferralLink(){
         currentUserId;
 
 
-    box.innerText =
-        link;
+    box.innerText = link;
 }
 
 
-// مشاركة الرابط مباشرة
 function shareReferral(){
 
     if(!currentUserId){
@@ -1433,31 +1165,19 @@ function shareReferral(){
             typeof tg.openTelegramLink === "function"
         ){
 
-            tg.openTelegramLink(
-                shareUrl
-            );
+            tg.openTelegramLink(shareUrl);
 
         }else{
 
-            window.open(
-                shareUrl,
-                "_blank"
-            );
+            window.open(shareUrl,"_blank");
         }
 
     }catch(error){
 
-        window.open(
-            shareUrl,
-            "_blank"
-        );
+        window.open(shareUrl,"_blank");
     }
 }
 
-
-// ============================================================
-// اللغة
-// ============================================================
 
 const translations = {
 
@@ -1493,41 +1213,27 @@ const translations = {
         referralsLabel:"👥 Рефералы",
         walletLabel:"👛 Кошелёк"
     }
-
 };
 
 
 function changeLanguage(lang){
 
-    if(
-        !["ar","en","ru"].includes(lang)
-    ){
+    if(!["ar","en","ru"].includes(lang)){
         lang = "ar";
     }
 
-
-    currentLanguage =
-        lang;
-
+    currentLanguage = lang;
 
     localStorage.setItem(
         "gram_max_language",
         lang
     );
 
-
     applyLanguage();
 
-
-    /*
-     * نحاول حفظ اللغة في حساب المستخدم أيضاً.
-     */
     sendAction({
-
         action:"change_lang",
-
         lang:lang
-
     });
 }
 
@@ -1537,10 +1243,8 @@ function applyLanguage(){
     const t =
         translations[currentLanguage];
 
-
     document.documentElement.lang =
         currentLanguage;
-
 
     document.documentElement.dir =
         currentLanguage === "ar"
@@ -1548,57 +1252,32 @@ function applyLanguage(){
             : "ltr";
 
 
-    document.getElementById(
-        "subtitle"
-    ).innerText =
+    document.getElementById("subtitle").innerText =
         t.subtitle;
 
-
-    document.getElementById(
-        "balanceTitle"
-    ).innerText =
+    document.getElementById("balanceTitle").innerText =
         t.balanceTitle;
 
-
-    document.getElementById(
-        "welcomeTitle"
-    ).innerText =
+    document.getElementById("welcomeTitle").innerText =
         t.welcomeTitle;
 
-
-    document.getElementById(
-        "welcomeText"
-    ).innerText =
+    document.getElementById("welcomeText").innerText =
         t.welcomeText;
 
-
-    document.getElementById(
-        "accountInfoTitle"
-    ).innerText =
+    document.getElementById("accountInfoTitle").innerText =
         t.accountInfoTitle;
 
-
-    document.getElementById(
-        "balanceLabel"
-    ).innerText =
+    document.getElementById("balanceLabel").innerText =
         t.balanceLabel;
 
-
-    document.getElementById(
-        "referralsLabel"
-    ).innerText =
+    document.getElementById("referralsLabel").innerText =
         t.referralsLabel;
 
-
-    document.getElementById(
-        "walletLabel"
-    ).innerText =
+    document.getElementById("walletLabel").innerText =
         t.walletLabel;
 
 
-    document.querySelectorAll(
-        "[data-ar]"
-    ).forEach(function(element){
+    document.querySelectorAll("[data-ar]").forEach(function(element){
 
         const value =
             element.getAttribute(
@@ -1606,15 +1285,12 @@ function applyLanguage(){
             );
 
         if(value){
-            element.innerText =
-                value;
+            element.innerText = value;
         }
     });
 
 
-    document.querySelectorAll(
-        ".nav-text"
-    ).forEach(function(element){
+    document.querySelectorAll(".nav-text").forEach(function(element){
 
         const value =
             element.getAttribute(
@@ -1622,8 +1298,7 @@ function applyLanguage(){
             );
 
         if(value){
-            element.innerText =
-                value;
+            element.innerText = value;
         }
     });
 
@@ -1632,9 +1307,7 @@ function applyLanguage(){
         ".language-buttons button"
     ).forEach(function(button){
 
-        button.classList.remove(
-            "active"
-        );
+        button.classList.remove("active");
     });
 
 
@@ -1645,50 +1318,15 @@ function applyLanguage(){
 
 
     if(selected){
-
-        selected.classList.add(
-            "active"
-        );
-    }
-
-
-    const status =
-        document.getElementById(
-            "languageStatus"
-        );
-
-
-    if(status){
-
-        if(currentLanguage === "ar"){
-
-            status.innerHTML =
-                '<div class="success">✓ تم تغيير اللغة إلى العربية</div>';
-
-        }else if(currentLanguage === "en"){
-
-            status.innerHTML =
-                '<div class="success">✓ Language changed to English</div>';
-
-        }else{
-
-            status.innerHTML =
-                '<div class="success">✓ Язык изменён на русский</div>';
-        }
+        selected.classList.add("active");
     }
 }
 
 
-// ============================================================
-// الدعم
-// ============================================================
-
 function sendSupport(){
 
     const textarea =
-        document.getElementById(
-            "supportMessage"
-        );
+        document.getElementById("supportMessage");
 
     const message =
         textarea.value.trim();
@@ -1696,12 +1334,8 @@ function sendSupport(){
 
     if(!message){
 
-        alert(
-            "❌ اكتب رسالة الدعم أولاً."
-        );
-
+        alert("❌ اكتب رسالة الدعم أولاً.");
         textarea.focus();
-
         return;
     }
 
@@ -1718,9 +1352,7 @@ function sendSupport(){
 
     if(sent){
 
-        document.getElementById(
-            "supportStatus"
-        ).innerHTML =
+        document.getElementById("supportStatus").innerHTML =
             '<div class="success">✓ تم إرسال رسالتك للدعم.</div>';
 
         textarea.value = "";
@@ -1728,40 +1360,26 @@ function sendSupport(){
 }
 
 
-// ============================================================
-// إضافة قناة
-// ============================================================
-
 function addChannel(){
 
     const input =
-        document.getElementById(
-            "channelUrl"
-        );
+        document.getElementById("channelUrl");
 
     const url =
         input.value.trim();
 
 
-    if(
-        !url.startsWith(
-            "https://t.me/"
-        )
-    ){
+    if(!url.startsWith("https://t.me/")){
 
-        alert(
-            "❌ رابط القناة غير صحيح."
-        );
-
+        alert("❌ رابط القناة غير صحيح.");
         input.focus();
-
         return;
     }
 
 
     const ok =
         confirm(
-            "سيتم إرسال طلب إضافة القناة بسعر $1.\nهل تريد المتابعة؟"
+            "سيتم خصم 1 GRAM لإرسال طلب إضافة القناة.\nهل تريد المتابعة؟"
         );
 
 
@@ -1782,9 +1400,7 @@ function addChannel(){
 
     if(sent){
 
-        document.getElementById(
-            "channelStatus"
-        ).innerHTML =
+        document.getElementById("channelStatus").innerHTML =
             '<div class="success">✓ تم إرسال طلب إضافة القناة.</div>';
 
         input.value = "";
@@ -1792,40 +1408,26 @@ function addChannel(){
 }
 
 
-// ============================================================
-// إضافة بوت
-// ============================================================
-
 function addBot(){
 
     const input =
-        document.getElementById(
-            "botUrl"
-        );
+        document.getElementById("botUrl");
 
     const url =
         input.value.trim();
 
 
-    if(
-        !url.startsWith(
-            "https://t.me/"
-        )
-    ){
+    if(!url.startsWith("https://t.me/")){
 
-        alert(
-            "❌ رابط البوت غير صحيح."
-        );
-
+        alert("❌ رابط البوت غير صحيح.");
         input.focus();
-
         return;
     }
 
 
     const ok =
         confirm(
-            "سيتم إرسال طلب إضافة البوت بسعر $0.30.\nهل تريد المتابعة؟"
+            "سيتم خصم 0.30 GRAM لإرسال طلب إضافة البوت.\nهل تريد المتابعة؟"
         );
 
 
@@ -1846,9 +1448,7 @@ function addBot(){
 
     if(sent){
 
-        document.getElementById(
-            "botStatus"
-        ).innerHTML =
+        document.getElementById("botStatus").innerHTML =
             '<div class="success">✓ تم إرسال طلب إضافة البوت.</div>';
 
         input.value = "";
@@ -1856,16 +1456,10 @@ function addBot(){
 }
 
 
-// ============================================================
-// تحميل البيانات المحفوظة على الجهاز
-// ============================================================
-
 function loadLocalData(){
 
     const savedWallet =
-        localStorage.getItem(
-            "gram_max_wallet"
-        );
+        localStorage.getItem("gram_max_wallet");
 
 
     if(savedWallet){
@@ -1874,9 +1468,7 @@ function loadLocalData(){
             savedWallet;
 
         const input =
-            document.getElementById(
-                "walletInput"
-            );
+            document.getElementById("walletInput");
 
         if(input){
             input.value =
@@ -1886,16 +1478,12 @@ function loadLocalData(){
 
 
     const savedLanguage =
-        localStorage.getItem(
-            "gram_max_language"
-        );
+        localStorage.getItem("gram_max_language");
 
 
     if(
         savedLanguage &&
-        ["ar","en","ru"].includes(
-            savedLanguage
-        )
+        ["ar","en","ru"].includes(savedLanguage)
     ){
 
         currentLanguage =
@@ -1903,10 +1491,6 @@ function loadLocalData(){
     }
 }
 
-
-// ============================================================
-// البداية
-// ============================================================
 
 document.addEventListener(
     "DOMContentLoaded",
