@@ -10,21 +10,19 @@
         body { background: #1a1a2e; color: white; padding: 20px; padding-bottom: 80px; }
         .header { text-align: center; margin-bottom: 20px; }
         .header h1 { color: #f0b90b; font-size: 24px; }
-        .card { background: #16213e; border-radius: 12px; padding: 15px; margin-bottom: 15px; }
-        .card h3 { color: #f0b90b; margin-bottom: 10px; font-size: 18px; }
+        .card { background: #16213e; border-radius: 12px; padding: 15px; margin-bottom: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        .card h3 { color: #f0b90b; margin-bottom: 10px; font-size: 18px; border-bottom: 1px solid #0f3460; padding-bottom: 5px; }
         .card p { font-size: 14px; color: #ccc; margin-bottom: 5px; }
         .balance { font-size: 28px; color: #00ff88; font-weight: bold; text-align: center; }
         .btn { background: #f0b90b; color: #1a1a2e; border: none; padding: 15px; font-size: 16px; border-radius: 10px; width: 100%; margin-top: 10px; cursor: pointer; font-weight: bold; }
         .btn-success { background: #00ff88; color: #1a1a2e; }
         .hidden { display: none; }
-        .nav-bottom { position: fixed; bottom: 0; left: 0; right: 0; background: #16213e; display: flex; justify-content: space-around; padding: 10px; border-top: 1px solid #0f3460; }
-        .nav-item { text-align: center; color: #888; font-size: 12px; cursor: pointer; }
+        .nav-bottom { position: fixed; bottom: 0; left: 0; right: 0; background: #16213e; display: flex; justify-content: space-around; padding: 10px; border-top: 1px solid #0f3460; z-index: 100; }
+        .nav-item { text-align: center; color: #888; font-size: 12px; cursor: pointer; flex: 1; }
         .nav-item.active { color: #f0b90b; }
         .nav-item span { font-size: 20px; display: block; }
-        .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
-        .menu-item { background: #0f3460; border-radius: 10px; padding: 20px 10px; text-align: center; cursor: pointer; }
-        .menu-item span { font-size: 30px; display: block; margin-bottom: 5px; }
-        .menu-item small { font-size: 12px; }
+        .invest-item { display: flex; justify-content: space-between; align-items: center; background: #0f3460; padding: 10px; border-radius: 8px; margin-bottom: 8px; font-size: 13px; }
+        .invest-item span { color: #00ff88; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -40,11 +38,11 @@
         </div>
         <div class="card">
             <h3>💰 الاستثمار</h3>
-            <p>1️⃣ 1 GRAM ➜ 1.15 GRAM (12 ساعة)</p>
-            <p>2️⃣ 2 GRAM ➜ 2.20 GRAM (24 ساعة)</p>
-            <p>3️⃣ 5 GRAM ➜ 5.70 GRAM (48 ساعة)</p>
-            <p>4️⃣ 7 GRAM ➜ 8.30 GRAM (3 أيام)</p>
-            <p>5️⃣ 10 GRAM ➜ 13 GRAM (5 أيام)</p>
+            <div class="invest-item"><span>المستوى 1</span> 1 GRAM ➜ 1.15 GRAM (12 ساعة)</div>
+            <div class="invest-item"><span>المستوى 2</span> 2 GRAM ➜ 2.20 GRAM (24 ساعة)</div>
+            <div class="invest-item"><span>المستوى 3</span> 5 GRAM ➜ 5.70 GRAM (48 ساعة)</div>
+            <div class="invest-item"><span>المستوى 4</span> 7 GRAM ➜ 8.30 GRAM (3 أيام)</div>
+            <div class="invest-item"><span>المستوى 5</span> 10 GRAM ➜ 13 GRAM (5 أيام)</div>
         </div>
         <div class="card">
             <h3>💳 الإيداع</h3>
@@ -55,15 +53,35 @@
         </div>
     </div>
 
+    <!-- صفحة دعوة الأصدقاء -->
+    <div id="page-invite" class="hidden">
+        <div class="card">
+            <h3>👥 دعوة الأصدقاء</h3>
+            <p>رابط الإحالة الخاص بك:</p>
+            <p style="color:#f0b90b; word-break: break-all;" id="ref-link">https://t.me/GramMax1_Bot?start=ref_123</p>
+            <p>عدد المدعوين: <span id="ref-count">0</span></p>
+            <p>أرباح الإحالات: 5%</p>
+        </div>
+    </div>
+
     <!-- صفحة الإحصائيات -->
     <div id="page-stats" class="hidden">
         <div class="card">
             <h3>📈 الإحصائيات</h3>
-            <p>💰 الرصيد: 0.00</p>
-            <p>📈 إجمالي الأرباح: 0.00</p>
-            <p>👥 عدد الإحالات: 0</p>
-            <p>🔄 الاستثمارات النشطة: 0</p>
-            <p>✅ الاستثمارات المنتهية: 0</p>
+            <p>💰 الرصيد: <span id="stat-balance">0.00</span></p>
+            <p>📈 إجمالي الأرباح: <span id="stat-profit">0.00</span></p>
+            <p>👥 عدد الإحالات: <span id="stat-refs">0</span></p>
+            <p>🔄 الاستثمارات النشطة: <span id="stat-active">0</span></p>
+            <p>✅ الاستثمارات المنتهية: <span id="stat-done">0</span></p>
+        </div>
+    </div>
+
+    <!-- صفحة السحب -->
+    <div id="page-withdraw" class="hidden">
+        <div class="card">
+            <h3>💵 السحب</h3>
+            <p>الرصيد المتاح: <span id="withdraw-balance">0.00</span></p>
+            <button class="btn" onclick="alert('انتقل إلى محادثة البوت لطلب السحب')">طلب سحب</button>
         </div>
     </div>
 
@@ -79,6 +97,8 @@
     <!-- شريط التنقل السفلي -->
     <div class="nav-bottom">
         <div class="nav-item active" onclick="showPage('home')"><span>🏠</span>الرئيسية</div>
+        <div class="nav-item" onclick="showPage('invite')"><span>👥</span>دعوة</div>
+        <div class="nav-item" onclick="showPage('withdraw')"><span>💵</span>سحب</div>
         <div class="nav-item" onclick="showPage('stats')"><span>📈</span>إحصائيات</div>
         <div class="nav-item" onclick="showPage('settings')"><span>⚙️</span>إعدادات</div>
     </div>
@@ -90,11 +110,18 @@
         function showPage(pageId) {
             document.querySelectorAll('[id^="page-"]').forEach(p => p.classList.add('hidden'));
             document.getElementById('page-' + pageId).classList.remove('hidden');
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
         }
 
         function confirmDeposit() {
             window.Telegram.WebApp.sendData(JSON.stringify({ action: "deposit_confirmed" }));
             document.getElementById('status-message').innerText = "✅ تم استلام طلب الإيداع! سيتم مراجعته.";
+        }
+
+        // جلب بيانات المستخدم (سيتم ربطها بالبوت لاحقاً)
+        const user = window.Telegram.WebApp.initDataUnsafe.user;
+        if (user) {
+            document.getElementById('ref-link').innerText = `https://t.me/GramMax1_Bot?start=ref_${user.id}`;
         }
     </script>
 </body>
