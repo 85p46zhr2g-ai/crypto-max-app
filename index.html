@@ -13,14 +13,18 @@
         .card { background: #16213e; border-radius: 12px; padding: 15px; margin-bottom: 15px; }
         .card h3 { color: #f0b90b; margin-bottom: 10px; font-size: 18px; }
         .card p { font-size: 14px; color: #ccc; margin-bottom: 5px; }
+        .balance { font-size: 28px; color: #00ff88; font-weight: bold; text-align: center; }
         .btn { background: #f0b90b; color: #1a1a2e; border: none; padding: 15px; font-size: 16px; border-radius: 10px; width: 100%; margin-top: 10px; cursor: pointer; font-weight: bold; }
-        .btn-deposit { background: #00ff88; color: #1a1a2e; }
+        .btn-success { background: #00ff88; color: #1a1a2e; }
         .hidden { display: none; }
-        #status-message { text-align: center; margin-top: 10px; color: #00ff88; font-weight: bold; }
         .nav-bottom { position: fixed; bottom: 0; left: 0; right: 0; background: #16213e; display: flex; justify-content: space-around; padding: 10px; border-top: 1px solid #0f3460; }
         .nav-item { text-align: center; color: #888; font-size: 12px; cursor: pointer; }
         .nav-item.active { color: #f0b90b; }
         .nav-item span { font-size: 20px; display: block; }
+        .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
+        .menu-item { background: #0f3460; border-radius: 10px; padding: 20px 10px; text-align: center; cursor: pointer; }
+        .menu-item span { font-size: 30px; display: block; margin-bottom: 5px; }
+        .menu-item small { font-size: 12px; }
     </style>
 </head>
 <body>
@@ -28,10 +32,11 @@
         <h1>🚀 GRAM MAX</h1>
     </div>
 
+    <!-- الصفحة الرئيسية -->
     <div id="page-home">
         <div class="card">
             <p>💰 الرصيد الحالي</p>
-            <div style="font-size: 28px; color: #00ff88; font-weight: bold; text-align: center;" id="balance">0.00 GRAM</div>
+            <div class="balance" id="balance">0.00 GRAM</div>
         </div>
         <div class="card">
             <h3>💰 الاستثمار</h3>
@@ -45,26 +50,50 @@
             <h3>💳 الإيداع</h3>
             <p>قم بالتحويل إلى المحفظة:</p>
             <p style="color:#f0b90b; word-break: break-all;">UQBrfxfxzB5-op8FGLs-BxnZg0Bv0CveJ8VJbC3Xc9pVXZ5X</p>
-            <button class="btn btn-deposit" onclick="confirmDeposit()">إيداع</button>
-            <div id="status-message"></div>
+            <button class="btn btn-success" onclick="confirmDeposit()">إيداع</button>
+            <div id="status-message" style="text-align: center; margin-top: 10px; color: #00ff88; font-weight: bold;"></div>
         </div>
     </div>
 
+    <!-- صفحة الإحصائيات -->
+    <div id="page-stats" class="hidden">
+        <div class="card">
+            <h3>📈 الإحصائيات</h3>
+            <p>💰 الرصيد: 0.00</p>
+            <p>📈 إجمالي الأرباح: 0.00</p>
+            <p>👥 عدد الإحالات: 0</p>
+            <p>🔄 الاستثمارات النشطة: 0</p>
+            <p>✅ الاستثمارات المنتهية: 0</p>
+        </div>
+    </div>
+
+    <!-- صفحة الإعدادات -->
+    <div id="page-settings" class="hidden">
+        <div class="card">
+            <h3>⚙️ الإعدادات</h3>
+            <p>🔔 الإشعارات: مفعلة</p>
+            <p>🌐 اللغة: العربية</p>
+        </div>
+    </div>
+
+    <!-- شريط التنقل السفلي -->
     <div class="nav-bottom">
-        <div class="nav-item active"><span>🏠</span>الرئيسية</div>
-        <div class="nav-item"><span>💰</span>استثمار</div>
-        <div class="nav-item"><span>📈</span>إحصائيات</div>
-        <div class="nav-item"><span>⚙️</span>إعدادات</div>
+        <div class="nav-item active" onclick="showPage('home')"><span>🏠</span>الرئيسية</div>
+        <div class="nav-item" onclick="showPage('stats')"><span>📈</span>إحصائيات</div>
+        <div class="nav-item" onclick="showPage('settings')"><span>⚙️</span>إعدادات</div>
     </div>
 
     <script>
         window.Telegram.WebApp.ready();
         window.Telegram.WebApp.expand();
 
+        function showPage(pageId) {
+            document.querySelectorAll('[id^="page-"]').forEach(p => p.classList.add('hidden'));
+            document.getElementById('page-' + pageId).classList.remove('hidden');
+        }
+
         function confirmDeposit() {
-            // إرسال إشارة إلى البوت
             window.Telegram.WebApp.sendData(JSON.stringify({ action: "deposit_confirmed" }));
-            // عرض رسالة التأكيد تحت الزر (دون تغيير الزر)
             document.getElementById('status-message').innerText = "✅ تم استلام طلب الإيداع! سيتم مراجعته.";
         }
     </script>
