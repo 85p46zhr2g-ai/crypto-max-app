@@ -12,10 +12,16 @@ WALLET_ADDRESS = "UQBrfxfxzB5-op8FGLs-BxnZg0Bv0CveJ8VJbC3Xc9pVXZ5X"
 BOT_USERNAME = "GramMax1_Bot"
 SUPPORT_USERNAME = "SowzzFF"
 
+# قنوات الاشتراك الإجباري
+CHANNEL_BOT = "https://t.me/GramMax1_Bot"
+CHANNEL_CHAT = "https://t.me/GramMaxChat"
+CHANNEL_OWNER = "https://t.me/SowzzFF"
+
 # الحدود الدنيا والرسوم
 MIN_DEPOSIT = 1.0
 MIN_WITHDRAWAL = 1.0
 WITHDRAWAL_FEE_PERCENT = 1.0
+ADS_REQUIRED = 15
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 
@@ -27,6 +33,7 @@ def init_db():
     cursor.execute("CREATE TABLE IF NOT EXISTS deposits (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, amount REAL, status TEXT DEFAULT 'pending', created_at TEXT)")
     cursor.execute("CREATE TABLE IF NOT EXISTS withdrawals (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, amount REAL, fee REAL, wallet TEXT, status TEXT DEFAULT 'pending', created_at TEXT)")
     cursor.execute("CREATE TABLE IF NOT EXISTS settings (user_id INTEGER PRIMARY KEY, language TEXT DEFAULT 'ar', notifications INTEGER DEFAULT 1)")
+    cursor.execute("CREATE TABLE IF NOT EXISTS ads (user_id INTEGER PRIMARY KEY, ads_watched INTEGER DEFAULT 0, last_ad_time TEXT, withdraw_unlocked INTEGER DEFAULT 0)")
     conn.commit()
     conn.close()
 
@@ -41,6 +48,32 @@ def get_user(user_id):
         result = (0, 0)
     conn.close()
     return result
+
+def get_ads(user_id):
+    conn = sqlite3.connect("gram_max.db")
+    cursor = conn.cursor()
+    cursor.execute("SELECT ads_watched, withdraw_unlocked FROM ads WHERE user_id = ?", (user_id,))
+    result = cursor.fetchone()
+    if not result:
+        cursor.execute("INSERT INTO ads (user_id, ads_watched, withdraw_unlocked) VALUES (?, 0, 0)", (user_id,))
+        conn.commit()
+        result = (0, 0)
+    conn.close()
+    return result
+
+def add_ad_watched(user_id):
+    conn = sqlite3.connect("gram_max.db")
+    cursor = conn.cursor()
+    cursor.execute("SELECT ads_watched FROM ads WHERE user_id = ?", (user_id,))
+    row = cursor.fetchone()
+    current = row[0] if row else 0
+    new_count = current + 1
+    unlocked = 1 if new_count >= ADS_REQUIRED else 0
+    cursor.execute("UPDATE ads SET ads_watched = ?, last_ad_time = ?, withdraw_unlocked = ? WHERE user_id = ?", 
+                   (new_count, datetime.now().strftime("%Y-%m-%d %H:%M:%S"), unlocked, user_id))
+    conn.commit()
+    conn.close()
+    return new_count, unlocked
 
 def get_settings(user_id):
     conn = sqlite3.connect("gram_max.db")
@@ -109,10 +142,37 @@ def update_notifications(user_id, enabled):
     conn.commit()
     conn.close()
 
+# ==================== التحقق من الاشتراك ====================
+async def check_subscription(user_id, context):
+    try:
+        member = await context.bot.get_chat_member(chat_id="@GramMaxChat", user_id=user_id)
+        if member.status in ['member', 'administrator', 'creator']:
+            return True
+    except:
+        pass
+    return False
+
 # ==================== أوامر المستخدم ====================
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     args = context.args
+    
+    # التحقق من الاشتراك
+    is_subscribed = await check_subscription(user_id, context)
+    if not is_subscribed:
+        keyboard = [
+            [InlineKeyboardButton("📢 قناة البوت", url=CHANNEL_BOT)],
+            [InlineKeyboardButton("💬 قناة الدردشة", url=CHANNEL_CHAT)],
+            [InlineKeyboardButton("👑 قناة صانع البوت", url=CHANNEL_OWNER)],
+            [InlineKeyboardButton("✅ تحقق من الاشتراك", callback_data="check_sub")]
+        ]
+        await update.message.reply_text(
+            "📢 **يرجى الاشتراك بالقنوات أولاً.**\n\nبعد الاشتراك، اضغط على زر التحقق.",
+            reply_markup=InlineKeyboardMarkup(keyboard),
+            parse_mode='Markdown'
+        )
+        return
+    
     if args and args[0].startswith("ref_"):
         try:
             referrer_id = int(args[0].split("_")[1])
@@ -120,8 +180,11 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 add_referral(user_id, referrer_id)
         except:
             pass
+    
     get_user(user_id)
     get_settings(user_id)
+    get_ads(user_id)
+    
     keyboard = [
         ["💰 الاستثمار", "👥 دعوة الأصدقاء"],
         ["📊 المستويات", "📈 الإحصائيات"],
@@ -152,8 +215,21 @@ async def support_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = f"🆘 **الدعم المباشر**\n\nللتواصل مع الدعم:\n@{SUPPORT_USERNAME}"
     await update.message.reply_text(text, parse_mode='Markdown')
 
-# ==================== قسم السحب ====================
+# ==================== قسم السحب مع شرط الإعلانات ====================
 async def withdraw_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
+    ads_watched, unlocked = get_ads(user_id)
+    
+    if not unlocked:
+        text = (
+            f"🎬 **شاهد {ADS_REQUIRED} إعلاناً لفتح السحب**\n\n"
+            f"التقدم: {ads_watched} / {ADS_REQUIRED} إعلان\n\n"
+            "بعد كل إعلان مكتمل ومؤكد من شبكة الإعلانات، سيتم تحديث العداد."
+        )
+        keyboard = [[InlineKeyboardButton(f"🎬 مشاهدة إعلان ({ads_watched}/{ADS_REQUIRED})", callback_data="watch_ad")]]
+        await update.message.reply_text(text, parse_mode='Markdown', reply_markup=InlineKeyboardMarkup(keyboard))
+        return
+    
     context.user_data['state'] = "WAITING_AMOUNT"
     await update.message.reply_text(f"💵 السحب\n\nالحد الأدنى للسحب: {MIN_WITHDRAWAL} GRAM\nرسوم السحب: {WITHDRAWAL_FEE_PERCENT}%\n\nأرسل المبلغ الذي تريد سحبه:")
 
@@ -258,6 +334,11 @@ async def web_app_data_handler(update: Update, context: ContextTypes.DEFAULT_TYP
             amount = float(req_data.get('amount', 0))
             wallet = req_data.get('wallet', '')
             
+            ads_watched, unlocked = get_ads(user_id)
+            if not unlocked:
+                await update.message.reply_text(f"❌ يجب مشاهدة {ADS_REQUIRED} إعلاناً أولاً لفتح السحب.")
+                return
+            
             balance, _ = get_user(user_id)
             if amount < MIN_WITHDRAWAL:
                 await update.message.reply_text(f"❌ الحد الأدنى للسحب هو {MIN_WITHDRAWAL} GRAM.")
@@ -278,6 +359,15 @@ async def web_app_data_handler(update: Update, context: ContextTypes.DEFAULT_TYP
         elif action == "toggle_notifications":
             enabled = 1 if req_data.get('enabled') else 0
             update_notifications(user_id, enabled)
+        
+        elif action == "watch_ad_complete":
+            # هذا الإجراء يتم استدعاؤه فقط عند تأكيد مزود الإعلانات
+            # ⚠️ لا تستخدمه من التطبيق مباشرة، يجب أن يأتي من Webhook مزود الإعلانات
+            new_count, unlocked = add_ad_watched(user_id)
+            if unlocked:
+                await context.bot.send_message(chat_id=user_id, text="🎉 تم فتح السحب بنجاح!")
+            else:
+                await context.bot.send_message(chat_id=user_id, text=f"✅ تم احتساب الإعلان. التقدم: {new_count}/{ADS_REQUIRED}")
     
     except Exception as e:
         print(f"Error in web_app_data: {e}")
@@ -286,8 +376,33 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
     data = query.data
-    if data == "confirm_deposit":
-        user_id = query.from_user.id
+    user_id = query.from_user.id
+    
+    if data == "check_sub":
+        is_subscribed = await check_subscription(user_id, context)
+        if is_subscribed:
+            await query.edit_message_text("✅ تم التحقق من الاشتراك! يمكنك الآن استخدام البوت.\n\nأرسل /start للبدء.")
+        else:
+            await query.edit_message_text("❌ لم يتم التحقق. يرجى الاشتراك في جميع القنوات أولاً.")
+    
+    elif data == "watch_ad":
+        # ⚠️ هنا يجب استدعاء مزود الإعلانات الحقيقي
+        # مثال: AdsGram API
+        ads_watched, unlocked = get_ads(user_id)
+        
+        if unlocked:
+            await query.edit_message_text("✅ السحب مفتوح بالفعل!")
+            return
+        
+        # ⚠️ يجب استبدال هذا الجزء بكود مزود الإعلانات الحقيقي
+        await query.edit_message_text(
+            f"🎬 **مشاهدة إعلان**\n\n"
+            f"التقدم: {ads_watched}/{ADS_REQUIRED}\n\n"
+            f"⚠️ يجب ربط مزود الإعلانات (AdsGram/Monetag) لتفعيل هذه الميزة.\n"
+            f"لا يمكن احتساب الإعلان دون تأكيد حقيقي من المزود."
+        )
+    
+    elif data == "confirm_deposit":
         create_deposit(user_id, MIN_DEPOSIT)
         await query.edit_message_text("✅ تم استلام طلب الإيداع!")
         await context.bot.send_message(chat_id=ADMIN_ID, text=f"🔔 طلب إيداع جديد من `{user_id}`.")
