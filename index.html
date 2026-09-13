@@ -153,6 +153,8 @@
             <p style="font-size:13px; color:#8b949e; margin-bottom:10px;" data-key="deposit_note">قم بالتحويل إلى المحفظة ثم أدخل المبلغ:</p>
             <p style="color:var(--gold-light); font-size:11px; word-break:break-all; margin-bottom:10px;" id="wallet-address">UQBrfxfxzB5-op8FGLs-BxnZg0Bv0CveJ8VJbC3Xc9pVXZ5X</p>
             <button class="btn-share" onclick="copyWallet()" style="margin-bottom:10px;" data-key="copy_wallet">📋 نسخ عنوان المحفظة</button>
+            <div id="ton-connect"></div>
+            <button class="btn-connect" onclick="connectWallet()" style="margin-bottom:10px;">🔗 ربط المحفظة</button>
             <input type="number" id="deposit-amount" placeholder="أدخل مبلغ الإيداع" data-key="deposit_placeholder">
             <button class="btn-deposit" onclick="confirmDeposit()" data-key="deposit_btn">💰 تأكيد الإيداع</button>
             <div id="status-message"></div>
@@ -165,6 +167,16 @@
             <input type="text" id="withdraw-wallet" placeholder="أدخل عنوان المحفظة" data-key="wallet_placeholder">
             <button class="btn-deposit" style="margin-top:18px;" onclick="requestWithdraw()" data-key="withdraw_btn">📤 طلب سحب</button>
             <p style="text-align:center; color:var(--text-dim); font-size:11px; margin-top:12px;" data-key="withdraw_note">الحد الأدنى: 1 GRAM | رسوم: 1%</p>
+        </div>
+    </div>
+
+    <!-- صفحة المهام -->
+    <div id="page-tasks" class="hidden">
+        <div class="section-title"><span>📋</span> <span data-key="tasks_title">المهام</span></div>
+        <div class="profile-card">
+            <p style="font-size:13px; color:#8b949e; margin-bottom:10px;">اشترك في القنوات التالية واحصل على 0.01 GRAM لكل قناة:</p>
+            <div id="tasks-list"></div>
+            <button class="btn-share" onclick="addChannel()" style="margin-top:15px;">➕ إضافة قناتي</button>
         </div>
     </div>
 
@@ -215,7 +227,7 @@
     <!-- شريط التنقل السفلي -->
     <div class="nav-bottom">
         <div class="nav-item active" onclick="showPage('home', event)"><span>🏠</span><span data-key="nav_home">الرئيسية</span></div>
-        <div class="nav-item" onclick="showPage('stats', event)"><span>📊</span><span data-key="nav_stats">الإحصائيات</span></div>
+        <div class="nav-item" onclick="showPage('tasks', event)"><span>📋</span><span data-key="nav_tasks">المهام</span></div>
         <div class="nav-item" onclick="showPage('invite', event)"><span>👥</span><span data-key="nav_invite">الإحالات</span></div>
         <div class="nav-item" onclick="showPage('deposit', event)"><span>💳</span><span data-key="nav_deposit">الإيداع</span></div>
         <div class="nav-item" onclick="showPage('settings', event)"><span>⚙️</span><span data-key="nav_settings">الإعدادات</span></div>
@@ -229,9 +241,9 @@
         let currentUserLang = 'ar';
 
         const translations = {
-            ar: { balance_label: "💰 الرصيد الحالي", profit_label: "📈 الأرباح", refs_label: "👥 الإحالات", invest_title: "مستويات الاستثمار", hours: "ساعة", days: "أيام", available: "متاح", locked_text: "مقفل", deposit_title: "الإيداع والسحب", deposit_note: "قم بالتحويل إلى المحفظة ثم أدخل المبلغ:", copy_wallet: "📋 نسخ عنوان المحفظة", deposit_placeholder: "أدخل مبلغ الإيداع", deposit_btn: "💰 تأكيد الإيداع", stats_title: "الإحصائيات", stats_balance: "💰 الرصيد", stats_profit: "📈 إجمالي الأرباح", stats_refs: "👥 عدد الإحالات", invite_title: "دعوة الأصدقاء", ref_link_label: "رابط الإحالة الخاص بك", share_btn: "📤 مشاركة الرابط", invited_label: "عدد المدعوين", withdraw_title: "السحب", withdraw_available: "الرصيد المتاح للسحب", withdraw_placeholder: "أدخل المبلغ", wallet_placeholder: "أدخل عنوان المحفظة", withdraw_btn: "📤 طلب سحب", withdraw_note: "الحد الأدنى: 1 GRAM | رسوم: 1%", settings_title: "الإعدادات", language_label: "🌐 اللغة", invest_label: "💰 الاستثمار", notifications: "🔔 الإشعارات", enabled: "مفعلة ›", disabled: "معطلة ›", support: "🆘 الدعم", support_title: "الدعم المباشر", contact_support: "💬 التواصل مع الدعم", faq: "❓ الأسئلة الشائعة", report_issue: "📝 إرسال مشكلة", back: "🔙 العودة", bot_info: "ℹ️ معلومات البوت", nav_home: "الرئيسية", nav_stats: "الإحصائيات", nav_invite: "الإحالات", nav_deposit: "الإيداع", nav_settings: "الإعدادات" },
-            en: { balance_label: "💰 Current Balance", profit_label: "📈 Profit", refs_label: "👥 Referrals", invest_title: "Investment Levels", hours: "hours", days: "days", available: "Available", locked_text: "Locked", deposit_title: "Deposit & Withdraw", deposit_note: "Transfer to wallet then enter amount:", copy_wallet: "📋 Copy Wallet Address", deposit_placeholder: "Enter deposit amount", deposit_btn: "💰 Confirm Deposit", stats_title: "Statistics", stats_balance: "💰 Balance", stats_profit: "📈 Total Profit", stats_refs: "👥 Referrals", invite_title: "Invite Friends", ref_link_label: "Your referral link", share_btn: "📤 Share Link", invited_label: "Invited", withdraw_title: "Withdraw", withdraw_available: "Available Balance", withdraw_placeholder: "Enter amount", wallet_placeholder: "Enter wallet address", withdraw_btn: "📤 Request Withdrawal", withdraw_note: "Min: 1 GRAM | Fee: 1%", settings_title: "Settings", language_label: "🌐 Language", invest_label: "💰 Investment", notifications: "🔔 Notifications", enabled: "Enabled ›", disabled: "Disabled ›", support: "🆘 Support", support_title: "Live Support", contact_support: "💬 Contact Support", faq: "❓ FAQ", report_issue: "📝 Report Issue", back: "🔙 Back", bot_info: "ℹ️ Bot Info", nav_home: "Home", nav_stats: "Stats", nav_invite: "Invite", nav_deposit: "Deposit", nav_settings: "Settings" },
-            ru: { balance_label: "💰 Текущий баланс", profit_label: "📈 Прибыль", refs_label: "👥 Рефералы", invest_title: "Уровни инвестиций", hours: "часов", days: "дней", available: "Доступно", locked_text: "Закрыто", deposit_title: "Депозит и вывод", deposit_note: "Переведите на кошелек и введите сумму:", copy_wallet: "📋 Копировать адрес кошелька", deposit_placeholder: "Введите сумму депозита", deposit_btn: "💰 Подтвердить депозит", stats_title: "Статистика", stats_balance: "💰 Баланс", stats_profit: "📈 Общая прибыль", stats_refs: "👥 Рефералы", invite_title: "Пригласить друзей", ref_link_label: "Ваша реферальная ссылка", share_btn: "📤 Поделиться", invited_label: "Приглашено", withdraw_title: "Вывод", withdraw_available: "Доступно для вывода", withdraw_placeholder: "Введите сумму", wallet_placeholder: "Введите адрес кошелька", withdraw_btn: "📤 Запросить вывод", withdraw_note: "Мин: 1 GRAM | Комиссия: 1%", settings_title: "Настройки", language_label: "🌐 Язык", invest_label: "💰 Инвестиции", notifications: "🔔 Уведомления", enabled: "Включено ›", disabled: "Отключено ›", support: "🆘 Поддержка", support_title: "Прямая поддержка", contact_support: "💬 Связаться с поддержкой", faq: "❓ Часто задаваемые вопросы", report_issue: "📝 Сообщить о проблеме", back: "🔙 Назад", bot_info: "ℹ️ О боте", nav_home: "Главная", nav_stats: "Статистика", nav_invite: "Рефералы", nav_deposit: "Депозит", nav_settings: "Настройки" }
+            ar: { balance_label: "💰 الرصيد الحالي", profit_label: "📈 الأرباح", refs_label: "👥 الإحالات", invest_title: "مستويات الاستثمار", hours: "ساعة", days: "أيام", available: "متاح", locked_text: "مقفل", deposit_title: "الإيداع والسحب", deposit_note: "قم بالتحويل إلى المحفظة ثم أدخل المبلغ:", copy_wallet: "📋 نسخ عنوان المحفظة", deposit_placeholder: "أدخل مبلغ الإيداع", deposit_btn: "💰 تأكيد الإيداع", stats_title: "الإحصائيات", stats_balance: "💰 الرصيد", stats_profit: "📈 إجمالي الأرباح", stats_refs: "👥 عدد الإحالات", invite_title: "دعوة الأصدقاء", ref_link_label: "رابط الإحالة الخاص بك", share_btn: "📤 مشاركة الرابط", invited_label: "عدد المدعوين", withdraw_title: "السحب", withdraw_available: "الرصيد المتاح للسحب", withdraw_placeholder: "أدخل المبلغ", wallet_placeholder: "أدخل عنوان المحفظة", withdraw_btn: "📤 طلب سحب", withdraw_note: "الحد الأدنى: 1 GRAM | رسوم: 1%", settings_title: "الإعدادات", language_label: "🌐 اللغة", invest_label: "💰 الاستثمار", notifications: "🔔 الإشعارات", enabled: "مفعلة ›", disabled: "معطلة ›", support: "🆘 الدعم", support_title: "الدعم المباشر", contact_support: "💬 التواصل مع الدعم", faq: "❓ الأسئلة الشائعة", report_issue: "📝 إرسال مشكلة", back: "🔙 العودة", bot_info: "ℹ️ معلومات البوت", nav_home: "الرئيسية", nav_tasks: "المهام", nav_invite: "الإحالات", nav_deposit: "الإيداع", nav_settings: "الإعدادات" },
+            en: { balance_label: "💰 Current Balance", profit_label: "📈 Profit", refs_label: "👥 Referrals", invest_title: "Investment Levels", hours: "hours", days: "days", available: "Available", locked_text: "Locked", deposit_title: "Deposit & Withdraw", deposit_note: "Transfer to wallet then enter amount:", copy_wallet: "📋 Copy Wallet Address", deposit_placeholder: "Enter deposit amount", deposit_btn: "💰 Confirm Deposit", stats_title: "Statistics", stats_balance: "💰 Balance", stats_profit: "📈 Total Profit", stats_refs: "👥 Referrals", invite_title: "Invite Friends", ref_link_label: "Your referral link", share_btn: "📤 Share Link", invited_label: "Invited", withdraw_title: "Withdraw", withdraw_available: "Available Balance", withdraw_placeholder: "Enter amount", wallet_placeholder: "Enter wallet address", withdraw_btn: "📤 Request Withdrawal", withdraw_note: "Min: 1 GRAM | Fee: 1%", settings_title: "Settings", language_label: "🌐 Language", invest_label: "💰 Investment", notifications: "🔔 Notifications", enabled: "Enabled ›", disabled: "Disabled ›", support: "🆘 Support", support_title: "Live Support", contact_support: "💬 Contact Support", faq: "❓ FAQ", report_issue: "📝 Report Issue", back: "🔙 Back", bot_info: "ℹ️ Bot Info", nav_home: "Home", nav_tasks: "Tasks", nav_invite: "Invite", nav_deposit: "Deposit", nav_settings: "Settings" },
+            ru: { balance_label: "💰 Текущий баланс", profit_label: "📈 Прибыль", refs_label: "👥 Рефералы", invest_title: "Уровни инвестиций", hours: "часов", days: "дней", available: "Доступно", locked_text: "Закрыто", deposit_title: "Депозит и вывод", deposit_note: "Переведите на кошелек и введите сумму:", copy_wallet: "📋 Копировать адрес кошелька", deposit_placeholder: "Введите сумму депозита", deposit_btn: "💰 Подтвердить депозит", stats_title: "Статистика", stats_balance: "💰 Баланс", stats_profit: "📈 Общая прибыль", stats_refs: "👥 Рефералы", invite_title: "Пригласить друзей", ref_link_label: "Ваша реферальная ссылка", share_btn: "📤 Поделиться", invited_label: "Приглашено", withdraw_title: "Вывод", withdraw_available: "Доступно для вывода", withdraw_placeholder: "Введите сумму", wallet_placeholder: "Введите адрес кошелька", withdraw_btn: "📤 Запросить вывод", withdraw_note: "Мин: 1 GRAM | Комиссия: 1%", settings_title: "Настройки", language_label: "🌐 Язык", invest_label: "💰 Инвестиции", notifications: "🔔 Уведомления", enabled: "Включено ›", disabled: "Отключено ›", support: "🆘 Поддержка", support_title: "Прямая поддержка", contact_support: "💬 Связаться с поддержкой", faq: "❓ Часто задаваемые вопросы", report_issue: "📝 Сообщить о проблеме", back: "🔙 Назад", bot_info: "ℹ️ О боте", nav_home: "Главная", nav_tasks: "Задания", nav_invite: "Рефералы", nav_deposit: "Депозит", nav_settings: "Настройки" }
         };
 
         // ==================== TON Connect ====================
@@ -285,6 +297,14 @@
             });
         }
 
+        function connectWallet() {
+            tonConnectUI.openModal();
+        }
+
+        function addChannel() {
+            window.Telegram.WebApp.sendData(JSON.stringify({ action: "add_channel_request" }));
+        }
+
         function changeLanguage(lang) {
             currentUserLang = lang;
             const t = translations[lang];
@@ -319,27 +339,4 @@
         function confirmDeposit() {
             const amount = document.getElementById('deposit-amount').value;
             if (!amount || parseFloat(amount) < 1) { alert("الحد الأدنى للإيداع هو 1 GRAM"); return; }
-            window.Telegram.WebApp.sendData(JSON.stringify({ action: "deposit_confirmed", amount: amount }));
-            document.getElementById('status-message').innerText = "✅ تم استلام طلب الإيداع";
-        }
-
-        function requestWithdraw() {
-            const amount = document.getElementById('withdraw-amount').value;
-            const wallet = document.getElementById('withdraw-wallet').value;
-            if (!amount || !wallet) { alert("يرجى إدخال المبلغ والعنوان"); return; }
-            if (parseFloat(amount) < 1) { alert("الحد الأدنى للسحب هو 1 GRAM"); return; }
-            window.Telegram.WebApp.sendData(JSON.stringify({ action: "withdraw_request", amount: amount, wallet: wallet }));
-            alert("✅ تم استلام طلب السحب");
-        }
-
-        function shareLink() {
-            const refLink = document.getElementById('ref-link').innerText;
-            const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(refLink)}`;
-            window.Telegram.WebApp.openTelegramLink(shareUrl);
-        }
-
-        const user = window.Telegram.WebApp.initDataUnsafe.user;
-        if (user) { document.getElementById('ref-link').innerText = `https://t.me/GramMax1_Bot?start=ref_${user.id}`; }
-    </script>
-</body>
-</html>
+            window.Telegram.WebApp.sendData(JSON.stringify({ action: "deposit_confirmed",
