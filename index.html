@@ -126,6 +126,26 @@
         }
         .btn-deposit:active { transform: scale(0.98); }
 
+        .btn-share {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+            background: linear-gradient(135deg, #0088cc, #006699);
+            color: #ffffff;
+            border: none;
+            padding: 14px;
+            font-size: 15px;
+            font-weight: 700;
+            border-radius: 14px;
+            margin-top: 15px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0, 136, 204, 0.3);
+            transition: transform 0.1s;
+        }
+        .btn-share:active { transform: scale(0.98); }
+
         .nav-bottom {
             position: fixed;
             bottom: 0; left: 0; right: 0;
@@ -265,7 +285,10 @@
         <div class="profile-card" style="text-align:center;">
             <span class="balance-label">رابط الإحالة الخاص بك</span>
             <div style="color:#f0b90b; font-size:13px; word-break:break-all; margin:10px 0; background:rgba(0,0,0,0.3); padding:10px; border-radius:8px;" id="ref-link">https://t.me/GramMax1_Bot?start=ref_0</div>
-            <div style="font-size:20px; font-weight:bold; color:#00ff88;">0</div>
+            
+            <button class="btn-share" onclick="shareLink()">📤 مشاركة الرابط</button>
+
+            <div style="font-size:20px; font-weight:bold; color:#00ff88; margin-top:20px;">0</div>
             <span class="balance-label">عدد المدعوين</span>
             <div style="margin-top:15px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.05); font-size:14px; color:#ccc;">
                 💰 أرباح الإحالات: <span style="color:#00ff88; font-weight:bold;">5%</span>
@@ -346,6 +369,14 @@
                 alert("تم تغيير اللغة إلى العربية");
             }
             document.getElementById('language-options').classList.add('hidden');
+        }
+
+        // دالة المشاركة
+        function shareLink() {
+            const refLink = document.getElementById('ref-link').innerText;
+            const shareText = "🚀 انضم إلى بوت GRAM MAX واستثمر أرباحك الآن!";
+            const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(refLink)}&text=${encodeURIComponent(shareText)}`;
+            window.Telegram.WebApp.openTelegramLink(shareUrl);
         }
 
         const user = window.Telegram.WebApp.initDataUnsafe.user;
