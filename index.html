@@ -1,388 +1,295 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GRAM MAX</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+import logging
+import sqlite3
+from datetime import datetime
+from telegram import Update, ReplyKeyboardMarkup, InlineKeyboardMarkup, InlineKeyboardButton
+from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters, CallbackQueryHandler
+
+# ⚠️ الإعدادات
+BOT_TOKEN = "8724497887:AAEmhudPVYMApgfakZT_T2X_r61dcTJuemc"
+ADMIN_ID = 8183652969
+WALLET_ADDRESS = "UQBrfxfxzB5-op8FGLs-BxnZg0Bv0CveJ8VJbC3Xc9pVXZ5X"
+BOT_USERNAME = "GramMax1_Bot"
+
+# الحدود الدنيا والرسوم
+MIN_DEPOSIT = 1.0
+MIN_WITHDRAWAL = 1.0
+WITHDRAWAL_FEE_PERCENT = 1.0
+
+logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
+
+# ==================== قاعدة البيانات ====================
+def init_db():
+    conn = sqlite3.connect("gram_max.db")
+    cursor = conn.cursor()
+    cursor.execute("CREATE TABLE IF NOT EXISTS users (user_id INTEGER PRIMARY KEY, balance REAL DEFAULT 0.0, referrals INTEGER DEFAULT 0, referrer_id INTEGER)")
+    cursor.execute("CREATE TABLE IF NOT EXISTS deposits (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, amount REAL, status TEXT DEFAULT 'pending', created_at TEXT)")
+    cursor.execute("CREATE TABLE IF NOT EXISTS withdrawals (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, amount REAL, fee REAL, wallet TEXT, status TEXT DEFAULT 'pending', created_at TEXT)")
+    conn.commit()
+    conn.close()
+
+def get_user(user_id):
+    conn = sqlite3.connect("gram_max.db")
+    cursor = conn.cursor()
+    cursor.execute("SELECT balance, referrals FROM users WHERE user_id = ?", (user_id,))
+    result = cursor.fetchone()
+    if not result:
+        cursor.execute("INSERT INTO users (user_id, balance, referrals) VALUES (?, 0, 0)", (user_id,))
+        conn.commit()
+        result = (0, 0)
+    conn.close()
+    return result
+
+def update_balance(user_id, amount):
+    conn = sqlite3.connect("gram_max.db")
+    cursor = conn.cursor()
+    cursor.execute("UPDATE users SET balance = balance + ? WHERE user_id = ?", (amount, user_id))
+    conn.commit()
+    conn.close()
+
+def create_deposit(user_id, amount):
+    conn = sqlite3.connect("gram_max.db")
+    cursor = conn.cursor()
+    cursor.execute("INSERT INTO deposits (user_id, amount, status, created_at) VALUES (?, ?, 'pending', ?)", 
+                   (usergram_id, amount, datetime.now().str_maxftime("%Y-%m-%.dbd %H:%M:%S")))
+")
+    conn.commit()
+       conn.close()
+
+def create_with cursordrawal(user_id, amount, fee, wallet):
+    conn = sqlite3.connect("gram_max.db")
+    cursor = conn.cursor()
+    cursor.execute("INSERT INTO withdrawals (user_id, amount, fee, wallet, status, created_at) VALUES (?, ?, ?, ?, 'pending', ?)", 
+                   (user_id, amount, fee, wallet, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+    withdraw_id = cursor.lastrowid
+    conn.commit()
+    conn.close()
+    return withdraw_id
+
+def get_pending_withdrawals():
+    conn = sqlite3.connect("gram_max.db")
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, user_id, amount, fee, wallet, created_at FROM withdrawals WHERE status = 'pending'")
+    rows = cursor.fetchall()
+    conn.close()
+    return rows
+
+def add_referral(user_id, referrer_id):
+    conn = sqlite3.connect(" = conn.cursor()
+    cursor.execute("UPDATE users SET referrals = referrals + 1 WHERE user_id = ?", (referrer_id,))
+    cursor.execute("UPDATE users SET referrer_id = ? WHERE user_id = ?", (referrer_id, user_id))
+    conn.commit()
+    conn.close()
+
+# ==================== أوامر المستخدم ====================
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
+    args = context.args
+    if args and args[0].startswith("ref_"):
+        referrer_id = int(args[0].split("_")[1])
+        if referrer_id != user_id:
+            add_referral(user_id, referrer_id)
+    get_user(user_id)
+    keyboard = [["💰 الاستثمار", "👥 دعوة الأصدقاء"], ["📊 المستويات", "📈 الإحصائيات"], ["💵 السحب", "💳 الإيداع"], ["🎁 المكافآت", "🆘 الدعم"], ["⚙️ الإعدادات"]]
+    await update.message.reply_text("مرحباً بك في GRAM MAX! 🤖", reply_markup=ReplyKeyboardMarkup(keyboard, resize_keyboard=True))
+
+async def invest_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    text = "💰 الاستثمار\n\n1️⃣ 1 GRAM ➜ 1.15 (12 ساعة)\n2️⃣ 2 GRAM ➜ 2.20 (24 ساعة)\n3️⃣ 5 GRAM ➜ 5.70 (48 ساعة)\n4️⃣ 7 GRAM ➜ 8.30 (3 أيام)\n5️⃣ 10 GRAM ➜ 13 (5 أيام)\n\nقم بالتحويل إلى:\n`" + WALLET_ADDRESS + "`"
+    keyboard = [[InlineKeyboardButton("✅ تم الإيداع", callback_data="confirm_deposit")]]
+    await update.message.reply_text(text, parse_mode='Markdown', reply_markup=InlineKeyboardMarkup(keyboard))
+
+async def deposit_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    text = f"💳 الإيداع\n\nالحد الأدنى للإيداع: {MIN_DEPOSIT} GRAM\n\nقم بالتحويل إلى:\n`" + WALLET_ADDRESS + "`"
+    keyboard = [[InlineKeyboardButton("✅ تم الإيداع", callback_data="confirm_deposit")]]
+    await update.message.reply_text(text, parse_mode='Markdown', reply_markup=InlineKeyboardMarkup(keyboard))
+
+async def referral_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
+    balance, referrals = get_user(user_id)
+    link = f"https://t.me/{BOT_USERNAME}?start=ref_{user_id}"
+    text = f"👥 **دعوة الأصدقاء**\n\nرابط الإحالة الخاص بك:\n`{link}`\n\nعدد المدعوين: {referrals}\nأرباح الإحالات: 5%"
+    await update.message.reply_text(text, parse_mode='Markdown')
+
+# ==================== قسم السحب ====================
+async def withdraw_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    context.user_data['state'] = "WAITING_AMOUNT"
+    await update.message.reply_text(f"💵 السحب\n\nالحد الأدنى للسحب: {MIN_WITHDRAWAL} GRAM\nرسوم السحب: {WITHDRAWAL_FEE_PERCENT}%\n\nأرسل المبلغ الذي تريد سحبه:")
+
+async def withdraw_amount(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    try:
+        amount = float(update.message.text)
+        user_id = update.effective_user.id
+        balance, _ = get_user(user_id)
         
-        body {
-            background-color: #0b0e14;
-            background-image: 
-                radial-gradient(circle at 15% 50%, rgba(88, 86, 214, 0.08), transparent 40%),
-                radial-gradient(circle at 85% 30%, rgba(0, 150, 255, 0.05), transparent 40%);
-            color: #ffffff;
-            padding: 20px 15px 100px 15px;
-            min-height: 100vh;
-        }
-
-        .profile-card {
-            background: linear-gradient(145deg, #161b22, #0d1117);
-            border: 1px solid rgba(240, 185, 11, 0.15);
-            border-radius: 18px;
-            padding: 20px;
-            margin-bottom: 25px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(240, 185, 11, 0.03);
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .profile-card::before {
-            content: '';
-            position: absolute;
-            top: -50%; left: -50%;
-            width: 200%; height: 200%;
-            background: radial-gradient(circle, rgba(240, 185, 11, 0.05) 0%, transparent 70%);
-            pointer-events: none;
-        }
-
-        .balance-label { font-size: 13px; color: #8b949e; margin-bottom: 4px; display: block; }
-        .balance-amount { font-size: 32px; font-weight: 700; color: #f0b90b; text-shadow: 0 0 15px rgba(240, 185, 11, 0.4); letter-spacing: 1px; }
+        if amount < MIN_WITHDRAWAL:
+            await update.message.reply_text(f"❌ الحد الأدنى للسحب هو {MIN_WITHDRAWAL} GRAM.")
+            context.user_data['state'] = None
+            return
         
-        .stats-row {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 10px;
-            border-top: 1px solid rgba(255,255,255,0.05);
-            padding-top: 15px;
-        }
-        .stat-item { text-align: center; flex: 1; }
-        .stat-value { font-size: 16px; font-weight: 600; color: #ffffff; display: block; }
-        .stat-label { font-size: 11px; color: #8b949e; margin-top: 2px; display: block; }
-
-        .section-title {
-            font-size: 18px;
-            font-weight: 700;
-            color: #ffffff;
-            margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .section-title span { color: #f0b90b; }
-
-        .invest-card {
-            background: #161b22;
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 16px;
-            padding: 16px;
-            margin-bottom: 12px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            transition: all 0.3s ease;
-        }
-
-        .invest-card.available {
-            border-left: 4px solid #00ff88;
-            box-shadow: 0 4px 15px rgba(0, 255, 136, 0.05);
-        }
-
-        .invest-card.locked {
-            opacity: 0.6;
-            border-left: 4px solid #30363d;
-        }
-
-        .invest-info { display: flex; flex-direction: column; gap: 4px; }
-        .invest-level { font-size: 15px; font-weight: 700; color: #ffffff; }
-        .invest-return { font-size: 13px; color: #00ff88; font-weight: 600; }
-        .invest-time { font-size: 11px; color: #8b949e; }
+        if amount > balance:
+            await update.message.reply_text(f"❌ رصيدك غير كافٍ. رصيدك الحالي: {balance}")
+            context.user_data['state'] = None
+            return
         
-        .invest-status {
-            font-size: 11px;
-            padding: 4px 10px;
-            border-radius: 20px;
-            background: rgba(0, 255, 136, 0.1);
-            color: #00ff88;
-            font-weight: 600;
-        }
-        .invest-card.locked .invest-status {
-            background: rgba(139, 148, 158, 0.1);
-            color: #8b949e;
-        }
+        fee = amount * (WITHDRAWAL_FEE_PERCENT / 100)
+        context.user_data['withdraw_amount'] = amount
+        context.user_data['withdraw_fee'] = fee
+        context.user_data['state'] = "WAITING_WALLET"
+        await update.message.reply_text(f"الرسوم: {fee:.2f} GRAM\nالمبلغ الصافي: {amount - fee:.2f} GRAM\n\nالآن أرسل عنوان محفظتك:")
+    except ValueError:
+        await update.message.reply_text("❌ الرجاء إرسال رقم صحيح.")
+        context.user_data['state'] = None
 
-        .btn-deposit {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            width: 100%;
-            background: linear-gradient(135deg, #f0b90b, #d4a017);
-            color: #0b0e14;
-            border: none;
-            padding: 16px;
-            font-size: 16px;
-            font-weight: 800;
-            border-radius: 14px;
-            margin-top: 20px;
-            cursor: pointer;
-            box-shadow: 0 4px 15px rgba(240, 185, 11, 0.3);
-            transition: transform 0.1s;
-        }
-        .btn-deposit:active { transform: scale(0.98); }
+async def withdraw_wallet(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    wallet = update.message.text
+    amount = context.user_data.get('withdraw_amount')
+    fee = context.user_data.get('withdraw_fee')
+    user_id = update.effective_user.id
+    withdraw_id = create_withdrawal(user_id, amount, fee, wallet)
+    context.user_data['state'] = None
+    await update.message.reply_text(f"✅ تم استلام طلب السحب رقم {withdraw_id}.\nسيتم مراجعته من قبل الإدارة.")
+    await context.bot.send_message(chat_id=ADMIN_ID, text=f"🔔 طلب سحب جديد رقم {withdraw_id}\n👤 المستخدم: `{user_id}`\n💰 المبلغ: {amount}\n💸 الرسوم: {fee}\n🏦 المحفظة: `{wallet}`", parse_mode='Markdown')
 
-        .btn-share {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            width: 100%;
-            background: linear-gradient(135deg, #0088cc, #006699);
-            color: #ffffff;
-            border: none;
-            padding: 14px;
-            font-size: 15px;
-            font-weight: 700;
-            border-radius: 14px;
-            margin-top: 15px;
-            cursor: pointer;
-            box-shadow: 0 4px 15px rgba(0, 136, 204, 0.3);
-            transition: transform 0.1s;
-        }
-        .btn-share:active { transform: scale(0.98); }
+# ==================== لوحة تحكم المشرف ====================
+async def admin_panel(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.effective_user.id != ADMIN_ID: return
+    await update.message.reply_text("👑 لوحة التحكم\n/pending_deposits - طلبات الإيداع\n/pending_withdrawals - طلبات السحب")
 
-        .nav-bottom {
-            position: fixed;
-            bottom: 0; left: 0; right: 0;
-            background: rgba(13, 17, 23, 0.95);
-            backdrop-filter: blur(10px);
-            display: flex;
-            justify-content: space-around;
-            padding: 12px 5px;
-            border-top: 1px solid rgba(255,255,255,0.05);
-            z-index: 100;
-        }
-        .nav-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            color: #8b949e;
-            font-size: 10px;
-            cursor: pointer;
-            flex: 1;
-            gap: 4px;
-            transition: color 0.2s;
-        }
-        .nav-item.active { color: #f0b90b; }
-        .nav-item span { font-size: 22px; }
-        .nav-item.active span { filter: drop-shadow(0 0 8px rgba(240, 185, 11, 0.5)); }
+async def pending_deposits(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.effective_user.id != ADMIN_ID: return
+    conn = sqlite3.connect("gram_max.db")
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, user_id, amount FROM deposits WHERE status = 'pending'")
+    rows = cursor.fetchall()
+    conn.close()
+    if not rows:
+        await update.message.reply_text("لا توجد طلبات إيداع.")
+        return
+    for row in rows:
+        dep_id, user_id, amount = row
+        text = f"📌 إيداع رقم: {dep_id}\n👤 المستخدم: `{user_id}`\n💰 المبلغ: {amount}"
+        keyboard = [[InlineKeyboardButton("✅ تأكيد", callback_data=f"confirm_dep_{dep_id}"), InlineKeyboardButton("❌ رفض", callback_data=f"reject_dep_{dep_id}")]]
+        await update.message.reply_text(text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode='Markdown')
 
-        .hidden { display: none !important; }
+async def pending_withdrawals(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.effective_user.id != ADMIN_ID: return
+    rows = get_pending_withdrawals()
+    if not rows:
+        await update.message.reply_text("لا توجد طلبات سحب.")
+        return
+    for row in rows:
+        w_id, user_id, amount, fee, wallet, created_at = row
+        text = f"📌 سحب رقم: {w_id}\n👤 المستخدم: `{user_id}`\n💰 المبلغ: {amount}\n💸 الرسوم: {fee}\n🏦 المحفظة: `{wallet}`"
+        keyboard = [[InlineKeyboardButton("✅ تأكيد", callback_data=f"confirm_wd_{w_id}"), InlineKeyboardButton("❌ رفض", callback_data=f"reject_wd_{w_id}")]]
+        await update.message.reply_text(text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode='Markdown')
 
-        .settings-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px;
-            background: #161b22;
-            border-radius: 12px;
-            margin-bottom: 10px;
-            border: 1px solid rgba(255,255,255,0.03);
-            cursor: pointer;
-        }
-        .settings-item span:first-child { display: flex; align-items: center; gap: 10px; font-size: 14px; }
-        .settings-item .arrow { color: #8b949e; font-size: 18px; }
+# ==================== معالجة الأزرار ====================
+async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    text = update.message.text
+    if text == "💰 الاستثمار": await invest_menu(update, context)
+    elif text == "💳 الإيداع": await deposit_menu(update, context)
+    elif text == "👥 دعوة الأصدقاء": await referral_menu(update, context)
+    elif text == "💵 السحب": await withdraw_start(update, context)
+    elif context.user_data.get('state') == "WAITING_AMOUNT": await withdraw_amount(update, context)
+    elif context.user_data.get('state') == "WAITING_WALLET": await withdraw_wallet(update, context)
+    else: await update.message.reply_text("هذا القسم قيد التطوير.")
 
-        #status-message {
-            text-align: center;
-            margin-top: 15px;
-            color: #00ff88;
-            font-weight: 600;
-            font-size: 14px;
-            text-shadow: 0 0 10px rgba(0,255,136,0.3);
-        }
-    </style>
-</head>
-<body>
-    <!-- الصفحة الرئيسية -->
-    <div id="page-home">
-        <div class="profile-card">
-            <div>
-                <span class="balance-label">💰 الرصيد الحالي</span>
-                <div class="balance-amount">0.00 <span style="font-size:16px; color:#8b949e;">GRAM</span></div>
-            </div>
-            <div class="stats-row">
-                <div class="stat-item">
-                    <span class="stat-value">0.00</span>
-                    <span class="stat-label">📈 الأرباح</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-value">0</span>
-                    <span class="stat-label">👥 الإحالات</span>
-                </div>
-            </div>
-        </div>
-
-        <div class="section-title"><span>💰</span> الاستثمار</div>
-        
-        <div class="invest-card available">
-            <div class="invest-info">
-                <span class="invest-level">المستوى 1</span>
-                <span class="invest-return">1 GRAM ➜ 1.15 GRAM</span>
-                <span class="invest-time">⏱️ 12 ساعة</span>
-            </div>
-            <div class="invest-status">🔓 متاح</div>
-        </div>
-
-        <div class="invest-card locked">
-            <div class="invest-info">
-                <span class="invest-level">المستوى 2</span>
-                <span class="invest-return">2 GRAM ➜ 2.30 GRAM</span>
-                <span class="invest-time">⏱️ 24 ساعة</span>
-            </div>
-            <div class="invest-status">🔒 مقفل</div>
-        </div>
-
-        <div class="invest-card locked">
-            <div class="invest-info">
-                <span class="invest-level">المستوى 3</span>
-                <span class="invest-return">5 GRAM ➜ 5.70 GRAM</span>
-                <span class="invest-time">⏱️ 48 ساعة</span>
-            </div>
-            <div class="invest-status">🔒 مقفل</div>
-        </div>
-
-        <div class="invest-card locked">
-            <div class="invest-info">
-                <span class="invest-level">المستوى 4</span>
-                <span class="invest-return">7 GRAM ➜ 8.30 GRAM</span>
-                <span class="invest-time">⏱️ 3 أيام</span>
-            </div>
-            <div class="invest-status">🔒 مقفل</div>
-        </div>
-
-        <div class="invest-card locked">
-            <div class="invest-info">
-                <span class="invest-level">المستوى 5</span>
-                <span class="invest-return">10 GRAM ➜ 13 GRAM</span>
-                <span class="invest-time">⏱️ 5 أيام</span>
-            </div>
-            <div class="invest-status">🔒 مقفل</div>
-        </div>
-
-        <button class="btn-deposit" onclick="confirmDeposit()">💳 الإيداع</button>
-        <div id="status-message"></div>
-    </div>
-
-    <!-- صفحة الإحصائيات -->
-    <div id="page-stats" class="hidden">
-        <div class="section-title"><span>📈</span> الإحصائيات</div>
-        <div class="settings-item"><span>💰 الرصيد</span><span style="color:#00ff88;">0.00 GRAM</span></div>
-        <div class="settings-item"><span>📈 إجمالي الأرباح</span><span style="color:#00ff88;">0.00 GRAM</span></div>
-        <div class="settings-item"><span>👥 عدد الإحالات</span><span>0</span></div>
-        <div class="settings-item"><span>🔄 الاستثمارات النشطة</span><span>0</span></div>
-        <div class="settings-item"><span>✅ الاستثمارات المنتهية</span><span>0</span></div>
-    </div>
-
-    <!-- صفحة الإحالات -->
-    <div id="page-invite" class="hidden">
-        <div class="section-title"><span>👥</span> دعوة الأصدقاء</div>
-        <div class="profile-card" style="text-align:center;">
-            <span class="balance-label">رابط الإحالة الخاص بك</span>
-            <div style="color:#f0b90b; font-size:13px; word-break:break-all; margin:10px 0; background:rgba(0,0,0,0.3); padding:10px; border-radius:8px;" id="ref-link">https://t.me/GramMax1_Bot?start=ref_0</div>
+async def web_app_data_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    data = update.effective_message.web_app_data.data
+    user_id = update.effective_user.id
+    
+    if "deposit_confirmed" in data:
+        create_deposit(user_id, MIN_DEPOSIT)
+        await update.message.reply_text(f"✅ تم استلام طلب الإيداع! سيتم مراجعته.")
+        await context.bot.send_message(chat_id=ADMIN_ID, text=f"🔔 طلب إيداع جديد من `{user_id}`. المبلغ: {MIN_DEPOSIT}")
+    
+    elif "withdraw_request" in data:
+        import json
+        try:
+            req_data = json.loads(data)
+            amount = float(req_data.get('amount', 0))
+            wallet = req_data.get('wallet', '')
             
-            <button class="btn-share" onclick="shareLink()">📤 مشاركة الرابط</button>
+            balance, _ = get_user(user_id)
+            if amount < MIN_WITHDRAWAL:
+                await update.message.reply_text(f"❌ الحد الأدنى للسحب هو {MIN_WITHDRAWAL} GRAM.")
+                return
+            if amount > balance:
+                await update.message.reply_text(f"❌ رصيدك غير كافٍ. رصيدك الحالي: {balance}")
+                return
+            
+            fee = amount * (WITHDRAWAL_FEE_PERCENT / 100)
+            withdraw_id = create_withdrawal(user_id, amount, fee, wallet)
+            await update.message.reply_text(f"✅ تم استلام طلب السحب رقم {withdraw_id}.\nسيتم مراجعته من قبل الإدارة.")
+            await context.bot.send_message(chat_id=ADMIN_ID, text=f"🔔 طلب سحب جديد رقم {withdraw_id}\n👤 المستخدم: `{user_id}`\n💰 المبلغ: {amount}\n💸 الرسوم: {fee}\n🏦 المحفظة: `{wallet}`", parse_mode='Markdown')
+        except Exception as e:
+            print(f"Error: {e}")
 
-            <div style="font-size:20px; font-weight:bold; color:#00ff88; margin-top:20px;">0</div>
-            <span class="balance-label">عدد المدعوين</span>
-            <div style="margin-top:15px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.05); font-size:14px; color:#ccc;">
-                💰 أرباح الإحالات: <span style="color:#00ff88; font-weight:bold;">5%</span>
-            </div>
-        </div>
-    </div>
+async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    data = query.data
+    if data == "confirm_deposit":
+        user_id = query.from_user.id
+        create_deposit(user_id, MIN_DEPOSIT)
+        await query.edit_message_text("✅ تم استلام طلب الإيداع!")
+        await context.bot.send_message(chat_id=ADMIN_ID, text=f"🔔 طلب إيداع جديد من `{user_id}`.")
+    elif data.startswith("confirm_dep_"):
+        dep_id = int(data.split("_")[2])
+        conn = sqlite3.connect("gram_max.db")
+        cursor = conn.cursor()
+        cursor.execute("SELECT user_id, amount FROM deposits WHERE id = ?", (dep_id,))
+        row = cursor.fetchone()
+        if row:
+            update_balance(row[0], row[1])
+            cursor.execute("UPDATE deposits SET status = 'completed' WHERE id = ?", (dep_id,))
+            conn.commit()
+            await context.bot.send_message(chat_id=row[0], text=f"🎉 تم تأكيد إيداعك رقم {dep_id}.")
+        conn.close()
+        await query.edit_message_text(f"✅ تم تأكيد الإيداع {dep_id}.")
+    elif data.startswith("reject_dep_"):
+        dep_id = int(data.split("_")[2])
+        conn = sqlite3.connect("gram_max.db")
+        cursor = conn.cursor()
+        cursor.execute("UPDATE deposits SET status = 'rejected' WHERE id = ?", (dep_id,))
+        conn.commit()
+        conn.close()
+        await query.edit_message_text(f"❌ تم رفض الإيداع {dep_id}.")
+    elif data.startswith("confirm_wd_"):
+        wd_id = int(data.split("_")[2])
+        conn = sqlite3.connect("gram_max.db")
+        cursor = conn.cursor()
+        cursor.execute("SELECT user_id, amount, fee FROM withdrawals WHERE id = ?", (wd_id,))
+        row = cursor.fetchone()
+        if row:
+            user_id, amount, fee = row
+            total_deduction = amount + fee
+            update_balance(user_id, -total_deduction)
+            cursor.execute("UPDATE withdrawals SET status = 'completed' WHERE id = ?", (wd_id,))
+            conn.commit()
+            await context.bot.send_message(chat_id=user_id, text=f"🎉 تم تأكيد سحبك رقم {wd_id}.\nتم خصم {amount} + {fee} رسوم.")
+        conn.close()
+        await query.edit_message_text(f"✅ تم تأكيد السحب {wd_id}.")
+    elif data.startswith("reject_wd_"):
+        wd_id = int(data.split("_")[2])
+        conn = sqlite3.connect("gram_max.db")
+        cursor = conn.cursor()
+        cursor.execute("UPDATE withdrawals SET status = 'rejected' WHERE id = ?", (wd_id,))
+        conn.commit()
+        conn.close()
+        await query.edit_message_text(f"❌ تم رفض السحب {wd_id}.")
 
-    <!-- صفحة السحب -->
-    <div id="page-withdraw" class="hidden">
-        <div class="section-title"><span>💵</span> السحب</div>
-        <div class="profile-card">
-            <span class="balance-label">الرصيد المتاح للسحب</span>
-            <div class="balance-amount">0.00 <span style="font-size:16px; color:#8b949e;">GRAM</span></div>
-            <button class="btn-deposit" style="margin-top:15px;" onclick="alert('يرجى التوجه إلى محادثة البوت لطلب السحب')">📤 طلب سحب</button>
-            <p style="text-align:center; color:#8b949e; font-size:12px; margin-top:10px;">يتم معالجة طلبات السحب يدوياً خلال 24 ساعة</p>
-        </div>
-    </div>
+def main():
+    init_db()
+    app = Application.builder().token(BOT_TOKEN).build()
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(CommandHandler("admin", admin_panel))
+    app.add_handler(CommandHandler("pending_deposits", pending_deposits))
+    app.add_handler(CommandHandler("pending_withdrawals", pending_withdrawals))
+    app.add_handler(MessageHandler(filters.StatusUpdate.WEB_APP_DATA, web_app_data_handler))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+    app.add_handler(CallbackQueryHandler(button_handler))
+    print("البوت يعمل الآن...")
+    app.run_polling()
 
-    <!-- صفحة الإعدادات -->
-    <div id="page-settings" class="hidden">
-        <div class="section-title"><span>⚙️</span> الإعدادات</div>
-        
-        <div class="settings-item" onclick="toggleLanguageMenu()">
-            <span>🌐 اللغة</span>
-            <span class="arrow" id="current-lang">العربية ›</span>
-        </div>
-        <div id="language-options" class="hidden" style="background: #0d1117; border-radius: 12px; padding: 10px; margin-bottom: 10px; border: 1px solid #f0b90b;">
-            <div class="settings-item" onclick="changeLanguage('ar')" style="margin-bottom:5px;">🇸🇦 العربية</div>
-            <div class="settings-item" onclick="changeLanguage('en')" style="margin-bottom:5px;">🇬🇧 English</div>
-            <div class="settings-item" onclick="changeLanguage('ru')" style="margin-bottom:0;">🇷🇺 Русский</div>
-        </div>
-
-        <div class="settings-item"><span>💰 الاستثمار</span><span class="arrow">›</span></div>
-        <div class="settings-item"><span>🔔 الإشعارات</span><span class="arrow" style="color:#00ff88;">مفعلة ›</span></div>
-        <div class="settings-item"><span>👤 الحساب</span><span class="arrow">›</span></div>
-        <div class="settings-item"><span>🆘 الدعم</span><span class="arrow">›</span></div>
-        <div class="settings-item"><span>ℹ️ معلومات البوت</span><span class="arrow">v1.0 ›</span></div>
-    </div>
-
-    <!-- شريط التنقل السفلي -->
-    <div class="nav-bottom">
-        <div class="nav-item active" onclick="showPage('home')"><span>🏠</span>الرئيسية</div>
-        <div class="nav-item" onclick="showPage('stats')"><span>📊</span>الإحصائيات</div>
-        <div class="nav-item" onclick="showPage('invite')"><span>👥</span>الإحالات</div>
-        <div class="nav-item" onclick="showPage('withdraw')"><span>💵</span>السحب</div>
-        <div class="nav-item" onclick="showPage('settings')"><span>⚙️</span>الإعدادات</div>
-    </div>
-
-    <script>
-        window.Telegram.WebApp.ready();
-        window.Telegram.WebApp.expand();
-
-        function showPage(pageId) {
-            document.querySelectorAll('[id^="page-"]').forEach(p => p.classList.add('hidden'));
-            document.getElementById('page-' + pageId).classList.remove('hidden');
-            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
-            event.currentTarget.classList.add('active');
-        }
-
-        function confirmDeposit() {
-            window.Telegram.WebApp.sendData(JSON.stringify({ action: "deposit_confirmed" }));
-            document.getElementById('status-message').innerText = "✅ تم استلام طلب الإيداع بنجاح!";
-        }
-
-        function toggleLanguageMenu() {
-            const menu = document.getElementById('language-options');
-            menu.classList.toggle('hidden');
-        }
-
-        function changeLanguage(lang) {
-            const currentLangText = { 'ar': 'العربية', 'en': 'English', 'ru': 'Русский' };
-            document.getElementById('current-lang').innerText = currentLangText[lang] + ' ›';
-            if (lang === 'en') {
-                alert("Language changed to English");
-            } else if (lang === 'ru') {
-                alert("Язык изменен на русский");
-            } else {
-                alert("تم تغيير اللغة إلى العربية");
-            }
-            document.getElementById('language-options').classList.add('hidden');
-        }
-
-        // دالة المشاركة
-        function shareLink() {
-            const refLink = document.getElementById('ref-link').innerText;
-            const shareText = "🚀 انضم إلى بوت GRAM MAX واستثمر أرباحك الآن!";
-            const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(refLink)}&text=${encodeURIComponent(shareText)}`;
-            window.Telegram.WebApp.openTelegramLink(shareUrl);
-        }
-
-        const user = window.Telegram.WebApp.initDataUnsafe.user;
-        if (user) {
-            document.getElementById('ref-link').innerText = `https://t.me/GramMax1_Bot?start=ref_${user.id}`;
-        }
-    </script>
-</body>
-</html>
+if __name__ == "__main__":
+    main()
