@@ -6,10 +6,11 @@ from telegram import Update, ReplyKeyboardMarkup, InlineKeyboardMarkup, InlineKe
 from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters, CallbackQueryHandler
 
 # ⚠️ الإعدادات
-BOT_TOKEN = "8724497887:AAE02WdKwwMWaXzXmRlsVUiYjPqjVfVR5LI"
+BOT_TOKEN = "8724497887:AAEmhudPVYMApgfakZT_T2X_r61dcTJuemc"
 ADMIN_ID = 8183652969
 WALLET_ADDRESS = "UQBrfxfxzB5-op8FGLs-BxnZg0Bv0CveJ8VJbC3Xc9pVXZ5X"
 BOT_USERNAME = "GramMax1_Bot"
+SUPPORT_USERNAME = "SowzzFF"
 
 # الحدود الدنيا والرسوم
 MIN_DEPOSIT = 1.0
@@ -25,6 +26,7 @@ def init_db():
     cursor.execute("CREATE TABLE IF NOT EXISTS users (user_id INTEGER PRIMARY KEY, balance REAL DEFAULT 0.0, referrals INTEGER DEFAULT 0, referrer_id INTEGER)")
     cursor.execute("CREATE TABLE IF NOT EXISTS deposits (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, amount REAL, status TEXT DEFAULT 'pending', created_at TEXT)")
     cursor.execute("CREATE TABLE IF NOT EXISTS withdrawals (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, amount REAL, fee REAL, wallet TEXT, status TEXT DEFAULT 'pending', created_at TEXT)")
+    cursor.execute("CREATE TABLE IF NOT EXISTS settings (user_id INTEGER PRIMARY KEY, language TEXT DEFAULT 'ar', notifications INTEGER DEFAULT 1)")
     conn.commit()
     conn.close()
 
@@ -37,6 +39,18 @@ def get_user(user_id):
         cursor.execute("INSERT INTO users (user_id, balance, referrals) VALUES (?, 0, 0)", (user_id,))
         conn.commit()
         result = (0, 0)
+    conn.close()
+    return result
+
+def get_settings(user_id):
+    conn = sqlite3.connect("gram_max.db")
+    cursor = conn.cursor()
+    cursor.execute("SELECT language, notifications FROM settings WHERE user_id = ?", (user_id,))
+    result = cursor.fetchone()
+    if not result:
+        cursor.execute("INSERT INTO settings (user_id) VALUES (?)", (user_id,))
+        conn.commit()
+        result = ('ar', 1)
     conn.close()
     return result
 
@@ -81,6 +95,20 @@ def add_referral(user_id, referrer_id):
     conn.commit()
     conn.close()
 
+def update_language(user_id, lang):
+    conn = sqlite3.connect("gram_max.db")
+    cursor = conn.cursor()
+    cursor.execute("UPDATE settings SET language = ? WHERE user_id = ?", (lang, user_id))
+    conn.commit()
+    conn.close()
+
+def update_notifications(user_id, enabled):
+    conn = sqlite3.connect("gram_max.db")
+    cursor = conn.cursor()
+    cursor.execute("UPDATE settings SET notifications = ? WHERE user_id = ?", (enabled, user_id))
+    conn.commit()
+    conn.close()
+
 # ==================== أوامر المستخدم ====================
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
@@ -93,6 +121,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         except:
             pass
     get_user(user_id)
+    get_settings(user_id)
     keyboard = [
         ["💰 الاستثمار", "👥 دعوة الأصدقاء"],
         ["📊 المستويات", "📈 الإحصائيات"],
@@ -117,6 +146,10 @@ async def referral_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     balance, referrals = get_user(user_id)
     link = f"https://t.me/{BOT_USERNAME}?start=ref_{user_id}"
     text = f"👥 **دعوة الأصدقاء**\n\nرابط الإحالة الخاص بك:\n`{link}`\n\nعدد المدعوين: {referrals}\nأرباح الإحالات: 5%"
+    await update.message.reply_text(text, parse_mode='Markdown')
+
+async def support_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    text = f"🆘 **الدعم المباشر**\n\nللتواصل مع الدعم:\n@{SUPPORT_USERNAME}"
     await update.message.reply_text(text, parse_mode='Markdown')
 
 # ==================== قسم السحب ====================
@@ -195,33 +228,33 @@ async def pending_withdrawals(update: Update, context: ContextTypes.DEFAULT_TYPE
 # ==================== معالجة الأزرار ====================
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text
-    if text == "💰 الاستثمار":
-        await invest_menu(update, context)
-    elif text == "💳 الإيداع":
-        await deposit_menu(update, context)
-    elif text == "👥 دعوة الأصدقاء":
-        await referral_menu(update, context)
-    elif text == "💵 السحب":
-        await withdraw_start(update, context)
-    elif context.user_data.get('state') == "WAITING_AMOUNT":
-        await withdraw_amount(update, context)
-    elif context.user_data.get('state') == "WAITING_WALLET":
-        await withdraw_wallet(update, context)
-    else:
-        await update.message.reply_text("هذا القسم قيد التطوير.")
+    if text == "💰 الاستثمار": await invest_menu(update, context)
+    elif text == "💳 الإيداع": await deposit_menu(update, context)
+    elif text == "👥 دعوة الأصدقاء": await referral_menu(update, context)
+    elif text == "🆘 الدعم": await support_menu(update, context)
+    elif text == "💵 السحب": await withdraw_start(update, context)
+    elif context.user_data.get('state') == "WAITING_AMOUNT": await withdraw_amount(update, context)
+    elif context.user_data.get('state') == "WAITING_WALLET": await withdraw_wallet(update, context)
+    else: await update.message.reply_text("هذا القسم قيد التطوير.")
 
 async def web_app_data_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     data = update.effective_message.web_app_data.data
     user_id = update.effective_user.id
     
-    if "deposit_confirmed" in data:
-        create_deposit(user_id, MIN_DEPOSIT)
-        await update.message.reply_text("✅ تم استلام طلب الإيداع! سيتم مراجعته.")
-        await context.bot.send_message(chat_id=ADMIN_ID, text=f"🔔 طلب إيداع جديد من `{user_id}`. المبلغ: {MIN_DEPOSIT}")
-    
-    elif "withdraw_request" in data:
-        try:
-            req_data = json.loads(data)
+    try:
+        req_data = json.loads(data)
+        action = req_data.get('action', '')
+        
+        if action == "deposit_confirmed":
+            amount = float(req_data.get('amount', MIN_DEPOSIT))
+            if amount < MIN_DEPOSIT:
+                await update.message.reply_text(f"❌ الحد الأدنى للإيداع هو {MIN_DEPOSIT} GRAM.")
+                return
+            create_deposit(user_id, amount)
+            await update.message.reply_text(f"✅ تم استلام طلب الإيداع بمبلغ {amount} GRAM. سيتم مراجعته.")
+            await context.bot.send_message(chat_id=ADMIN_ID, text=f"🔔 طلب إيداع جديد من `{user_id}` بمبلغ {amount}")
+        
+        elif action == "withdraw_request":
             amount = float(req_data.get('amount', 0))
             wallet = req_data.get('wallet', '')
             
@@ -235,10 +268,19 @@ async def web_app_data_handler(update: Update, context: ContextTypes.DEFAULT_TYP
             
             fee = amount * (WITHDRAWAL_FEE_PERCENT / 100)
             withdraw_id = create_withdrawal(user_id, amount, fee, wallet)
-            await update.message.reply_text(f"✅ تم استلام طلب السحب رقم {withdraw_id}.\nسيتم مراجعته من قبل الإدارة.")
-            await context.bot.send_message(chat_id=ADMIN_ID, text=f"🔔 طلب سحب جديد رقم {withdraw_id}\n👤 المستخدم: `{user_id}`\n💰 المبلغ: {amount}\n💸 الرسوم: {fee}\n🏦 المحفظة: `{wallet}`", parse_mode='Markdown')
-        except Exception as e:
-            print(f"Error: {e}")
+            await update.message.reply_text(f"✅ تم استلام طلب السحب رقم {withdraw_id}.")
+            await context.bot.send_message(chat_id=ADMIN_ID, text=f"🔔 طلب سحب جديد رقم {withdraw_id}\n👤 `{user_id}`\n💰 {amount}\n💸 {fee}\n🏦 `{wallet}`", parse_mode='Markdown')
+        
+        elif action == "change_lang":
+            lang = req_data.get('lang', 'ar')
+            update_language(user_id, lang)
+        
+        elif action == "toggle_notifications":
+            enabled = 1 if req_data.get('enabled') else 0
+            update_notifications(user_id, enabled)
+    
+    except Exception as e:
+        print(f"Error in web_app_data: {e}")
 
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
