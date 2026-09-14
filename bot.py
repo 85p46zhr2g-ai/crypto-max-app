@@ -23,14 +23,11 @@ from telegram.ext import (
 
 # ============================================================
 # GRAM MAX
-# Bot.py - النسخة المعدلة
 # ============================================================
 
-# ============================================================
-# الإعدادات الأساسية
-# ============================================================
-
-BOT_TOKEN = "8724497887:AAE02WdKwwMWaXzXmRlsVUiYjPqjVfVR5LI"
+# مهم:
+# ضع التوكن الجديد في Replit Secrets باسم BOT_TOKEN
+BOT_TOKEN = os.getenv("8724497887:AAE02WdKwwMWaXzXmRlsVUiYjPqjVfVR5LI")
 
 ADMIN_ID = 8183652969
 
@@ -57,6 +54,10 @@ BOT_ADD_PRICE_GRAM = 0.30
 
 MIN_TASKS_FOR_WITHDRAWAL = 5
 WITHDRAWAL_FEE_PERCENT = 1.0
+
+REFERRAL_PERCENT = 5.0
+
+DB_FILE = "gram_max.db"
 
 # ============================================================
 # الاستثمار
@@ -95,14 +96,17 @@ INVESTMENT_LEVELS = {
     },
 }
 
-DB_FILE = "gram_max.db"
+# ============================================================
+# Logging
+# ============================================================
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     level=logging.INFO,
 )
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("GRAM_MAX")
+
 
 # ============================================================
 # Database
@@ -112,14 +116,13 @@ def db():
     connection = sqlite3.connect(
         DB_FILE,
         check_same_thread=False,
+        timeout=30,
     )
+
     connection.row_factory = sqlite3.Row
+
     return connection
 
-
-# ============================================================
-# Backup
-# ============================================================
 
 def backup_database():
 
@@ -127,6 +130,7 @@ def backup_database():
         return
 
     try:
+
         backup_name = (
             "gram_max_backup_"
             + datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -235,7 +239,7 @@ def init_db():
             user_id INTEGER NOT NULL,
             amount REAL NOT NULL,
             wallet_address TEXT,
-            tx_hash TEXT,
+            tx_hash TEXT UNIQUE,
             status TEXT DEFAULT 'pending',
             created_at TEXT,
             processed_at TEXT,
@@ -303,7 +307,7 @@ def init_db():
     )
 
     # --------------------------------------------------------
-    # Migrations آمنة
+    # Migrations
     # --------------------------------------------------------
 
     add_column_if_missing(
@@ -340,8 +344,6 @@ def init_db():
         "admin_note",
         "TEXT",
     )
-
-    connection.commit()
 
     defaults = {
         "channel_url": DEFAULT_CHANNEL_URL,
@@ -494,15 +496,26 @@ def ensure_user(
 
         safe_referrer = None
 
-        if (
-            referrer_id
-            and int(referrer_id) != int(user_id)
-            and get_user(referrer_id)
-        ):
+        if referrer_id:
 
-            safe_referrer = int(
-                referrer_id
-            )
+            try:
+                referrer_id = int(referrer_id)
+
+                if (
+                    referrer_id != int(user_id)
+                    and connection.execute(
+                        """
+                        SELECT user_id
+                        FROM users
+                        WHERE user_id = ?
+                        """,
+                        (referrer_id,),
+                    ).fetchone()
+                ):
+                    safe_referrer = referrer_id
+
+            except Exception:
+                safe_referrer = None
 
         connection.execute(
             """
@@ -609,10 +622,19 @@ def valid_wallet(address):
     ):
         return False
 
-    if len(address) < 40:
+    if len(address) != 48:
         return False
 
-    return True
+    allowed = (
+        "abcdefghijklmnopqrstuvwxyz"
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+        "0123456789_-"
+    )
+
+    return all(
+        character in allowed
+        for character in address
+    )
 
 
 def save_wallet(
@@ -632,6 +654,23 @@ def save_wallet(
             address,
             user_id,
         ),
+    )
+
+    connection.commit()
+    connection.close()
+
+
+def delete_wallet(user_id):
+
+    connection = db()
+
+    connection.execute(
+        """
+        UPDATE users
+        SET wallet_address = NULL
+        WHERE user_id = ?
+        """,
+        (user_id,),
     )
 
     connection.commit()
@@ -719,18 +758,23 @@ def extract_channel_username(url):
     if not url:
         return None
 
-    url = url.strip()
-
     try:
 
-        parsed = urlparse(url)
+        parsed = urlparse(
+            url.strip()
+        )
 
         host = (
             parsed.netloc
             or ""
         ).lower()
 
-        if "t.me" not in host:
+        host = host.split(":")[0]
+
+        if host not in (
+            "t.me",
+            "www.t.me",
+        ):
             return None
 
         path = parsed.path.strip("/")
@@ -738,9 +782,6 @@ def extract_channel_username(url):
         if not path:
             return None
 
-        # روابط عامة مثل:
-        # https://t.me/CRYBTO_MAX_1
-        # https://t.me/username
         if path.startswith("+"):
             return None
 
@@ -767,8 +808,8 @@ async def check_channel_membership(
     if not username:
 
         return (
-            False,
-            "لا يمكن تحديد القناة من الرابط.",
+            None,
+            "❌ لا يمكن تحديد القناة من الرابط.",
         )
 
     try:
@@ -785,6 +826,7 @@ async def check_channel_membership(
             "administrator",
             "member",
         ):
+
             return True, None
 
         if (
@@ -795,23 +837,24 @@ async def check_channel_membership(
                 False,
             )
         ):
+
             return True, None
 
         return (
             False,
-            "لم يتم العثور على اشتراكك.",
+            "❌ لم يتم العثور على اشتراكك.",
         )
 
     except Exception as e:
 
         logger.exception(
-            "Telegram membership verification failed: %s",
+            "Membership check error: %s",
             e,
         )
 
         return (
             None,
-            "تعذر التحقق من الاشتراك حالياً. تأكد أن البوت موجود في القناة ولديه الصلاحية المطلوبة ثم حاول مرة أخرى.",
+            "⚠️ تعذر التحقق حالياً. تأكد أن البوت موجود في القناة ولديه الصلاحية المطلوبة.",
         )
 
 
@@ -833,7 +876,7 @@ async def is_user_subscribed_to_official_channel(
 
 
 # ============================================================
-# الاستثمار
+# Investment
 # ============================================================
 
 def get_unlocked_level(user_id):
@@ -877,9 +920,7 @@ def get_unlocked_level(user_id):
     )
 
 
-def process_finished_investments(
-    user_id,
-):
+def process_finished_investments(user_id):
 
     connection = db()
 
@@ -906,7 +947,6 @@ def process_finished_investments(
             )
 
         except Exception:
-
             continue
 
         if now >= finish_time:
@@ -978,9 +1018,11 @@ def create_investment(
 
     if level not in INVESTMENT_LEVELS:
 
-        return False, "المستوى غير صحيح."
+        return (
+            False,
+            "❌ المستوى غير صحيح.",
+        )
 
-    # تحديث الاستثمارات المنتهية أولاً
     process_finished_investments(
         user_id
     )
@@ -991,7 +1033,7 @@ def create_investment(
 
         return (
             False,
-            "⚠️ لديك استثمار نشط حالياً. انتظر انتهاءه قبل بدء استثمار آخر.",
+            "⚠️ لديك استثمار نشط حالياً.",
         )
 
     unlocked = get_unlocked_level(
@@ -1002,7 +1044,7 @@ def create_investment(
 
         return (
             False,
-            f"🔒 المستوى {level} مغلق حالياً. أكمل المستوى السابق أولاً.",
+            f"🔒 المستوى {level} مغلق حالياً.",
         )
 
     data = INVESTMENT_LEVELS[level]
@@ -1011,28 +1053,18 @@ def create_investment(
         data["amount"]
     )
 
-    if (
-        abs(
-            float(amount)
-            - expected_amount
-        )
-        > 0.000001
-    ):
+    try:
+        amount = float(amount)
+    except Exception:
+        return False, "❌ مبلغ الاستثمار غير صحيح."
+
+    if abs(
+        amount - expected_amount
+    ) > 0.000001:
 
         return (
             False,
-            "مبلغ الاستثمار غير صحيح.",
-        )
-
-    balance = get_balance(
-        user_id
-    )
-
-    if balance < expected_amount:
-
-        return (
-            False,
-            "رصيدك غير كافٍ.",
+            "❌ مبلغ الاستثمار غير صحيح.",
         )
 
     return_amount = float(
@@ -1052,97 +1084,111 @@ def create_investment(
 
     connection = db()
 
-    # حماية من تشغيل استثمارين بنفس الوقت
-    active = connection.execute(
-        """
-        SELECT id
-        FROM investments
-        WHERE user_id = ?
-        AND status = 'active'
-        LIMIT 1
-        """,
-        (user_id,),
-    ).fetchone()
+    try:
 
-    if active:
+        active = connection.execute(
+            """
+            SELECT id
+            FROM investments
+            WHERE user_id = ?
+            AND status = 'active'
+            LIMIT 1
+            """,
+            (user_id,),
+        ).fetchone()
 
-        connection.close()
+        if active:
 
-        return (
-            False,
-            "⚠️ لديك استثمار نشط حالياً.",
+            connection.close()
+
+            return (
+                False,
+                "⚠️ لديك استثمار نشط حالياً.",
+            )
+
+        cursor = connection.execute(
+            """
+            UPDATE users
+            SET balance = balance - ?
+            WHERE user_id = ?
+            AND balance >= ?
+            """,
+            (
+                expected_amount,
+                user_id,
+                expected_amount,
+            ),
         )
 
-    cursor = connection.execute(
-        """
-        UPDATE users
-        SET balance = balance - ?
-        WHERE user_id = ?
-        AND balance >= ?
-        """,
-        (
-            expected_amount,
-            user_id,
-            expected_amount,
-        ),
-    )
+        if cursor.rowcount != 1:
 
-    if cursor.rowcount != 1:
+            connection.rollback()
+            connection.close()
+
+            return (
+                False,
+                "❌ رصيدك غير كافٍ.",
+            )
+
+        connection.execute(
+            """
+            INSERT INTO investments
+            (
+                user_id,
+                level,
+                amount,
+                return_amount,
+                started_at,
+                finish_at,
+                status
+            )
+            VALUES (?, ?, ?, ?, ?, ?, 'active')
+            """,
+            (
+                user_id,
+                level,
+                expected_amount,
+                return_amount,
+                started.isoformat(),
+                finish.isoformat(),
+            ),
+        )
+
+        connection.commit()
+
+    except Exception:
 
         connection.rollback()
         connection.close()
 
+        logger.exception(
+            "Investment error"
+        )
+
         return (
             False,
-            "تعذر خصم مبلغ الاستثمار.",
+            "❌ حدث خطأ أثناء تشغيل الاستثمار.",
         )
 
-    connection.execute(
-        """
-        INSERT INTO investments
-        (
-            user_id,
-            level,
-            amount,
-            return_amount,
-            started_at,
-            finish_at,
-            status
-        )
-        VALUES (?, ?, ?, ?, ?, ?, 'active')
-        """,
-        (
-            user_id,
-            level,
-            expected_amount,
-            return_amount,
-            started.isoformat(),
-            finish.isoformat(),
-        ),
-    )
-
-    connection.commit()
     connection.close()
 
     return (
         True,
         (
-            f"تم تشغيل الاستثمار.\n"
-            f"المستوى: {level}\n"
-            f"المبلغ: {expected_amount:.2f} GRAM\n"
-            f"العائد عند الانتهاء: {return_amount:.2f} GRAM\n"
-            f"المدة: {hours} ساعة"
+            f"✅ تم تشغيل الاستثمار.\n\n"
+            f"📈 المستوى: {level}\n"
+            f"💰 المبلغ: {expected_amount:.2f} GRAM\n"
+            f"🎁 العائد: {return_amount:.2f} GRAM\n"
+            f"⏱️ المدة: {hours} ساعة"
         ),
     )
 
 
 # ============================================================
-# Welcome / Subscription Gate
+# Welcome
 # ============================================================
 
-def subscription_keyboard(
-    channel_url,
-):
+def subscription_keyboard(channel_url):
 
     return InlineKeyboardMarkup(
         [
@@ -1182,27 +1228,35 @@ async def send_subscription_required(
         "🔐 قبل الدخول إلى البوت يجب الاشتراك "
         "في القناة الرسمية.\n\n"
         "📢 اشترك بالقناة ثم اضغط:\n"
-        "«✅ تحقق من الاشتراك»\n\n"
-        "بعد نجاح التحقق سيظهر لك زر فتح البوت."
+        "«✅ تحقق من الاشتراك»"
     )
 
     keyboard = subscription_keyboard(
         channel_url
     )
 
+    target = (
+        update.callback_query.message
+        if update.callback_query
+        else update.message
+    )
+
+    if not target:
+        return
+
     try:
 
         if update.callback_query:
 
-            await update.callback_query.message.reply_photo(
+            await target.reply_photo(
                 photo=image,
                 caption=text,
                 reply_markup=keyboard,
             )
 
-        elif update.message:
+        else:
 
-            await update.message.reply_photo(
+            await target.reply_photo(
                 photo=image,
                 caption=text,
                 reply_markup=keyboard,
@@ -1210,18 +1264,10 @@ async def send_subscription_required(
 
     except Exception:
 
-        target = (
-            update.callback_query.message
-            if update.callback_query
-            else update.message
+        await target.reply_text(
+            text,
+            reply_markup=keyboard,
         )
-
-        if target:
-
-            await target.reply_text(
-                text,
-                reply_markup=keyboard,
-            )
 
 
 async def send_welcome(
@@ -1252,10 +1298,6 @@ async def send_welcome(
         user.id,
         referrer_id,
     )
-
-    # --------------------------------------------------------
-    # فحص الاشتراك بالقناة الرسمية
-    # --------------------------------------------------------
 
     subscribed, error = (
         await is_user_subscribed_to_official_channel(
@@ -1300,7 +1342,7 @@ async def send_welcome(
             ],
             [
                 InlineKeyboardButton(
-                    "📢 القناة الرسمية",
+                    "🏢 القناة الرسمية",
                     url=channel_url,
                 ),
                 InlineKeyboardButton(
@@ -1316,37 +1358,27 @@ async def send_welcome(
         f"👤 {user.full_name}\n\n"
         "💰 نفّذ المهام واحصل على المكافآت.\n"
         "📈 استخدم نظام الاستثمار.\n"
-        "💳 اربط محفظتك وأدر عمليات السحب.\n\n"
+        "💳 اربط محفظتك وأدر السحب.\n\n"
         "🚀 اضغط «فتح البوت» للبدء."
     )
 
-    try:
+    target = (
+        update.callback_query.message
+        if update.callback_query
+        else update.message
+    )
 
-        if update.callback_query:
+    if target:
 
-            await update.callback_query.message.reply_photo(
+        try:
+
+            await target.reply_photo(
                 photo=image,
                 caption=text,
                 reply_markup=keyboard,
             )
 
-        else:
-
-            await update.message.reply_photo(
-                photo=image,
-                caption=text,
-                reply_markup=keyboard,
-            )
-
-    except Exception:
-
-        target = (
-            update.callback_query.message
-            if update.callback_query
-            else update.message
-        )
-
-        if target:
+        except Exception:
 
             await target.reply_text(
                 text,
@@ -1431,7 +1463,7 @@ async def admin_command(
 
     treasury = get_treasury_balance()
 
-    text = (
+    await update.message.reply_text(
         "🛠 لوحة الإدارة\n\n"
         "/user USER_ID\n"
         "/add_balance USER_ID AMOUNT\n"
@@ -1439,25 +1471,17 @@ async def admin_command(
         "/set_channel LINK\n"
         "/set_welcome_image URL\n"
         "/set_bot_name NAME\n"
-        "/treasury\n\n"
+        "/treasury\n"
+        "/set_treasury AMOUNT\n\n"
         f"🏦 محفظة المشروع:\n"
         f"{get_setting('deposit_wallet')}\n\n"
-        f"💰 رصيد الإدارة:\n"
+        f"💰 خزينة المشروع:\n"
         f"{treasury:.8f} GRAM\n\n"
-        f"🎯 شرط السحب:\n"
-        f"{MIN_TASKS_FOR_WITHDRAWAL} مهام\n\n"
-        f"💸 رسوم السحب:\n"
-        f"{WITHDRAWAL_FEE_PERCENT}%"
+        f"🎯 شرط السحب: {MIN_TASKS_FOR_WITHDRAWAL} مهام\n"
+        f"💸 رسوم السحب: {WITHDRAWAL_FEE_PERCENT}%\n"
+        f"👥 الإحالة: {REFERRAL_PERCENT}%"
     )
 
-    await update.message.reply_text(
-        text
-    )
-
-
-# ============================================================
-# Treasury
-# ============================================================
 
 async def treasury_command(
     update: Update,
@@ -1467,17 +1491,14 @@ async def treasury_command(
     if update.effective_user.id != ADMIN_ID:
         return
 
-    balance = get_treasury_balance()
-
     await update.message.reply_text(
-        "🏦 رصيد الإدارة\n\n"
-        f"💰 {balance:.8f} GRAM\n\n"
-        "هذا الرصيد منفصل عن أرصدة المستخدمين."
+        "🏦 خزينة GRAM MAX\n\n"
+        f"💰 {get_treasury_balance():.8f} GRAM"
     )
 
 
 # ============================================================
-# User
+# User Admin Command
 # ============================================================
 
 async def user_command(
@@ -1501,9 +1522,11 @@ async def user_command(
             context.args[0]
         )
     except Exception:
+
         await update.message.reply_text(
             "❌ USER_ID غير صحيح."
         )
+
         return
 
     user = get_user(
@@ -1518,36 +1541,20 @@ async def user_command(
 
         return
 
-    count = completed_task_count(
-        user_id
-    )
-
-    unlocked = get_unlocked_level(
-        user_id
-    )
-
-    text = (
+    await update.message.reply_text(
         "👤 معلومات المستخدم\n\n"
         f"🆔 ID: {user_id}\n"
-        f"💰 الرصيد: "
-        f"{float(user['balance'] or 0):.8f} GRAM\n"
-        f"👥 الإحالات: "
-        f"{int(user['referrals'] or 0)}\n"
-        f"🎯 المهام: {count}\n"
-        f"📈 آخر مستوى مفتوح: {unlocked}\n"
-        f"👛 المحفظة: "
-        f"{user['wallet_address'] or 'غير مربوطة'}\n"
-        f"🌐 اللغة: "
-        f"{user['language'] or 'ar'}"
-    )
-
-    await update.message.reply_text(
-        text
+        f"💰 الرصيد: {float(user['balance'] or 0):.8f} GRAM\n"
+        f"👥 الإحالات: {int(user['referrals'] or 0)}\n"
+        f"🎯 المهام: {completed_task_count(user_id)}\n"
+        f"📈 المستوى المفتوح: {get_unlocked_level(user_id)}\n"
+        f"👛 المحفظة: {user['wallet_address'] or 'غير مربوطة'}\n"
+        f"🌐 اللغة: {user['language'] or 'ar'}"
     )
 
 
 # ============================================================
-# Add Balance
+# Balance Admin
 # ============================================================
 
 async def add_balance_command(
@@ -1602,13 +1609,9 @@ async def add_balance_command(
     )
 
     await update.message.reply_text(
-        f"✅ تمت إضافة {amount:.8f} GRAM للمستخدم {user_id}."
+        f"✅ تمت إضافة {amount:.8f} GRAM."
     )
 
-
-# ============================================================
-# Remove Balance
-# ============================================================
 
 async def remove_balance_command(
     update: Update,
@@ -1652,22 +1655,35 @@ async def remove_balance_command(
 
         return
 
-    balance = get_balance(
-        user_id
+    connection = db()
+
+    cursor = connection.execute(
+        """
+        UPDATE users
+        SET balance = balance - ?
+        WHERE user_id = ?
+        AND balance >= ?
+        """,
+        (
+            amount,
+            user_id,
+            amount,
+        ),
     )
 
-    if balance < amount:
+    if cursor.rowcount != 1:
+
+        connection.rollback()
+        connection.close()
 
         await update.message.reply_text(
-            "❌ رصيد المستخدم غير كافٍ."
+            "❌ الرصيد غير كافٍ."
         )
 
         return
 
-    update_balance(
-        user_id,
-        -amount,
-    )
+    connection.commit()
+    connection.close()
 
     await update.message.reply_text(
         f"✅ تم خصم {amount:.8f} GRAM."
@@ -1675,7 +1691,7 @@ async def remove_balance_command(
 
 
 # ============================================================
-# Set Channel
+# Settings Admin
 # ============================================================
 
 async def set_channel_command(
@@ -1689,7 +1705,7 @@ async def set_channel_command(
     if not context.args:
 
         await update.message.reply_text(
-            "الاستخدام:\n/set_channel https://t.me/..."
+            "الاستخدام:\n/set_channel https://t.me/channel"
         )
 
         return
@@ -1699,7 +1715,7 @@ async def set_channel_command(
     if not extract_channel_username(url):
 
         await update.message.reply_text(
-            "❌ رابط القناة يجب أن يكون قناة عامة مثل https://t.me/channel"
+            "❌ رابط القناة غير صحيح."
         )
 
         return
@@ -1714,10 +1730,6 @@ async def set_channel_command(
     )
 
 
-# ============================================================
-# Set Welcome Image
-# ============================================================
-
 async def set_welcome_image_command(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
@@ -1727,28 +1739,20 @@ async def set_welcome_image_command(
         return
 
     if not context.args:
-
         await update.message.reply_text(
-            "الاستخدام:\n/set_welcome_image IMAGE_URL"
+            "الاستخدام:\n/set_welcome_image URL"
         )
-
         return
-
-    image_url = context.args[0]
 
     set_setting(
         "welcome_image",
-        image_url,
+        context.args[0],
     )
 
     await update.message.reply_text(
         "✅ تم تحديث صورة الترحيب."
     )
 
-
-# ============================================================
-# Set Bot Name
-# ============================================================
 
 async def set_bot_name_command(
     update: Update,
@@ -1759,11 +1763,9 @@ async def set_bot_name_command(
         return
 
     if not context.args:
-
         await update.message.reply_text(
             "الاستخدام:\n/set_bot_name NAME"
         )
-
         return
 
     name = " ".join(
@@ -1779,10 +1781,6 @@ async def set_bot_name_command(
         "✅ تم تحديث اسم البوت."
     )
 
-
-# ============================================================
-# Set Treasury
-# ============================================================
 
 async def set_treasury_command(
     update: Update,
@@ -1801,11 +1799,9 @@ async def set_treasury_command(
         return
 
     try:
-
         amount = float(
             context.args[0]
         )
-
     except Exception:
 
         await update.message.reply_text(
@@ -1828,12 +1824,160 @@ async def set_treasury_command(
     )
 
     await update.message.reply_text(
-        f"✅ رصيد الإدارة أصبح {amount:.8f} GRAM."
+        f"✅ الخزينة أصبحت {amount:.8f} GRAM."
     )
 
 
 # ============================================================
-# Mini App
+# Mini App - GET DATA
+# ============================================================
+
+async def send_mini_data(
+    update,
+    user,
+):
+
+    process_finished_investments(
+        user.id
+    )
+
+    current = get_user(
+        user.id
+    )
+
+    tasks = completed_tasks(
+        user.id
+    )
+
+    active_investment = None
+
+    connection = db()
+
+    active_row = connection.execute(
+        """
+        SELECT *
+        FROM investments
+        WHERE user_id = ?
+        AND status = 'active'
+        ORDER BY id DESC
+        LIMIT 1
+        """,
+        (user.id,),
+    ).fetchone()
+
+    connection.close()
+
+    if active_row:
+
+        active_investment = {
+            "id": active_row["id"],
+            "level": active_row["level"],
+            "amount": active_row["amount"],
+            "return_amount": active_row["return_amount"],
+            "started_at": active_row["started_at"],
+            "finish_at": active_row["finish_at"],
+        }
+
+    subscribed, subscription_error = (
+        await is_user_subscribed_to_official_channel(
+            update.get_bot(),
+            user.id,
+        )
+    )
+
+    result = {
+
+        "type": "data",
+
+        "balance": float(
+            current["balance"] or 0
+        ),
+
+        "referrals": int(
+            current["referrals"] or 0
+        ),
+
+        "wallet": current[
+            "wallet_address"
+        ] or "",
+
+        "language": current[
+            "language"
+        ] or "ar",
+
+        "telegram_user": {
+            "id": user.id,
+            "first_name": user.first_name or "",
+            "last_name": user.last_name or "",
+            "full_name": user.full_name or "",
+            "username": user.username or "",
+            "photo_url": "",
+        },
+
+        "completed_tasks": tasks,
+
+        "completed_task_count": len(tasks),
+
+        "min_tasks_for_withdrawal":
+            MIN_TASKS_FOR_WITHDRAWAL,
+
+        "withdrawal_fee_percent":
+            WITHDRAWAL_FEE_PERCENT,
+
+        "referral_percent":
+            REFERRAL_PERCENT,
+
+        "unlocked_investment_level":
+            get_unlocked_level(user.id),
+
+        "investment_levels":
+            INVESTMENT_LEVELS,
+
+        "active_investment":
+            active_investment,
+
+        "official_channel_subscribed":
+            subscribed is True,
+
+        "subscription_check_error":
+            subscription_error,
+
+        "project_deposit_wallet":
+            get_setting(
+                "deposit_wallet",
+                PROJECT_DEPOSIT_WALLET,
+            ),
+
+        "support_url":
+            get_setting(
+                "support_url",
+                SUPPORT_URL,
+            ),
+
+        "channel_url":
+            get_setting(
+                "channel_url",
+                DEFAULT_CHANNEL_URL,
+            ),
+
+        "bot_name":
+            get_setting(
+                "bot_name",
+                DEFAULT_BOT_NAME,
+            ),
+    }
+
+    await update.message.reply_text(
+        "DATA:"
+        + json.dumps(
+            result,
+            ensure_ascii=False,
+        )
+    )
+
+
+# ============================================================
+# Mini App Handler
 # ============================================================
 
 async def web_app_data_handler(
@@ -1871,7 +2015,7 @@ async def web_app_data_handler(
     )
 
     # --------------------------------------------------------
-    # فحص الاشتراك قبل أي وظيفة في Mini App
+    # الاشتراك الرسمي
     # --------------------------------------------------------
 
     subscribed, subscription_error = (
@@ -1881,8 +2025,6 @@ async def web_app_data_handler(
         )
     )
 
-    # get_data يسمح بإرجاع حالة الاشتراك للواجهة
-    # أما العمليات الأخرى فلا تعمل بدون اشتراك.
     if action != "get_data":
 
         if subscribed is not True:
@@ -1896,158 +2038,32 @@ async def web_app_data_handler(
             else:
 
                 await update.message.reply_text(
-                    "⚠️ تعذر التحقق من اشتراكك حالياً. حاول مرة أخرى."
+                    "⚠️ تعذر التحقق من الاشتراك حالياً."
                 )
 
             return
 
-    # ========================================================
+    # --------------------------------------------------------
     # GET DATA
-    # ========================================================
+    # --------------------------------------------------------
 
     if action == "get_data":
 
-        process_finished_investments(
-            user.id
-        )
-
-        current = get_user(
-            user.id
-        )
-
-        tasks = completed_tasks(
-            user.id
-        )
-
-        unlocked_level = get_unlocked_level(
-            user.id
-        )
-
-        active_investment = None
-
-        connection = db()
-
-        active_row = connection.execute(
-            """
-            SELECT *
-            FROM investments
-            WHERE user_id = ?
-            AND status = 'active'
-            ORDER BY id DESC
-            LIMIT 1
-            """,
-            (user.id,),
-        ).fetchone()
-
-        connection.close()
-
-        if active_row:
-
-            active_investment = {
-                "id": active_row["id"],
-                "level": active_row["level"],
-                "amount": active_row["amount"],
-                "return_amount": active_row["return_amount"],
-                "started_at": active_row["started_at"],
-                "finish_at": active_row["finish_at"],
-            }
-
-        result = {
-
-            "type": "data",
-
-            "balance":
-                float(
-                    current["balance"] or 0
-                ),
-
-            "referrals":
-                int(
-                    current["referrals"] or 0
-                ),
-
-            "wallet":
-                current["wallet_address"] or "",
-
-            "language":
-                current["language"] or "ar",
-
-            "telegram_user": {
-                "id": user.id,
-                "first_name": user.first_name or "",
-                "last_name": user.last_name or "",
-                "full_name": user.full_name or "",
-                "username": user.username or "",
-                "photo_url": "",
-            },
-
-            "completed_tasks":
-                tasks,
-
-            "completed_task_count":
-                len(tasks),
-
-            "min_tasks_for_withdrawal":
-                MIN_TASKS_FOR_WITHDRAWAL,
-
-            "withdrawal_fee_percent":
-                WITHDRAWAL_FEE_PERCENT,
-
-            "unlocked_investment_level":
-                unlocked_level,
-
-            "investment_levels":
-                INVESTMENT_LEVELS,
-
-            "active_investment":
-                active_investment,
-
-            "official_channel_subscribed":
-                subscribed is True,
-
-            "subscription_check_error":
-                subscription_error,
-
-            "project_deposit_wallet":
-                get_setting(
-                    "deposit_wallet",
-                    PROJECT_DEPOSIT_WALLET,
-                ),
-
-            "support_url":
-                get_setting(
-                    "support_url",
-                    SUPPORT_URL,
-                ),
-
-            "channel_url":
-                get_setting(
-                    "channel_url",
-                    DEFAULT_CHANNEL_URL,
-                ),
-
-            "bot_name":
-                get_setting(
-                    "bot_name",
-                    DEFAULT_BOT_NAME,
-                ),
-        }
-
-        await update.message.reply_text(
-            "DATA:"
-            + json.dumps(
-                result,
-                ensure_ascii=False,
-            )
+        await send_mini_data(
+            update,
+            user,
         )
 
         return
 
-    # ========================================================
+    # --------------------------------------------------------
     # LINK WALLET
-    # ========================================================
+    # --------------------------------------------------------
 
-    if action == "link_wallet":
+    if action in (
+        "link_wallet",
+        "change_wallet",
+    ):
 
         address = str(
             data.get(
@@ -2061,7 +2077,15 @@ async def web_app_data_handler(
         ):
 
             await update.message.reply_text(
-                "❌ عنوان محفظة TON غير صحيح."
+                "WALLET_ERROR:"
+                + json.dumps(
+                    {
+                        "success": False,
+                        "message":
+                            "❌ عنوان محفظة TON غير صحيح.",
+                    },
+                    ensure_ascii=False,
+                )
             )
 
             return
@@ -2072,14 +2096,47 @@ async def web_app_data_handler(
         )
 
         await update.message.reply_text(
-            "✅ تم ربط محفظة TON بنجاح."
+            "WALLET_SUCCESS:"
+            + json.dumps(
+                {
+                    "success": True,
+                    "wallet": address,
+                    "message":
+                        "✅ تم حفظ محفظة TON بنجاح.",
+                },
+                ensure_ascii=False,
+            )
         )
 
         return
 
-    # ========================================================
+    # --------------------------------------------------------
+    # DELETE WALLET
+    # --------------------------------------------------------
+
+    if action == "unlink_wallet":
+
+        delete_wallet(
+            user.id
+        )
+
+        await update.message.reply_text(
+            "WALLET_UNLINKED:"
+            + json.dumps(
+                {
+                    "success": True,
+                    "message":
+                        "✅ تم حذف المحفظة من قاعدة البيانات.",
+                },
+                ensure_ascii=False,
+            )
+        )
+
+        return
+
+    # --------------------------------------------------------
     # CHANGE LANGUAGE
-    # ========================================================
+    # --------------------------------------------------------
 
     if action == "change_lang":
 
@@ -2088,11 +2145,11 @@ async def web_app_data_handler(
             "ar",
         )
 
-        if language not in [
+        if language not in (
             "ar",
             "en",
             "ru",
-        ]:
+        ):
 
             language = "ar"
 
@@ -2119,9 +2176,9 @@ async def web_app_data_handler(
 
         return
 
-    # ========================================================
-    # VERIFY TASK - تحقق حقيقي
-    # ========================================================
+    # --------------------------------------------------------
+    # VERIFY TASK
+    # --------------------------------------------------------
 
     if action == "verify_task":
 
@@ -2132,14 +2189,18 @@ async def web_app_data_handler(
         if task_id not in TASKS:
 
             await update.message.reply_text(
-                "❌ المهمة غير موجودة."
+                "VERIFY_ERROR:"
+                + json.dumps(
+                    {
+                        "success": False,
+                        "message":
+                            "❌ المهمة غير موجودة.",
+                    },
+                    ensure_ascii=False,
+                )
             )
 
             return
-
-        # ----------------------------------------------------
-        # فحص قاعدة البيانات أولاً
-        # ----------------------------------------------------
 
         connection = db()
 
@@ -2162,14 +2223,18 @@ async def web_app_data_handler(
         if existing:
 
             await update.message.reply_text(
-                "⚠️ هذه المهمة مكتملة مسبقاً."
+                "VERIFY_ALREADY:"
+                + json.dumps(
+                    {
+                        "success": False,
+                        "message":
+                            "⚠️ هذه المهمة مكتملة مسبقاً.",
+                    },
+                    ensure_ascii=False,
+                )
             )
 
             return
-
-        # ----------------------------------------------------
-        # التحقق الحقيقي من عضوية القناة
-        # ----------------------------------------------------
 
         task = TASKS[
             task_id
@@ -2183,7 +2248,6 @@ async def web_app_data_handler(
             )
         )
 
-        # Telegram API error
         if subscribed is None:
 
             await update.message.reply_text(
@@ -2191,7 +2255,8 @@ async def web_app_data_handler(
                 + json.dumps(
                     {
                         "success": False,
-                        "message": verification_error,
+                        "message":
+                            verification_error,
                     },
                     ensure_ascii=False,
                 )
@@ -2199,7 +2264,6 @@ async def web_app_data_handler(
 
             return
 
-        # لم يشترك
         if subscribed is False:
 
             await update.message.reply_text(
@@ -2207,10 +2271,8 @@ async def web_app_data_handler(
                 + json.dumps(
                     {
                         "success": False,
-                        "message": (
-                            "❌ لم يتم العثور على اشتراكك، "
-                            "اشترك بالقناة ثم حاول مرة أخرى."
-                        ),
+                        "message":
+                            "❌ لم يتم العثور على اشتراكك. اشترك بالقناة ثم حاول مرة أخرى.",
                     },
                     ensure_ascii=False,
                 )
@@ -2218,85 +2280,108 @@ async def web_app_data_handler(
 
             return
 
-        # ----------------------------------------------------
-        # الاشتراك مؤكد
-        # ----------------------------------------------------
-
         reward = float(
             task["reward"]
         )
 
         connection = db()
 
-        # حماية إضافية ضد تكرار المكافأة
-        existing = connection.execute(
-            """
-            SELECT id
-            FROM user_tasks
-            WHERE user_id = ?
-            AND task_id = ?
-            LIMIT 1
-            """,
-            (
-                user.id,
-                task_id,
-            ),
-        ).fetchone()
+        try:
 
-        if existing:
-
-            connection.close()
-
-            await update.message.reply_text(
-                "⚠️ هذه المهمة مكتملة مسبقاً."
+            cursor = connection.execute(
+                """
+                INSERT INTO user_tasks
+                (
+                    user_id,
+                    task_id,
+                    reward,
+                    completed_at
+                )
+                VALUES (?, ?, ?, ?)
+                """,
+                (
+                    user.id,
+                    task_id,
+                    reward,
+                    datetime.now().isoformat(),
+                ),
             )
 
-            return
+            if cursor.rowcount != 1:
 
-        # إضافة المهمة مرة واحدة
-        cursor = connection.execute(
-            """
-            INSERT INTO user_tasks
-            (
-                user_id,
-                task_id,
-                reward,
-                completed_at
+                connection.rollback()
+                connection.close()
+
+                await update.message.reply_text(
+                    "VERIFY_ERROR:"
+                    + json.dumps(
+                        {
+                            "success": False,
+                            "message":
+                                "❌ تعذر تسجيل المهمة.",
+                        },
+                        ensure_ascii=False,
+                    )
+                )
+
+                return
+
+            connection.execute(
+                """
+                UPDATE users
+                SET balance = balance + ?
+                WHERE user_id = ?
+                """,
+                (
+                    reward,
+                    user.id,
+                ),
             )
-            VALUES (?, ?, ?, ?)
-            """,
-            (
-                user.id,
-                task_id,
-                reward,
-                datetime.now().isoformat(),
-            ),
-        )
 
-        if cursor.rowcount != 1:
+            connection.commit()
+
+        except sqlite3.IntegrityError:
 
             connection.rollback()
             connection.close()
 
             await update.message.reply_text(
-                "❌ تعذر تسجيل المهمة. لم تتم إضافة المكافأة."
+                "VERIFY_ALREADY:"
+                + json.dumps(
+                    {
+                        "success": False,
+                        "message":
+                            "⚠️ هذه المهمة مكتملة مسبقاً.",
+                    },
+                    ensure_ascii=False,
+                )
             )
 
             return
 
-        connection.execute(
-            """
-            UPDATE users
-            SET balance = balance + ?
-            WHERE user_id = ?
-            """,
-            (
-                reward,
-                user.id,
-            ),
-        )
+        except Exception:
 
-        connection.commit()
+            connection.rollback()
+            connection.close()
+
+            logger.exception(
+                "Task completion error"
+            )
+
+            await update.message.reply_text(
+                "VERIFY_ERROR:"
+                + json.dumps(
+                    {
+                        "success": False,
+                        "message":
+                            "❌ حدث خطأ ولم تتم إضافة المكافأة.",
+                    },
+                    ensure_ascii=False,
+                )
+            )
+
+            return
+
         connection.close()
 
         await update.message.reply_text(
@@ -2306,7 +2391,8 @@ async def web_app_data_handler(
                     "success": True,
                     "task_id": task_id,
                     "reward": reward,
-                    "message": "✅ تم التحقق بنجاح",
+                    "message":
+                        "✅ تم التحقق بنجاح.",
                 },
                 ensure_ascii=False,
             )
@@ -2314,24 +2400,20 @@ async def web_app_data_handler(
 
         return
 
-    # ========================================================
+    # --------------------------------------------------------
     # INVEST
-    # ========================================================
+    # --------------------------------------------------------
 
     if action == "invest_start":
 
         try:
 
             level = int(
-                data.get(
-                    "level"
-                )
+                data.get("level")
             )
 
             amount = float(
-                data.get(
-                    "amount"
-                )
+                data.get("amount")
             )
 
         except Exception:
@@ -2358,30 +2440,28 @@ async def web_app_data_handler(
         else:
 
             await update.message.reply_text(
-                "❌ "
+                "INVEST_ERROR\n"
                 + message
             )
 
         return
 
-    # ========================================================
+    # --------------------------------------------------------
     # DEPOSIT
-    # ========================================================
+    # --------------------------------------------------------
 
     if action == "create_deposit":
 
         try:
 
             amount = float(
-                data.get(
-                    "amount"
-                )
+                data.get("amount")
             )
 
         except Exception:
 
             await update.message.reply_text(
-                "❌ مبلغ الإيداع غير صحيح."
+                "DEPOSIT_ERROR:❌ مبلغ الإيداع غير صحيح."
             )
 
             return
@@ -2389,7 +2469,7 @@ async def web_app_data_handler(
         if amount <= 0:
 
             await update.message.reply_text(
-                "❌ مبلغ الإيداع يجب أن يكون أكبر من صفر."
+                "DEPOSIT_ERROR:❌ المبلغ يجب أن يكون أكبر من صفر."
             )
 
             return
@@ -2401,10 +2481,10 @@ async def web_app_data_handler(
             )
         ).strip()
 
-        if not tx_hash:
+        if len(tx_hash) < 10:
 
             await update.message.reply_text(
-                "❌ يجب إرسال Tx Hash."
+                "DEPOSIT_ERROR:❌ Tx Hash غير صحيح."
             )
 
             return
@@ -2418,7 +2498,7 @@ async def web_app_data_handler(
 
         existing_tx = connection.execute(
             """
-            SELECT id, status
+            SELECT id
             FROM deposits
             WHERE tx_hash = ?
             LIMIT 1
@@ -2431,7 +2511,7 @@ async def web_app_data_handler(
             connection.close()
 
             await update.message.reply_text(
-                "⚠️ هذا الـ Tx Hash مسجل مسبقاً."
+                "DEPOSIT_ERROR:⚠️ هذا Tx Hash مسجل مسبقاً."
             )
 
             return
@@ -2492,13 +2572,12 @@ async def web_app_data_handler(
                 "💰 إيداع جديد\n\n"
                 f"🔢 الطلب: {request_number}\n"
                 f"👤 المستخدم: `{user.id}`\n"
-                f"💵 المبلغ: "
-                f"{amount:.8f} GRAM\n"
+                f"💵 المبلغ: {amount:.8f} GRAM\n\n"
                 f"🏦 محفظة المشروع:\n"
                 f"{project_wallet}\n\n"
                 f"🔗 Tx Hash:\n"
                 f"{tx_hash}\n\n"
-                "⚠️ يجب التأكد من المعاملة قبل الاعتماد."
+                "⚠️ لا يتم إضافة الرصيد إلا بعد التأكد والموافقة."
             ),
             parse_mode="Markdown",
             reply_markup=keyboard,
@@ -2518,24 +2597,22 @@ async def web_app_data_handler(
 
         return
 
-    # ========================================================
-    # WITHDRAWAL
-    # ========================================================
+    # --------------------------------------------------------
+    # WITHDRAW
+    # --------------------------------------------------------
 
     if action == "create_withdrawal":
 
         try:
 
             amount = float(
-                data.get(
-                    "amount"
-                )
+                data.get("amount")
             )
 
         except Exception:
 
             await update.message.reply_text(
-                "❌ مبلغ السحب غير صحيح."
+                "WITHDRAW_ERROR:❌ مبلغ السحب غير صحيح."
             )
 
             return
@@ -2543,7 +2620,7 @@ async def web_app_data_handler(
         if amount <= 0:
 
             await update.message.reply_text(
-                "❌ مبلغ السحب يجب أن يكون أكبر من صفر."
+                "WITHDRAW_ERROR:❌ المبلغ يجب أن يكون أكبر من صفر."
             )
 
             return
@@ -2552,10 +2629,7 @@ async def web_app_data_handler(
             user.id
         )
 
-        if (
-            task_count
-            < MIN_TASKS_FOR_WITHDRAWAL
-        ):
+        if task_count < MIN_TASKS_FOR_WITHDRAWAL:
 
             remaining = (
                 MIN_TASKS_FOR_WITHDRAWAL
@@ -2563,11 +2637,14 @@ async def web_app_data_handler(
             )
 
             await update.message.reply_text(
-                f"❌ لا يمكنك السحب حالياً.\n\n"
-                f"🎯 يجب إكمال "
-                f"{MIN_TASKS_FOR_WITHDRAWAL} مهام.\n"
-                f"✅ أكملت: {task_count}\n"
-                f"📌 المتبقي: {remaining}"
+                "WITHDRAW_ERROR:"
+                + json.dumps(
+                    {
+                        "message":
+                            f"❌ يجب إكمال {MIN_TASKS_FOR_WITHDRAWAL} مهام. المتبقي: {remaining}",
+                    },
+                    ensure_ascii=False,
+                )
             )
 
             return
@@ -2576,12 +2653,10 @@ async def web_app_data_handler(
             user.id
         )
 
-        if not valid_wallet(
-            wallet
-        ):
+        if not valid_wallet(wallet):
 
             await update.message.reply_text(
-                "❌ يجب ربط محفظة TON أولاً."
+                "WITHDRAW_ERROR:❌ يجب ربط محفظة TON أولاً."
             )
 
             return
@@ -2593,97 +2668,89 @@ async def web_app_data_handler(
         )
 
         payout_amount = (
-            amount
-            - fee
+            amount - fee
         )
 
         if payout_amount <= 0:
 
             await update.message.reply_text(
-                "❌ المبلغ غير صالح بعد خصم الرسوم."
+                "WITHDRAW_ERROR:❌ المبلغ غير صالح."
             )
 
             return
 
         connection = db()
 
-        current_balance = connection.execute(
-            """
-            SELECT balance
-            FROM users
-            WHERE user_id = ?
-            """,
-            (user.id,),
-        ).fetchone()
+        try:
 
-        balance = float(
-            current_balance["balance"]
-            if current_balance
-            else 0
-        )
-
-        if balance < amount:
-
-            connection.close()
-
-            await update.message.reply_text(
-                "❌ رصيدك غير كافٍ."
+            cursor = connection.execute(
+                """
+                UPDATE users
+                SET balance = balance - ?
+                WHERE user_id = ?
+                AND balance >= ?
+                """,
+                (
+                    amount,
+                    user.id,
+                    amount,
+                ),
             )
 
-            return
+            if cursor.rowcount != 1:
 
-        cursor_update = connection.execute(
-            """
-            UPDATE users
-            SET balance = balance - ?
-            WHERE user_id = ?
-            AND balance >= ?
-            """,
-            (
-                amount,
-                user.id,
-                amount,
-            ),
-        )
+                connection.rollback()
+                connection.close()
 
-        if cursor_update.rowcount != 1:
+                await update.message.reply_text(
+                    "WITHDRAW_ERROR:❌ رصيدك غير كافٍ."
+                )
+
+                return
+
+            cursor = connection.execute(
+                """
+                INSERT INTO withdrawals
+                (
+                    user_id,
+                    amount,
+                    fee,
+                    payout_amount,
+                    wallet_address,
+                    status,
+                    created_at
+                )
+                VALUES (?, ?, ?, ?, ?, 'pending', ?)
+                """,
+                (
+                    user.id,
+                    amount,
+                    fee,
+                    payout_amount,
+                    wallet,
+                    datetime.now().isoformat(),
+                ),
+            )
+
+            withdrawal_id = cursor.lastrowid
+
+            connection.commit()
+
+        except Exception:
 
             connection.rollback()
             connection.close()
 
+            logger.exception(
+                "Withdrawal error"
+            )
+
             await update.message.reply_text(
-                "❌ تعذر إنشاء طلب السحب."
+                "WITHDRAW_ERROR:❌ حدث خطأ أثناء إنشاء طلب السحب."
             )
 
             return
 
-        cursor = connection.execute(
-            """
-            INSERT INTO withdrawals
-            (
-                user_id,
-                amount,
-                fee,
-                payout_amount,
-                wallet_address,
-                status,
-                created_at
-            )
-            VALUES (?, ?, ?, ?, ?, 'pending', ?)
-            """,
-            (
-                user.id,
-                amount,
-                fee,
-                payout_amount,
-                wallet,
-                datetime.now().isoformat(),
-            ),
-        )
-
-        withdrawal_id = cursor.lastrowid
-
-        connection.commit()
         connection.close()
 
         request_number = (
@@ -2715,15 +2782,11 @@ async def web_app_data_handler(
                 "💵 طلب سحب جديد\n\n"
                 f"🔢 الطلب: {request_number}\n"
                 f"👤 المستخدم: `{user.id}`\n"
-                f"💰 المطلوب من الرصيد: "
-                f"{amount:.8f} GRAM\n"
-                f"💸 رسوم 1%: "
-                f"{fee:.8f} GRAM\n"
-                f"💵 المبلغ الذي يستلمه المستخدم: "
-                f"{payout_amount:.8f} GRAM\n\n"
-                f"👛 المحفظة:\n"
-                f"{wallet}\n\n"
-                "⚠️ ادفع المبلغ الصافي ثم اضغط «تم الدفع»."
+                f"💰 المبلغ: {amount:.8f} GRAM\n"
+                f"💸 الرسوم: {fee:.8f} GRAM\n"
+                f"💵 الصافي: {payout_amount:.8f} GRAM\n\n"
+                f"👛 المحفظة:\n{wallet}\n\n"
+                "⚠️ تم حجز المبلغ من رصيد المستخدم."
             ),
             parse_mode="Markdown",
             reply_markup=keyboard,
@@ -2744,9 +2807,9 @@ async def web_app_data_handler(
 
         return
 
-    # ========================================================
+    # --------------------------------------------------------
     # SUPPORT
-    # ========================================================
+    # --------------------------------------------------------
 
     if action == "support":
 
@@ -2760,9 +2823,9 @@ async def web_app_data_handler(
 
         return
 
-    # ========================================================
+    # --------------------------------------------------------
     # ADD CHANNEL
-    # ========================================================
+    # --------------------------------------------------------
 
     if action == "add_channel":
 
@@ -2785,22 +2848,9 @@ async def web_app_data_handler(
 
         price = CHANNEL_ADD_PRICE_GRAM
 
-        balance = get_balance(
-            user.id
-        )
-
-        if balance < price:
-
-            await update.message.reply_text(
-                f"❌ رصيدك غير كافٍ.\n"
-                f"💰 المطلوب: {price:.2f} GRAM"
-            )
-
-            return
-
         connection = db()
 
-        cursor_update = connection.execute(
+        cursor = connection.execute(
             """
             UPDATE users
             SET balance = balance - ?
@@ -2814,13 +2864,13 @@ async def web_app_data_handler(
             ),
         )
 
-        if cursor_update.rowcount != 1:
+        if cursor.rowcount != 1:
 
             connection.rollback()
             connection.close()
 
             await update.message.reply_text(
-                "❌ تعذر حجز الرصيد."
+                f"❌ رصيدك غير كافٍ.\nالمطلوب: {price:.2f} GRAM"
             )
 
             return
@@ -2873,9 +2923,9 @@ async def web_app_data_handler(
             chat_id=ADMIN_ID,
             text=(
                 "📢 طلب إضافة قناة\n\n"
-                f"🔢 الطلب: CH-{request_id:06d}\n"
-                f"👤 المستخدم: `{user.id}`\n"
-                f"🔗 القناة:\n{channel_url}\n"
+                f"🔢 CH-{request_id:06d}\n"
+                f"👤 `{user.id}`\n"
+                f"🔗 {channel_url}\n"
                 f"💰 السعر: {price:.2f} GRAM"
             ),
             parse_mode="Markdown",
@@ -2883,15 +2933,14 @@ async def web_app_data_handler(
         )
 
         await update.message.reply_text(
-            f"✅ تم إرسال طلب القناة.\n"
-            f"💰 تم حجز {price:.2f} GRAM."
+            "CHANNEL_PENDING"
         )
 
         return
 
-    # ========================================================
+    # --------------------------------------------------------
     # ADD BOT
-    # ========================================================
+    # --------------------------------------------------------
 
     if action == "add_bot":
 
@@ -2914,22 +2963,9 @@ async def web_app_data_handler(
 
         price = BOT_ADD_PRICE_GRAM
 
-        balance = get_balance(
-            user.id
-        )
-
-        if balance < price:
-
-            await update.message.reply_text(
-                f"❌ رصيدك غير كافٍ.\n"
-                f"💰 المطلوب: {price:.2f} GRAM"
-            )
-
-            return
-
         connection = db()
 
-        cursor_update = connection.execute(
+        cursor = connection.execute(
             """
             UPDATE users
             SET balance = balance - ?
@@ -2943,13 +2979,13 @@ async def web_app_data_handler(
             ),
         )
 
-        if cursor_update.rowcount != 1:
+        if cursor.rowcount != 1:
 
             connection.rollback()
             connection.close()
 
             await update.message.reply_text(
-                "❌ تعذر حجز الرصيد."
+                f"❌ رصيدك غير كافٍ.\nالمطلوب: {price:.2f} GRAM"
             )
 
             return
@@ -3002,9 +3038,9 @@ async def web_app_data_handler(
             chat_id=ADMIN_ID,
             text=(
                 "🤖 طلب إضافة بوت\n\n"
-                f"🔢 الطلب: BOT-{request_id:06d}\n"
-                f"👤 المستخدم: `{user.id}`\n"
-                f"🔗 البوت:\n{bot_url}\n"
+                f"🔢 BOT-{request_id:06d}\n"
+                f"👤 `{user.id}`\n"
+                f"🔗 {bot_url}\n"
                 f"💰 السعر: {price:.2f} GRAM"
             ),
             parse_mode="Markdown",
@@ -3012,8 +3048,7 @@ async def web_app_data_handler(
         )
 
         await update.message.reply_text(
-            f"✅ تم إرسال طلب البوت.\n"
-            f"💰 تم حجز {price:.2f} GRAM."
+            "BOT_PENDING"
         )
 
         return
@@ -3024,7 +3059,7 @@ async def web_app_data_handler(
 
 
 # ============================================================
-# Admin Callback
+# Callback Handler
 # ============================================================
 
 async def callback_handler(
@@ -3034,14 +3069,10 @@ async def callback_handler(
 
     query = update.callback_query
 
-    # ========================================================
-    # التحقق من الاشتراك - متاح لكل المستخدمين
-    # ========================================================
-
     if query.data == "check_subscription":
 
         await query.answer(
-            "⏳ جاري التحقق...",
+            "⏳ جاري التحقق..."
         )
 
         user_id = query.from_user.id
@@ -3086,7 +3117,7 @@ async def callback_handler(
                     ],
                     [
                         InlineKeyboardButton(
-                            "📢 القناة الرسمية",
+                            "🏢 القناة الرسمية",
                             url=channel_url,
                         ),
                         InlineKeyboardButton(
@@ -3097,16 +3128,8 @@ async def callback_handler(
                 ]
             )
 
-            text = (
-                "✅ تم التحقق بنجاح!\n\n"
-                "🎉 أهلاً بك في GRAM MAX.\n\n"
-                "🚀 اضغط «فتح البوت» للبدء."
-            )
-
             try:
-
                 await query.message.delete()
-
             except Exception:
                 pass
 
@@ -3115,7 +3138,11 @@ async def callback_handler(
                 await context.bot.send_photo(
                     chat_id=user_id,
                     photo=image,
-                    caption=text,
+                    caption=(
+                        "✅ تم التحقق بنجاح!\n\n"
+                        "🎉 أهلاً بك في GRAM MAX.\n\n"
+                        "🚀 اضغط «فتح البوت» للبدء."
+                    ),
                     reply_markup=keyboard,
                 )
 
@@ -3123,7 +3150,10 @@ async def callback_handler(
 
                 await context.bot.send_message(
                     chat_id=user_id,
-                    text=text,
+                    text=(
+                        "✅ تم التحقق بنجاح!\n\n"
+                        "🚀 اضغط «فتح البوت» للبدء."
+                    ),
                     reply_markup=keyboard,
                 )
 
@@ -3132,22 +3162,22 @@ async def callback_handler(
         if subscribed is False:
 
             await query.answer(
-                "❌ لم يتم العثور على اشتراكك. اشترك بالقناة ثم حاول مرة أخرى.",
+                "❌ لم يتم العثور على اشتراكك.",
                 show_alert=True,
             )
 
             return
 
         await query.answer(
-            "⚠️ تعذر التحقق حالياً. تأكد أن البوت موجود في القناة ولديه الصلاحية المطلوبة.",
+            "⚠️ تعذر التحقق حالياً.",
             show_alert=True,
         )
 
         return
 
-    # ========================================================
-    # باقي الأزرار للإدارة فقط
-    # ========================================================
+    # --------------------------------------------------------
+    # Admin only
+    # --------------------------------------------------------
 
     if query.from_user.id != ADMIN_ID:
 
@@ -3166,9 +3196,7 @@ async def callback_handler(
     # DEPOSIT APPROVE
     # ========================================================
 
-    if data.startswith(
-        "dep_approve_"
-    ):
+    if data.startswith("dep_approve_"):
 
         deposit_id = int(
             data.split("_")[-1]
@@ -3239,12 +3267,8 @@ async def callback_handler(
             WHERE user_id = ?
             """,
             (
-                float(
-                    row["amount"]
-                ),
-                int(
-                    row["user_id"]
-                ),
+                float(row["amount"]),
+                int(row["user_id"]),
             ),
         )
 
@@ -3252,30 +3276,24 @@ async def callback_handler(
         connection.close()
 
         treasury = update_treasury(
-            float(
-                row["amount"]
-            )
+            float(row["amount"])
         )
 
         await query.edit_message_text(
             query.message.text
             + "\n\n"
             "✅ تم تأكيد الإيداع.\n"
-            f"🏦 رصيد الإدارة الجديد: "
-            f"{treasury:.8f} GRAM"
+            f"🏦 الخزينة: {treasury:.8f} GRAM"
         )
 
         try:
 
             await context.bot.send_message(
-                chat_id=int(
-                    row["user_id"]
-                ),
+                chat_id=int(row["user_id"]),
                 text=(
                     "✅ تم تأكيد الإيداع.\n\n"
                     f"💰 تمت إضافة "
-                    f"{float(row['amount']):.8f} GRAM "
-                    "إلى رصيدك."
+                    f"{float(row['amount']):.8f} GRAM."
                 ),
             )
 
@@ -3288,9 +3306,7 @@ async def callback_handler(
     # DEPOSIT REJECT
     # ========================================================
 
-    if data.startswith(
-        "dep_reject_"
-    ):
+    if data.startswith("dep_reject_"):
 
         deposit_id = int(
             data.split("_")[-1]
@@ -3348,9 +3364,7 @@ async def callback_handler(
         try:
 
             await context.bot.send_message(
-                chat_id=int(
-                    row["user_id"]
-                ),
+                chat_id=int(row["user_id"]),
                 text=(
                     "❌ تم رفض طلب الإيداع.\n\n"
                     "لم تتم إضافة أي رصيد."
@@ -3366,9 +3380,7 @@ async def callback_handler(
     # WITHDRAW PAID
     # ========================================================
 
-    if data.startswith(
-        "wd_paid_"
-    ):
+    if data.startswith("wd_paid_"):
 
         withdrawal_id = int(
             data.split("_")[-1]
@@ -3424,6 +3436,11 @@ async def callback_handler(
         connection.commit()
         connection.close()
 
+        # رسوم السحب تدخل الخزينة
+        update_treasury(
+            float(row["fee"])
+        )
+
         await query.edit_message_text(
             query.message.text
             + "\n\n💸 تم تسجيل السحب كمدفوع."
@@ -3432,9 +3449,7 @@ async def callback_handler(
         try:
 
             await context.bot.send_message(
-                chat_id=int(
-                    row["user_id"]
-                ),
+                chat_id=int(row["user_id"]),
                 text=(
                     "💸 تم دفع طلب السحب.\n\n"
                     f"💰 المبلغ المدفوع: "
@@ -3453,9 +3468,7 @@ async def callback_handler(
     # WITHDRAW REJECT
     # ========================================================
 
-    if data.startswith(
-        "wd_reject_"
-    ):
+    if data.startswith("wd_reject_"):
 
         withdrawal_id = int(
             data.split("_")[-1]
@@ -3515,12 +3528,8 @@ async def callback_handler(
             WHERE user_id = ?
             """,
             (
-                float(
-                    row["amount"]
-                ),
-                int(
-                    row["user_id"]
-                ),
+                float(row["amount"]),
+                int(row["user_id"]),
             ),
         )
 
@@ -3529,21 +3538,17 @@ async def callback_handler(
 
         await query.edit_message_text(
             query.message.text
-            + "\n\n"
-            "❌ تم رفض السحب وإرجاع الرصيد."
+            + "\n\n❌ تم رفض السحب وإرجاع الرصيد."
         )
 
         try:
 
             await context.bot.send_message(
-                chat_id=int(
-                    row["user_id"]
-                ),
+                chat_id=int(row["user_id"]),
                 text=(
                     "❌ تم رفض طلب السحب.\n\n"
                     f"↩️ تمت إعادة "
-                    f"{float(row['amount']):.8f} GRAM "
-                    "إلى رصيدك."
+                    f"{float(row['amount']):.8f} GRAM."
                 ),
             )
 
@@ -3556,9 +3561,7 @@ async def callback_handler(
     # CHANNEL APPROVE
     # ========================================================
 
-    if data.startswith(
-        "ch_approve_"
-    ):
+    if data.startswith("ch_approve_"):
 
         request_id = int(
             data.split("_")[-1]
@@ -3604,6 +3607,10 @@ async def callback_handler(
         connection.commit()
         connection.close()
 
+        update_treasury(
+            float(row["price"])
+        )
+
         await query.edit_message_text(
             query.message.text
             + "\n\n✅ تم قبول القناة."
@@ -3612,12 +3619,8 @@ async def callback_handler(
         try:
 
             await context.bot.send_message(
-                chat_id=int(
-                    row["user_id"]
-                ),
-                text=(
-                    "✅ تم قبول طلب إضافة القناة."
-                ),
+                chat_id=int(row["user_id"]),
+                text="✅ تم قبول طلب إضافة القناة.",
             )
 
         except Exception:
@@ -3629,9 +3632,7 @@ async def callback_handler(
     # CHANNEL REJECT
     # ========================================================
 
-    if data.startswith(
-        "ch_reject_"
-    ):
+    if data.startswith("ch_reject_"):
 
         request_id = int(
             data.split("_")[-1]
@@ -3681,12 +3682,8 @@ async def callback_handler(
             WHERE user_id = ?
             """,
             (
-                float(
-                    row["price"]
-                ),
-                int(
-                    row["user_id"]
-                ),
+                float(row["price"]),
+                int(row["user_id"]),
             ),
         )
 
@@ -3695,16 +3692,13 @@ async def callback_handler(
 
         await query.edit_message_text(
             query.message.text
-            + "\n\n"
-            "❌ تم رفض القناة وإرجاع الرصيد."
+            + "\n\n❌ تم رفض القناة وإرجاع الرصيد."
         )
 
         try:
 
             await context.bot.send_message(
-                chat_id=int(
-                    row["user_id"]
-                ),
+                chat_id=int(row["user_id"]),
                 text=(
                     "❌ تم رفض طلب إضافة القناة.\n\n"
                     f"↩️ تمت إعادة "
@@ -3721,9 +3715,7 @@ async def callback_handler(
     # BOT APPROVE
     # ========================================================
 
-    if data.startswith(
-        "bot_approve_"
-    ):
+    if data.startswith("bot_approve_"):
 
         request_id = int(
             data.split("_")[-1]
@@ -3769,21 +3761,20 @@ async def callback_handler(
         connection.commit()
         connection.close()
 
+        update_treasury(
+            float(row["price"])
+        )
+
         await query.edit_message_text(
             query.message.text
-            + "\n\n"
-            "✅ تم قبول البوت."
+            + "\n\n✅ تم قبول البوت."
         )
 
         try:
 
             await context.bot.send_message(
-                chat_id=int(
-                    row["user_id"]
-                ),
-                text=(
-                    "✅ تم قبول طلب إضافة البوت."
-                ),
+                chat_id=int(row["user_id"]),
+                text="✅ تم قبول طلب إضافة البوت.",
             )
 
         except Exception:
@@ -3795,9 +3786,7 @@ async def callback_handler(
     # BOT REJECT
     # ========================================================
 
-    if data.startswith(
-        "bot_reject_"
-    ):
+    if data.startswith("bot_reject_"):
 
         request_id = int(
             data.split("_")[-1]
@@ -3847,12 +3836,8 @@ async def callback_handler(
             WHERE user_id = ?
             """,
             (
-                float(
-                    row["price"]
-                ),
-                int(
-                    row["user_id"]
-                ),
+                float(row["price"]),
+                int(row["user_id"]),
             ),
         )
 
@@ -3861,16 +3846,13 @@ async def callback_handler(
 
         await query.edit_message_text(
             query.message.text
-            + "\n\n"
-            "❌ تم رفض البوت وإرجاع الرصيد."
+            + "\n\n❌ تم رفض البوت وإرجاع الرصيد."
         )
 
         try:
 
             await context.bot.send_message(
-                chat_id=int(
-                    row["user_id"]
-                ),
+                chat_id=int(row["user_id"]),
                 text=(
                     "❌ تم رفض طلب إضافة البوت.\n\n"
                     f"↩️ تمت إعادة "
@@ -3885,30 +3867,23 @@ async def callback_handler(
 
 
 # ============================================================
-# تشغيل البوت
+# Main
 # ============================================================
 
 def main():
 
-    if os.path.exists(
-        DB_FILE
-    ):
+    if not BOT_TOKEN:
+
+        raise RuntimeError(
+            "BOT_TOKEN غير موجود. "
+            "ضع التوكن الجديد في Replit Secrets باسم BOT_TOKEN."
+        )
+
+    if os.path.exists(DB_FILE):
 
         backup_database()
 
     init_db()
-
-    if (
-        not BOT_TOKEN
-        or BOT_TOKEN
-        == "PUT_YOUR_NEW_BOT_TOKEN_HERE"
-    ):
-
-        print(
-            "❌ ضع Bot Token الجديد داخل BOT_TOKEN أولاً."
-        )
-
-        return
 
     application = (
         Application.builder()
@@ -3999,54 +3974,44 @@ def main():
         )
     )
 
-    print(
-        "==================================="
-    )
-
-    print(
-        "GRAM MAX BOT STARTED"
-    )
-
+    print("===================================")
+    print("GRAM MAX BOT STARTED")
     print(
         "Withdrawal tasks:",
         MIN_TASKS_FOR_WITHDRAWAL,
     )
-
     print(
         "Withdrawal fee:",
         WITHDRAWAL_FEE_PERCENT,
         "%",
     )
-
+    print(
+        "Referral:",
+        REFERRAL_PERCENT,
+        "%",
+    )
     print(
         "Investment levels:",
         len(INVESTMENT_LEVELS),
     )
-
     print(
-        "Real Telegram task verification: ENABLED"
+        "Real Telegram verification: ENABLED"
     )
-
     print(
-        "Official channel subscription gate: ENABLED"
+        "Wallet DB management: ENABLED"
     )
-
     print(
-        "Database migration: SAFE"
+        "Server-side withdrawal deduction: ENABLED"
     )
-
     print(
-        "==================================="
+        "Database migration: ENABLED"
     )
+    print("===================================")
 
     application.run_polling(
         allowed_updates=Update.ALL_TYPES
     )
 
-
-# ============================================================
-# START
-# ============================================================
 
 if __name__ == "__main__":
     main()
