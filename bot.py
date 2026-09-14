@@ -4,6 +4,7 @@ import json
 import os
 import shutil
 from datetime import datetime, timedelta
+from urllib.parse import urlparse
 
 from telegram import (
     Update,
@@ -22,17 +23,13 @@ from telegram.ext import (
 
 # ============================================================
 # GRAM MAX
-# Bot.py - النسخة الجديدة
+# Bot.py - النسخة المعدلة
 # ============================================================
-
 
 # ============================================================
 # الإعدادات الأساسية
 # ============================================================
 
-# مهم جداً:
-# ضع التوكن الجديد الذي تحصل عليه من BotFather هنا.
-# لا تضع التوكن القديم الذي تم إرساله في المحادثة.
 BOT_TOKEN = "8724497887:AAE02WdKwwMWaXzXmRlsVUiYjPqjVfVR5LI"
 
 ADMIN_ID = 8183652969
@@ -55,58 +52,41 @@ PROJECT_DEPOSIT_WALLET = (
 
 TASK_REWARD = 0.01
 
-
-# ============================================================
-# الأسعار
-# ============================================================
-
 CHANNEL_ADD_PRICE_GRAM = 1.00
 BOT_ADD_PRICE_GRAM = 0.30
 
-
-# ============================================================
-# السحب
-# ============================================================
-
 MIN_TASKS_FOR_WITHDRAWAL = 5
-
 WITHDRAWAL_FEE_PERCENT = 1.0
-
 
 # ============================================================
 # الاستثمار
 # ============================================================
 
 INVESTMENT_LEVELS = {
-
     1: {
         "amount": 1.0,
         "return": 1.15,
         "hours": 12,
         "name": "المستوى 1",
     },
-
     2: {
         "amount": 2.0,
         "return": 2.30,
         "hours": 24,
         "name": "المستوى 2",
     },
-
     3: {
         "amount": 5.0,
         "return": 5.70,
         "hours": 48,
         "name": "المستوى 3",
     },
-
     4: {
         "amount": 7.0,
         "return": 8.30,
         "hours": 72,
         "name": "المستوى 4",
     },
-
     5: {
         "amount": 10.0,
         "return": 13.0,
@@ -115,17 +95,7 @@ INVESTMENT_LEVELS = {
     },
 }
 
-
-# ============================================================
-# قاعدة البيانات
-# ============================================================
-
 DB_FILE = "gram_max.db"
-
-
-# ============================================================
-# Logging
-# ============================================================
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
@@ -134,20 +104,16 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
-
 # ============================================================
 # Database
 # ============================================================
 
 def db():
-
     connection = sqlite3.connect(
         DB_FILE,
         check_same_thread=False,
     )
-
     connection.row_factory = sqlite3.Row
-
     return connection
 
 
@@ -161,7 +127,6 @@ def backup_database():
         return
 
     try:
-
         backup_name = (
             "gram_max_backup_"
             + datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -338,7 +303,7 @@ def init_db():
     )
 
     # --------------------------------------------------------
-    # Migration
+    # Migrations آمنة
     # --------------------------------------------------------
 
     add_column_if_missing(
@@ -378,32 +343,13 @@ def init_db():
 
     connection.commit()
 
-    # --------------------------------------------------------
-    # Settings
-    # --------------------------------------------------------
-
     defaults = {
-
-        "channel_url":
-            DEFAULT_CHANNEL_URL,
-
-        "welcome_image":
-            DEFAULT_WELCOME_IMAGE,
-
-        "bot_name":
-            DEFAULT_BOT_NAME,
-
-        "deposit_wallet":
-            PROJECT_DEPOSIT_WALLET,
-
-        "support_url":
-            SUPPORT_URL,
-
-        # رصيد GRAM الإداري.
-        # هذا منفصل عن أرصدة المستخدمين.
-        "treasury_gram":
-            "0",
-
+        "channel_url": DEFAULT_CHANNEL_URL,
+        "welcome_image": DEFAULT_WELCOME_IMAGE,
+        "bot_name": DEFAULT_BOT_NAME,
+        "deposit_wallet": PROJECT_DEPOSIT_WALLET,
+        "support_url": SUPPORT_URL,
+        "treasury_gram": "0",
     }
 
     for key, value in defaults.items():
@@ -447,7 +393,6 @@ def get_setting(
     connection.close()
 
     if row:
-
         return row["value"]
 
     return default
@@ -477,7 +422,7 @@ def set_setting(
 
 
 # ============================================================
-# رصيد الإدارة
+# Treasury
 # ============================================================
 
 def get_treasury_balance():
@@ -493,9 +438,7 @@ def get_treasury_balance():
         return 0.0
 
 
-def update_treasury(
-    amount,
-):
+def update_treasury(amount):
 
     current = get_treasury_balance()
 
@@ -649,29 +592,6 @@ def update_balance(
     connection.close()
 
 
-def set_balance(
-    user_id,
-    amount,
-):
-
-    connection = db()
-
-    connection.execute(
-        """
-        UPDATE users
-        SET balance = ?
-        WHERE user_id = ?
-        """,
-        (
-            float(amount),
-            user_id,
-        ),
-    )
-
-    connection.commit()
-    connection.close()
-
-
 # ============================================================
 # Wallet
 # ============================================================
@@ -791,17 +711,132 @@ def completed_task_count(user_id):
 
 
 # ============================================================
+# Telegram Channel Helpers
+# ============================================================
+
+def extract_channel_username(url):
+
+    if not url:
+        return None
+
+    url = url.strip()
+
+    try:
+
+        parsed = urlparse(url)
+
+        host = (
+            parsed.netloc
+            or ""
+        ).lower()
+
+        if "t.me" not in host:
+            return None
+
+        path = parsed.path.strip("/")
+
+        if not path:
+            return None
+
+        # روابط عامة مثل:
+        # https://t.me/CRYBTO_MAX_1
+        # https://t.me/username
+        if path.startswith("+"):
+            return None
+
+        if "/" in path:
+            path = path.split("/")[0]
+
+        return "@" + path.lstrip("@")
+
+    except Exception:
+
+        return None
+
+
+async def check_channel_membership(
+    bot,
+    user_id,
+    channel_url,
+):
+
+    username = extract_channel_username(
+        channel_url
+    )
+
+    if not username:
+
+        return (
+            False,
+            "لا يمكن تحديد القناة من الرابط.",
+        )
+
+    try:
+
+        member = await bot.get_chat_member(
+            chat_id=username,
+            user_id=user_id,
+        )
+
+        status = member.status
+
+        if status in (
+            "creator",
+            "administrator",
+            "member",
+        ):
+            return True, None
+
+        if (
+            status == "restricted"
+            and getattr(
+                member,
+                "is_member",
+                False,
+            )
+        ):
+            return True, None
+
+        return (
+            False,
+            "لم يتم العثور على اشتراكك.",
+        )
+
+    except Exception as e:
+
+        logger.exception(
+            "Telegram membership verification failed: %s",
+            e,
+        )
+
+        return (
+            None,
+            "تعذر التحقق من الاشتراك حالياً. تأكد أن البوت موجود في القناة ولديه الصلاحية المطلوبة ثم حاول مرة أخرى.",
+        )
+
+
+async def is_user_subscribed_to_official_channel(
+    bot,
+    user_id,
+):
+
+    channel_url = get_setting(
+        "channel_url",
+        DEFAULT_CHANNEL_URL,
+    )
+
+    return await check_channel_membership(
+        bot,
+        user_id,
+        channel_url,
+    )
+
+
+# ============================================================
 # الاستثمار
 # ============================================================
 
 def get_unlocked_level(user_id):
-
-    """
-    المستوى 1 مفتوح دائماً.
-
-    المستوى التالي يفتح بعد إكمال المستوى السابق
-    مرة واحدة على الأقل.
-    """
 
     unlocked = 1
 
@@ -830,11 +865,8 @@ def get_unlocked_level(user_id):
         ).fetchone()
 
         if row:
-
             unlocked = next_level
-
         else:
-
             break
 
     connection.close()
@@ -918,6 +950,26 @@ def process_finished_investments(
     return paid
 
 
+def has_active_investment(user_id):
+
+    connection = db()
+
+    row = connection.execute(
+        """
+        SELECT id
+        FROM investments
+        WHERE user_id = ?
+        AND status = 'active'
+        LIMIT 1
+        """,
+        (user_id,),
+    ).fetchone()
+
+    connection.close()
+
+    return row is not None
+
+
 def create_investment(
     user_id,
     level,
@@ -928,6 +980,20 @@ def create_investment(
 
         return False, "المستوى غير صحيح."
 
+    # تحديث الاستثمارات المنتهية أولاً
+    process_finished_investments(
+        user_id
+    )
+
+    if has_active_investment(
+        user_id
+    ):
+
+        return (
+            False,
+            "⚠️ لديك استثمار نشط حالياً. انتظر انتهاءه قبل بدء استثمار آخر.",
+        )
+
     unlocked = get_unlocked_level(
         user_id
     )
@@ -936,7 +1002,7 @@ def create_investment(
 
         return (
             False,
-            f"🔒 المستوى {level} مغلق حالياً."
+            f"🔒 المستوى {level} مغلق حالياً. أكمل المستوى السابق أولاً.",
         )
 
     data = INVESTMENT_LEVELS[level]
@@ -955,7 +1021,7 @@ def create_investment(
 
         return (
             False,
-            "مبلغ الاستثمار غير صحيح."
+            "مبلغ الاستثمار غير صحيح.",
         )
 
     balance = get_balance(
@@ -966,7 +1032,7 @@ def create_investment(
 
         return (
             False,
-            "رصيدك غير كافٍ."
+            "رصيدك غير كافٍ.",
         )
 
     return_amount = float(
@@ -985,6 +1051,27 @@ def create_investment(
     )
 
     connection = db()
+
+    # حماية من تشغيل استثمارين بنفس الوقت
+    active = connection.execute(
+        """
+        SELECT id
+        FROM investments
+        WHERE user_id = ?
+        AND status = 'active'
+        LIMIT 1
+        """,
+        (user_id,),
+    ).fetchone()
+
+    if active:
+
+        connection.close()
+
+        return (
+            False,
+            "⚠️ لديك استثمار نشط حالياً.",
+        )
 
     cursor = connection.execute(
         """
@@ -1007,7 +1094,7 @@ def create_investment(
 
         return (
             False,
-            "تعذر خصم مبلغ الاستثمار."
+            "تعذر خصم مبلغ الاستثمار.",
         )
 
     connection.execute(
@@ -1050,8 +1137,92 @@ def create_investment(
 
 
 # ============================================================
-# Welcome
+# Welcome / Subscription Gate
 # ============================================================
+
+def subscription_keyboard(
+    channel_url,
+):
+
+    return InlineKeyboardMarkup(
+        [
+            [
+                InlineKeyboardButton(
+                    "📢 الاشتراك بالقناة الرسمية",
+                    url=channel_url,
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    "✅ تحقق من الاشتراك",
+                    callback_data="check_subscription",
+                )
+            ],
+        ]
+    )
+
+
+async def send_subscription_required(
+    update,
+    context,
+):
+
+    image = get_setting(
+        "welcome_image",
+        DEFAULT_WELCOME_IMAGE,
+    )
+
+    channel_url = get_setting(
+        "channel_url",
+        DEFAULT_CHANNEL_URL,
+    )
+
+    text = (
+        "👋 أهلاً بك في GRAM MAX\n\n"
+        "🔐 قبل الدخول إلى البوت يجب الاشتراك "
+        "في القناة الرسمية.\n\n"
+        "📢 اشترك بالقناة ثم اضغط:\n"
+        "«✅ تحقق من الاشتراك»\n\n"
+        "بعد نجاح التحقق سيظهر لك زر فتح البوت."
+    )
+
+    keyboard = subscription_keyboard(
+        channel_url
+    )
+
+    try:
+
+        if update.callback_query:
+
+            await update.callback_query.message.reply_photo(
+                photo=image,
+                caption=text,
+                reply_markup=keyboard,
+            )
+
+        elif update.message:
+
+            await update.message.reply_photo(
+                photo=image,
+                caption=text,
+                reply_markup=keyboard,
+            )
+
+    except Exception:
+
+        target = (
+            update.callback_query.message
+            if update.callback_query
+            else update.message
+        )
+
+        if target:
+
+            await target.reply_text(
+                text,
+                reply_markup=keyboard,
+            )
+
 
 async def send_welcome(
     update,
@@ -1082,6 +1253,26 @@ async def send_welcome(
         referrer_id,
     )
 
+    # --------------------------------------------------------
+    # فحص الاشتراك بالقناة الرسمية
+    # --------------------------------------------------------
+
+    subscribed, error = (
+        await is_user_subscribed_to_official_channel(
+            context.bot,
+            user.id,
+        )
+    )
+
+    if subscribed is not True:
+
+        await send_subscription_required(
+            update,
+            context,
+        )
+
+        return
+
     image = get_setting(
         "welcome_image",
         DEFAULT_WELCOME_IMAGE,
@@ -1111,39 +1302,56 @@ async def send_welcome(
                 InlineKeyboardButton(
                     "📢 القناة الرسمية",
                     url=channel_url,
-                )
-            ],
-            [
+                ),
                 InlineKeyboardButton(
                     "🆘 الدعم",
                     url=support_url,
-                )
+                ),
             ],
         ]
     )
 
     text = (
-        "👋 أهلاً بك في GRAM MAX\n\n"
-        "🚀 افتح البوت من الزر بالأسفل.\n"
-        "🎯 نفّذ المهام واحصل على GRAM.\n"
-        "📈 استخدم الاستثمار والمحفظة والسحب.\n\n"
-        "💰 نتمنى لك تجربة موفقة."
+        "🎉 أهلاً وسهلاً بك في GRAM MAX\n\n"
+        f"👤 {user.full_name}\n\n"
+        "💰 نفّذ المهام واحصل على المكافآت.\n"
+        "📈 استخدم نظام الاستثمار.\n"
+        "💳 اربط محفظتك وأدر عمليات السحب.\n\n"
+        "🚀 اضغط «فتح البوت» للبدء."
     )
 
     try:
 
-        await update.message.reply_photo(
-            photo=image,
-            caption=text,
-            reply_markup=keyboard,
-        )
+        if update.callback_query:
+
+            await update.callback_query.message.reply_photo(
+                photo=image,
+                caption=text,
+                reply_markup=keyboard,
+            )
+
+        else:
+
+            await update.message.reply_photo(
+                photo=image,
+                caption=text,
+                reply_markup=keyboard,
+            )
 
     except Exception:
 
-        await update.message.reply_text(
-            text,
-            reply_markup=keyboard,
+        target = (
+            update.callback_query.message
+            if update.callback_query
+            else update.message
         )
+
+        if target:
+
+            await target.reply_text(
+                text,
+                reply_markup=keyboard,
+            )
 
     if notify_admin:
 
@@ -1210,7 +1418,7 @@ async def start_command(
 
 
 # ============================================================
-# /admin
+# Admin
 # ============================================================
 
 async def admin_command(
@@ -1225,7 +1433,6 @@ async def admin_command(
 
     text = (
         "🛠 لوحة الإدارة\n\n"
-
         "/user USER_ID\n"
         "/add_balance USER_ID AMOUNT\n"
         "/remove_balance USER_ID AMOUNT\n"
@@ -1233,16 +1440,12 @@ async def admin_command(
         "/set_welcome_image URL\n"
         "/set_bot_name NAME\n"
         "/treasury\n\n"
-
         f"🏦 محفظة المشروع:\n"
         f"{get_setting('deposit_wallet')}\n\n"
-
         f"💰 رصيد الإدارة:\n"
         f"{treasury:.8f} GRAM\n\n"
-
         f"🎯 شرط السحب:\n"
         f"{MIN_TASKS_FOR_WITHDRAWAL} مهام\n\n"
-
         f"💸 رسوم السحب:\n"
         f"{WITHDRAWAL_FEE_PERCENT}%"
     )
@@ -1253,7 +1456,7 @@ async def admin_command(
 
 
 # ============================================================
-# /treasury
+# Treasury
 # ============================================================
 
 async def treasury_command(
@@ -1274,7 +1477,7 @@ async def treasury_command(
 
 
 # ============================================================
-# /user
+# User
 # ============================================================
 
 async def user_command(
@@ -1294,17 +1497,13 @@ async def user_command(
         return
 
     try:
-
         user_id = int(
             context.args[0]
         )
-
     except Exception:
-
         await update.message.reply_text(
             "❌ USER_ID غير صحيح."
         )
-
         return
 
     user = get_user(
@@ -1329,23 +1528,15 @@ async def user_command(
 
     text = (
         "👤 معلومات المستخدم\n\n"
-
         f"🆔 ID: {user_id}\n"
-
         f"💰 الرصيد: "
         f"{float(user['balance'] or 0):.8f} GRAM\n"
-
         f"👥 الإحالات: "
         f"{int(user['referrals'] or 0)}\n"
-
         f"🎯 المهام: {count}\n"
-
-        f"📈 آخر مستوى مفتوح: "
-        f"{unlocked}\n"
-
+        f"📈 آخر مستوى مفتوح: {unlocked}\n"
         f"👛 المحفظة: "
         f"{user['wallet_address'] or 'غير مربوطة'}\n"
-
         f"🌐 اللغة: "
         f"{user['language'] or 'ar'}"
     )
@@ -1356,7 +1547,7 @@ async def user_command(
 
 
 # ============================================================
-# /add_balance
+# Add Balance
 # ============================================================
 
 async def add_balance_command(
@@ -1416,7 +1607,7 @@ async def add_balance_command(
 
 
 # ============================================================
-# /remove_balance
+# Remove Balance
 # ============================================================
 
 async def remove_balance_command(
@@ -1484,7 +1675,7 @@ async def remove_balance_command(
 
 
 # ============================================================
-# /set_channel
+# Set Channel
 # ============================================================
 
 async def set_channel_command(
@@ -1505,6 +1696,14 @@ async def set_channel_command(
 
     url = context.args[0]
 
+    if not extract_channel_username(url):
+
+        await update.message.reply_text(
+            "❌ رابط القناة يجب أن يكون قناة عامة مثل https://t.me/channel"
+        )
+
+        return
+
     set_setting(
         "channel_url",
         url,
@@ -1516,7 +1715,7 @@ async def set_channel_command(
 
 
 # ============================================================
-# /set_welcome_image
+# Set Welcome Image
 # ============================================================
 
 async def set_welcome_image_command(
@@ -1548,7 +1747,7 @@ async def set_welcome_image_command(
 
 
 # ============================================================
-# /set_bot_name
+# Set Bot Name
 # ============================================================
 
 async def set_bot_name_command(
@@ -1582,7 +1781,7 @@ async def set_bot_name_command(
 
 
 # ============================================================
-# /set_treasury
+# Set Treasury
 # ============================================================
 
 async def set_treasury_command(
@@ -1671,6 +1870,36 @@ async def web_app_data_handler(
         "action"
     )
 
+    # --------------------------------------------------------
+    # فحص الاشتراك قبل أي وظيفة في Mini App
+    # --------------------------------------------------------
+
+    subscribed, subscription_error = (
+        await is_user_subscribed_to_official_channel(
+            context.bot,
+            user.id,
+        )
+    )
+
+    # get_data يسمح بإرجاع حالة الاشتراك للواجهة
+    # أما العمليات الأخرى فلا تعمل بدون اشتراك.
+    if action != "get_data":
+
+        if subscribed is not True:
+
+            if subscribed is False:
+
+                await update.message.reply_text(
+                    "❌ يجب الاشتراك بالقناة الرسمية أولاً."
+                )
+
+            else:
+
+                await update.message.reply_text(
+                    "⚠️ تعذر التحقق من اشتراكك حالياً. حاول مرة أخرى."
+                )
+
+            return
 
     # ========================================================
     # GET DATA
@@ -1694,6 +1923,35 @@ async def web_app_data_handler(
             user.id
         )
 
+        active_investment = None
+
+        connection = db()
+
+        active_row = connection.execute(
+            """
+            SELECT *
+            FROM investments
+            WHERE user_id = ?
+            AND status = 'active'
+            ORDER BY id DESC
+            LIMIT 1
+            """,
+            (user.id,),
+        ).fetchone()
+
+        connection.close()
+
+        if active_row:
+
+            active_investment = {
+                "id": active_row["id"],
+                "level": active_row["level"],
+                "amount": active_row["amount"],
+                "return_amount": active_row["return_amount"],
+                "started_at": active_row["started_at"],
+                "finish_at": active_row["finish_at"],
+            }
+
         result = {
 
             "type": "data",
@@ -1714,6 +1972,15 @@ async def web_app_data_handler(
             "language":
                 current["language"] or "ar",
 
+            "telegram_user": {
+                "id": user.id,
+                "first_name": user.first_name or "",
+                "last_name": user.last_name or "",
+                "full_name": user.full_name or "",
+                "username": user.username or "",
+                "photo_url": "",
+            },
+
             "completed_tasks":
                 tasks,
 
@@ -1731,6 +1998,15 @@ async def web_app_data_handler(
 
             "investment_levels":
                 INVESTMENT_LEVELS,
+
+            "active_investment":
+                active_investment,
+
+            "official_channel_subscribed":
+                subscribed is True,
+
+            "subscription_check_error":
+                subscription_error,
 
             "project_deposit_wallet":
                 get_setting(
@@ -1767,7 +2043,6 @@ async def web_app_data_handler(
 
         return
 
-
     # ========================================================
     # LINK WALLET
     # ========================================================
@@ -1786,7 +2061,7 @@ async def web_app_data_handler(
         ):
 
             await update.message.reply_text(
-                "❌ عنوان المحفظة غير صحيح."
+                "❌ عنوان محفظة TON غير صحيح."
             )
 
             return
@@ -1801,7 +2076,6 @@ async def web_app_data_handler(
         )
 
         return
-
 
     # ========================================================
     # CHANGE LANGUAGE
@@ -1845,9 +2119,8 @@ async def web_app_data_handler(
 
         return
 
-
     # ========================================================
-    # VERIFY TASK
+    # VERIFY TASK - تحقق حقيقي
     # ========================================================
 
     if action == "verify_task":
@@ -1864,6 +2137,10 @@ async def web_app_data_handler(
 
             return
 
+        # ----------------------------------------------------
+        # فحص قاعدة البيانات أولاً
+        # ----------------------------------------------------
+
         connection = db()
 
         existing = connection.execute(
@@ -1872,6 +2149,93 @@ async def web_app_data_handler(
             FROM user_tasks
             WHERE user_id = ?
             AND task_id = ?
+            LIMIT 1
+            """,
+            (
+                user.id,
+                task_id,
+            ),
+        ).fetchone()
+
+        connection.close()
+
+        if existing:
+
+            await update.message.reply_text(
+                "⚠️ هذه المهمة مكتملة مسبقاً."
+            )
+
+            return
+
+        # ----------------------------------------------------
+        # التحقق الحقيقي من عضوية القناة
+        # ----------------------------------------------------
+
+        task = TASKS[
+            task_id
+        ]
+
+        subscribed, verification_error = (
+            await check_channel_membership(
+                context.bot,
+                user.id,
+                task["url"],
+            )
+        )
+
+        # Telegram API error
+        if subscribed is None:
+
+            await update.message.reply_text(
+                "VERIFY_ERROR:"
+                + json.dumps(
+                    {
+                        "success": False,
+                        "message": verification_error,
+                    },
+                    ensure_ascii=False,
+                )
+            )
+
+            return
+
+        # لم يشترك
+        if subscribed is False:
+
+            await update.message.reply_text(
+                "VERIFY_FAILED:"
+                + json.dumps(
+                    {
+                        "success": False,
+                        "message": (
+                            "❌ لم يتم العثور على اشتراكك، "
+                            "اشترك بالقناة ثم حاول مرة أخرى."
+                        ),
+                    },
+                    ensure_ascii=False,
+                )
+            )
+
+            return
+
+        # ----------------------------------------------------
+        # الاشتراك مؤكد
+        # ----------------------------------------------------
+
+        reward = float(
+            task["reward"]
+        )
+
+        connection = db()
+
+        # حماية إضافية ضد تكرار المكافأة
+        existing = connection.execute(
+            """
+            SELECT id
+            FROM user_tasks
+            WHERE user_id = ?
+            AND task_id = ?
+            LIMIT 1
             """,
             (
                 user.id,
@@ -1889,11 +2253,8 @@ async def web_app_data_handler(
 
             return
 
-        reward = float(
-            TASKS[task_id]["reward"]
-        )
-
-        connection.execute(
+        # إضافة المهمة مرة واحدة
+        cursor = connection.execute(
             """
             INSERT INTO user_tasks
             (
@@ -1912,6 +2273,17 @@ async def web_app_data_handler(
             ),
         )
 
+        if cursor.rowcount != 1:
+
+            connection.rollback()
+            connection.close()
+
+            await update.message.reply_text(
+                "❌ تعذر تسجيل المهمة. لم تتم إضافة المكافأة."
+            )
+
+            return
+
         connection.execute(
             """
             UPDATE users
@@ -1928,12 +2300,19 @@ async def web_app_data_handler(
         connection.close()
 
         await update.message.reply_text(
-            f"✅ تم تسجيل المهمة.\n"
-            f"🎁 تمت إضافة {reward:.2f} GRAM."
+            "VERIFY_SUCCESS:"
+            + json.dumps(
+                {
+                    "success": True,
+                    "task_id": task_id,
+                    "reward": reward,
+                    "message": "✅ تم التحقق بنجاح",
+                },
+                ensure_ascii=False,
+            )
         )
 
         return
-
 
     # ========================================================
     # INVEST
@@ -1985,7 +2364,6 @@ async def web_app_data_handler(
 
         return
 
-
     # ========================================================
     # DEPOSIT
     # ========================================================
@@ -2036,7 +2414,6 @@ async def web_app_data_handler(
             PROJECT_DEPOSIT_WALLET,
         )
 
-        # منع إرسال نفس Tx Hash أكثر من مرة.
         connection = db()
 
         existing_tx = connection.execute(
@@ -2113,20 +2490,14 @@ async def web_app_data_handler(
             chat_id=ADMIN_ID,
             text=(
                 "💰 إيداع جديد\n\n"
-
                 f"🔢 الطلب: {request_number}\n"
-
                 f"👤 المستخدم: `{user.id}`\n"
-
                 f"💵 المبلغ: "
                 f"{amount:.8f} GRAM\n"
-
                 f"🏦 محفظة المشروع:\n"
                 f"{project_wallet}\n\n"
-
                 f"🔗 Tx Hash:\n"
                 f"{tx_hash}\n\n"
-
                 "⚠️ يجب التأكد من المعاملة قبل الاعتماد."
             ),
             parse_mode="Markdown",
@@ -2137,21 +2508,15 @@ async def web_app_data_handler(
             "DEPOSIT_PENDING:"
             + json.dumps(
                 {
-                    "request":
-                        request_number,
-
-                    "wallet":
-                        project_wallet,
-
-                    "amount":
-                        amount,
+                    "request": request_number,
+                    "wallet": project_wallet,
+                    "amount": amount,
                 },
                 ensure_ascii=False,
             )
         )
 
         return
-
 
     # ========================================================
     # WITHDRAWAL
@@ -2221,10 +2586,6 @@ async def web_app_data_handler(
 
             return
 
-        # ----------------------------------------------------
-        # الرسوم 1%
-        # ----------------------------------------------------
-
         fee = (
             amount
             * WITHDRAWAL_FEE_PERCENT
@@ -2270,11 +2631,6 @@ async def web_app_data_handler(
             )
 
             return
-
-        # ----------------------------------------------------
-        # حجز كامل المبلغ.
-        # 1% رسوم لا تدخل للمستخدم.
-        # ----------------------------------------------------
 
         cursor_update = connection.execute(
             """
@@ -2357,25 +2713,17 @@ async def web_app_data_handler(
             chat_id=ADMIN_ID,
             text=(
                 "💵 طلب سحب جديد\n\n"
-
                 f"🔢 الطلب: {request_number}\n"
-
                 f"👤 المستخدم: `{user.id}`\n"
-
                 f"💰 المطلوب من الرصيد: "
                 f"{amount:.8f} GRAM\n"
-
                 f"💸 رسوم 1%: "
                 f"{fee:.8f} GRAM\n"
-
                 f"💵 المبلغ الذي يستلمه المستخدم: "
                 f"{payout_amount:.8f} GRAM\n\n"
-
                 f"👛 المحفظة:\n"
                 f"{wallet}\n\n"
-
-                "⚠️ ادفع المبلغ الصافي ثم اضغط «تم الدفع».\n"
-                "⏱️ المدة المستهدفة للدفع: خلال 24 ساعة."
+                "⚠️ ادفع المبلغ الصافي ثم اضغط «تم الدفع»."
             ),
             parse_mode="Markdown",
             reply_markup=keyboard,
@@ -2385,24 +2733,16 @@ async def web_app_data_handler(
             "WITHDRAW_PENDING:"
             + json.dumps(
                 {
-                    "request":
-                        request_number,
-
-                    "amount":
-                        amount,
-
-                    "fee":
-                        fee,
-
-                    "payout":
-                        payout_amount,
+                    "request": request_number,
+                    "amount": amount,
+                    "fee": fee,
+                    "payout": payout_amount,
                 },
                 ensure_ascii=False,
             )
         )
 
         return
-
 
     # ========================================================
     # SUPPORT
@@ -2419,7 +2759,6 @@ async def web_app_data_handler(
         )
 
         return
-
 
     # ========================================================
     # ADD CHANNEL
@@ -2550,7 +2889,6 @@ async def web_app_data_handler(
 
         return
 
-
     # ========================================================
     # ADD BOT
     # ========================================================
@@ -2680,7 +3018,6 @@ async def web_app_data_handler(
 
         return
 
-
     await update.message.reply_text(
         "❌ الأمر غير معروف."
     )
@@ -2697,6 +3034,121 @@ async def callback_handler(
 
     query = update.callback_query
 
+    # ========================================================
+    # التحقق من الاشتراك - متاح لكل المستخدمين
+    # ========================================================
+
+    if query.data == "check_subscription":
+
+        await query.answer(
+            "⏳ جاري التحقق...",
+        )
+
+        user_id = query.from_user.id
+
+        ensure_user(
+            user_id
+        )
+
+        subscribed, error = (
+            await is_user_subscribed_to_official_channel(
+                context.bot,
+                user_id,
+            )
+        )
+
+        if subscribed is True:
+
+            image = get_setting(
+                "welcome_image",
+                DEFAULT_WELCOME_IMAGE,
+            )
+
+            channel_url = get_setting(
+                "channel_url",
+                DEFAULT_CHANNEL_URL,
+            )
+
+            support_url = get_setting(
+                "support_url",
+                SUPPORT_URL,
+            )
+
+            keyboard = InlineKeyboardMarkup(
+                [
+                    [
+                        InlineKeyboardButton(
+                            "🚀 فتح البوت",
+                            web_app=WebAppInfo(
+                                url=WEBAPP_URL
+                            ),
+                        )
+                    ],
+                    [
+                        InlineKeyboardButton(
+                            "📢 القناة الرسمية",
+                            url=channel_url,
+                        ),
+                        InlineKeyboardButton(
+                            "🆘 الدعم",
+                            url=support_url,
+                        ),
+                    ],
+                ]
+            )
+
+            text = (
+                "✅ تم التحقق بنجاح!\n\n"
+                "🎉 أهلاً بك في GRAM MAX.\n\n"
+                "🚀 اضغط «فتح البوت» للبدء."
+            )
+
+            try:
+
+                await query.message.delete()
+
+            except Exception:
+                pass
+
+            try:
+
+                await context.bot.send_photo(
+                    chat_id=user_id,
+                    photo=image,
+                    caption=text,
+                    reply_markup=keyboard,
+                )
+
+            except Exception:
+
+                await context.bot.send_message(
+                    chat_id=user_id,
+                    text=text,
+                    reply_markup=keyboard,
+                )
+
+            return
+
+        if subscribed is False:
+
+            await query.answer(
+                "❌ لم يتم العثور على اشتراكك. اشترك بالقناة ثم حاول مرة أخرى.",
+                show_alert=True,
+            )
+
+            return
+
+        await query.answer(
+            "⚠️ تعذر التحقق حالياً. تأكد أن البوت موجود في القناة ولديه الصلاحية المطلوبة.",
+            show_alert=True,
+        )
+
+        return
+
+    # ========================================================
+    # باقي الأزرار للإدارة فقط
+    # ========================================================
+
     if query.from_user.id != ADMIN_ID:
 
         await query.answer(
@@ -2709,7 +3161,6 @@ async def callback_handler(
     await query.answer()
 
     data = query.data
-
 
     # ========================================================
     # DEPOSIT APPROVE
@@ -2755,11 +3206,7 @@ async def callback_handler(
 
             return
 
-        # ----------------------------------------------------
-        # الاعتماد مرة واحدة فقط
-        # ----------------------------------------------------
-
-        connection.execute(
+        cursor = connection.execute(
             """
             UPDATE deposits
             SET status = 'approved',
@@ -2773,9 +3220,17 @@ async def callback_handler(
             ),
         )
 
-        # ----------------------------------------------------
-        # إضافة للمستخدم
-        # ----------------------------------------------------
+        if cursor.rowcount != 1:
+
+            connection.rollback()
+            connection.close()
+
+            await query.answer(
+                "⚠️ تمت معالجة الطلب مسبقاً.",
+                show_alert=True,
+            )
+
+            return
 
         connection.execute(
             """
@@ -2796,10 +3251,6 @@ async def callback_handler(
         connection.commit()
         connection.close()
 
-        # ----------------------------------------------------
-        # إضافة لرصيد الإدارة
-        # ----------------------------------------------------
-
         treasury = update_treasury(
             float(
                 row["amount"]
@@ -2813,10 +3264,6 @@ async def callback_handler(
             f"🏦 رصيد الإدارة الجديد: "
             f"{treasury:.8f} GRAM"
         )
-
-        # ----------------------------------------------------
-        # إرسال للمستخدم
-        # ----------------------------------------------------
 
         try:
 
@@ -2833,11 +3280,9 @@ async def callback_handler(
             )
 
         except Exception:
-
             pass
 
         return
-
 
     # ========================================================
     # DEPOSIT REJECT
@@ -2865,7 +3310,6 @@ async def callback_handler(
         if not row:
 
             connection.close()
-
             return
 
         if row["status"] != "pending":
@@ -2914,11 +3358,9 @@ async def callback_handler(
             )
 
         except Exception:
-
             pass
 
         return
-
 
     # ========================================================
     # WITHDRAW PAID
@@ -2946,7 +3388,6 @@ async def callback_handler(
         if not row:
 
             connection.close()
-
             return
 
         if row["status"] != "pending":
@@ -2960,7 +3401,7 @@ async def callback_handler(
 
             return
 
-        connection.execute(
+        cursor = connection.execute(
             """
             UPDATE withdrawals
             SET status = 'paid',
@@ -2973,6 +3414,12 @@ async def callback_handler(
                 withdrawal_id,
             ),
         )
+
+        if cursor.rowcount != 1:
+
+            connection.rollback()
+            connection.close()
+            return
 
         connection.commit()
         connection.close()
@@ -2998,11 +3445,9 @@ async def callback_handler(
             )
 
         except Exception:
-
             pass
 
         return
-
 
     # ========================================================
     # WITHDRAW REJECT
@@ -3030,7 +3475,6 @@ async def callback_handler(
         if not row:
 
             connection.close()
-
             return
 
         if row["status"] != "pending":
@@ -3043,10 +3487,6 @@ async def callback_handler(
             )
 
             return
-
-        # ----------------------------------------------------
-        # تغيير الحالة أولاً
-        # ----------------------------------------------------
 
         cursor = connection.execute(
             """
@@ -3066,12 +3506,7 @@ async def callback_handler(
 
             connection.rollback()
             connection.close()
-
             return
-
-        # ----------------------------------------------------
-        # إرجاع المبلغ المحجوز بالكامل
-        # ----------------------------------------------------
 
         connection.execute(
             """
@@ -3113,11 +3548,9 @@ async def callback_handler(
             )
 
         except Exception:
-
             pass
 
         return
-
 
     # ========================================================
     # CHANNEL APPROVE
@@ -3145,7 +3578,6 @@ async def callback_handler(
         if not row:
 
             connection.close()
-
             return
 
         if row["status"] != "pending":
@@ -3189,11 +3621,9 @@ async def callback_handler(
             )
 
         except Exception:
-
             pass
 
         return
-
 
     # ========================================================
     # CHANNEL REJECT
@@ -3221,7 +3651,6 @@ async def callback_handler(
         if not row:
 
             connection.close()
-
             return
 
         if row["status"] != "pending":
@@ -3284,11 +3713,9 @@ async def callback_handler(
             )
 
         except Exception:
-
             pass
 
         return
-
 
     # ========================================================
     # BOT APPROVE
@@ -3316,7 +3743,6 @@ async def callback_handler(
         if not row:
 
             connection.close()
-
             return
 
         if row["status"] != "pending":
@@ -3361,11 +3787,9 @@ async def callback_handler(
             )
 
         except Exception:
-
             pass
 
         return
-
 
     # ========================================================
     # BOT REJECT
@@ -3393,7 +3817,6 @@ async def callback_handler(
         if not row:
 
             connection.close()
-
             return
 
         if row["status"] != "pending":
@@ -3456,7 +3879,6 @@ async def callback_handler(
             )
 
         except Exception:
-
             pass
 
         return
@@ -3602,6 +4024,18 @@ def main():
     )
 
     print(
+        "Real Telegram task verification: ENABLED"
+    )
+
+    print(
+        "Official channel subscription gate: ENABLED"
+    )
+
+    print(
+        "Database migration: SAFE"
+    )
+
+    print(
         "==================================="
     )
 
@@ -3615,5 +4049,4 @@ def main():
 # ============================================================
 
 if __name__ == "__main__":
-
     main()
