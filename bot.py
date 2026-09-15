@@ -16,7 +16,7 @@ from aiogram.types import (
 )
 
 # ================== الإعدادات ==================
-BOT_TOKEN  = os.getenv("BOT_TOKEN", "8724497887:AAE02WdKwwMWaXzXmRlsVUiYjPqjVfVR5LI")
+BOT_TOKEN  = os.getenv("BOT_TOKEN", "8724497887:AAHOfyPLaBGMFfoaYV20Eh-MR7AmLlj0AaM")
 WEBAPP_URL = os.getenv("WEBAPP_URL", "https://example.com/index.html")
 HOST       = os.getenv("HOST", "0.0.0.0")
 PORT       = int(os.getenv("PORT", "8080"))
