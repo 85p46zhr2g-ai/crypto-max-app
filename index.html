@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>LION MAX</title>
+<title>🦁 LION MAX</title>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI',Tahoma,sans-serif; -webkit-tap-highlight-color:transparent; }
 html, body { overflow-x:hidden; }
@@ -38,6 +38,27 @@ body {
   transition:.3s;
 }
 .refresh-btn:active { transform:scale(.9); }
+
+/* ===== الشعار ===== */
+.brand-title {
+  font-size: 26px;
+  font-weight: 900;
+  text-align: center;
+  margin: 4px 0 14px;
+  background: linear-gradient(135deg, #ffd166, #f5a623, #b26a00);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  letter-spacing: 1px;
+  text-shadow: 0 2px 20px rgba(245,166,35,.25);
+}
+.brand-sub {
+  text-align:center;
+  font-size:11px;
+  color:#8a8a98;
+  margin:-10px 0 16px;
+  letter-spacing:2px;
+}
 
 /* ===== بطاقة الرصيد ===== */
 .balance-card {
@@ -154,7 +175,7 @@ h2 { margin-bottom:18px; color:#f5a623; font-size:20px; }
 .btn:active { transform:scale(.98); }
 .btn-secondary { background:#1a1a24; color:#fff; border:1px solid #2a2a3a; }
 
-/* ===== القائمة (setting items) ===== */
+/* ===== القائمة ===== */
 .setting-item {
   display:flex; align-items:center;
   background:linear-gradient(135deg,#1a1a24,#0f0f18);
@@ -254,7 +275,7 @@ h2 { margin-bottom:18px; color:#f5a623; font-size:20px; }
       <div>
         <div class="user-name" id="userName">...</div>
         <div class="user-username" id="userUsername">@...</div>
-        <div class="user-badge" id="userBadge">LION MAX</div>
+        <div class="user-badge" id="userBadge">👑 LION MAX</div>
       </div>
     </div>
     <button class="refresh-btn" onclick="refreshData()">↻</button>
@@ -262,12 +283,15 @@ h2 { margin-bottom:18px; color:#f5a623; font-size:20px; }
 
   <!-- الرئيسية -->
   <div id="page-home" class="page active">
+    <div class="brand-title">🦁 LION MAX</div>
+    <div class="brand-sub">THE APEX KING</div>
+
     <div class="balance-card">
       <div class="balance-label" data-i18n="balance_label">💰 رصيدك الحالي</div>
       <div class="balance-value"><span id="balance">0.00</span> <span class="balance-currency">TON</span></div>
       <div class="balance-actions">
         <button class="btn-wallet" onclick="showPage('wallet')" data-i18n="wallet">💳 المحفظة</button>
-        <button class="btn-tasks" onclick="showPage('tasks')" data-i18n="tasks">📋 المهام</button>
+        <button class="btn-tasks" onclick="showPage('rewards')" data-i18n="tasks">📋 المهام</button>
       </div>
     </div>
 
@@ -275,6 +299,9 @@ h2 { margin-bottom:18px; color:#f5a623; font-size:20px; }
       <div class="hero-emoji" id="heroEmoji">🦁</div>
       <div class="hero-name" id="heroName">الأسد المتعب</div>
       <div class="hero-desc" id="heroDesc">أسد هزيل يحتاج إلى رعايتك</div>
+      <div class="hero-progress" style="height:6px;background:#1a1a24;border-radius:6px;overflow:hidden;margin:10px 0 14px;">
+        <div style="height:100%;width:15%;background:linear-gradient(90deg,#f5a623,#ffd166);"></div>
+      </div>
       <div class="hero-stats">
         <div><div class="hero-stat-val" id="statStr">5</div><div class="hero-stat-lbl" data-i18n="str">قوة</div></div>
         <div><div class="hero-stat-val" id="statSpd">3</div><div class="hero-stat-lbl" data-i18n="spd">سرعة</div></div>
@@ -334,8 +361,8 @@ h2 { margin-bottom:18px; color:#f5a623; font-size:20px; }
     <h2 data-i18n="friends">👥 الأصدقاء</h2>
     <div class="section" style="text-align:center;">
       <div style="font-size:48px;margin-bottom:10px;">🎁</div>
-      <div style="font-size:15px;margin-bottom:8px;" data-i18n="invite_friend">ادعُ صديقًا واربح 0.01 TON</div>
-      <div style="font-size:12px;color:#8a8a98;margin-bottom:16px;" data-i18n="invite_desc">لكل صديق ينضم عبر رابطك</div>
+      <div style="font-size:15px;margin-bottom:8px;" data-i18n="invite_friend">🦁 ادعُ صديقًا واربح 0.01 TON</div>
+      <div style="font-size:12px;color:#8a8a98;margin-bottom:16px;" data-i18n="invite_desc">كل صديق ينضم = مكافأة فورية</div>
       <button class="btn" onclick="shareReferral()" data-i18n="share_link">🔗 مشاركة الرابط</button>
     </div>
     <div class="stat-card" style="text-align:center;">
@@ -437,8 +464,8 @@ const I18N = {
     task_ch1: "الاشتراك بالقناة الرسمية", task_ch2: "الاشتراك بقناة المهام",
     verify: "تحقق", shop: "🛒 المتجر", rewards: "🎁 المكافآت",
     invest: "📈 الاستثمار", friends: "👥 الأصدقاء", settings: "⚙️ الإعدادات",
-    home: "الرئيسية", invite_friend: "ادعُ صديقًا واربح 0.01 TON",
-    invite_desc: "لكل صديق ينضم عبر رابطك", share_link: "🔗 مشاركة الرابط",
+    home: "الرئيسية", invite_friend: "🦁 ادعُ صديقًا واربح 0.01 TON",
+    invite_desc: "كل صديق ينضم = مكافأة فورية", share_link: "🔗 مشاركة الرابط",
     your_referrals: "إحالاتك", link_wallet: "🔗 ربط المحفظة",
     no_wallet: "لا توجد محفظة مرتبطة", link: "🔗 ربط", unlink: "🗑️ إلغاء الربط",
     wallet_ph: "أدخل عنوان TON (EQ.../UQ...)",
@@ -447,7 +474,7 @@ const I18N = {
     choose_lang: "🌐 اختر اللغة", feed_me: "🍖 أطعمني",
     str: "قوة", spd: "سرعة", cha: "جاذبية",
     buy: "شراء", owned: "مملوك", active: "مُفعّل", activate: "تفعيل", locked: "مقفل",
-    tpl_lion_tired: "الأسد المتعب", tpl_lion_tired_desc: "أسد هزيل يحتاج إلى رعايتك",
+    tpl_lion_tired: "الأسد المتعب 🦁", tpl_lion_tired_desc: "أسد هزيل يحتاج إلى رعايتك ليصبح ملكًا",
     tpl_tiger: "النمر", tpl_tiger_desc: "سريع وقوي",
     tpl_wolf: "الذئب", tpl_wolf_desc: "ذكاء وحشي",
     tpl_bear: "الدب", tpl_bear_desc: "قوة لا تُقهر",
@@ -466,8 +493,8 @@ const I18N = {
     task_ch1: "Join official channel", task_ch2: "Join tasks channel",
     verify: "Verify", shop: "🛒 Shop", rewards: "🎁 Rewards",
     invest: "📈 Investment", friends: "👥 Friends", settings: "⚙️ Settings",
-    home: "Home", invite_friend: "Invite a friend, earn 0.01 TON",
-    invite_desc: "For each friend joining via your link", share_link: "🔗 Share Link",
+    home: "Home", invite_friend: "🦁 Invite a friend, earn 0.01 TON",
+    invite_desc: "Each friend joining via your link", share_link: "🔗 Share Link",
     your_referrals: "Your Referrals", link_wallet: "🔗 Link Wallet",
     no_wallet: "No wallet linked", link: "🔗 Link", unlink: "🗑️ Unlink",
     wallet_ph: "Enter TON address (EQ.../UQ...)",
@@ -476,7 +503,7 @@ const I18N = {
     choose_lang: "🌐 Choose Language", feed_me: "🍖 Feed me",
     str: "STR", spd: "SPD", cha: "CHA",
     buy: "Buy", owned: "Owned", active: "Active", activate: "Activate", locked: "Locked",
-    tpl_lion_tired: "Tired Lion", tpl_lion_tired_desc: "A weak lion that needs your care",
+    tpl_lion_tired: "Tired Lion 🦁", tpl_lion_tired_desc: "A weak lion that needs your care to become king",
     tpl_tiger: "Tiger", tpl_tiger_desc: "Fast and strong",
     tpl_wolf: "Wolf", tpl_wolf_desc: "Wild intelligence",
     tpl_bear: "Bear", tpl_bear_desc: "Unstoppable strength",
@@ -495,7 +522,7 @@ const I18N = {
     task_ch1: "Resmi kanala katıl", task_ch2: "Görev kanalına katıl",
     verify: "Doğrula", shop: "🛒 Mağaza", rewards: "🎁 Ödüller",
     invest: "📈 Yatırım", friends: "👥 Arkadaşlar", settings: "⚙️ Ayarlar",
-    home: "Ana Sayfa", invite_friend: "Arkadaş davet et, 0.01 TON kazan",
+    home: "Ana Sayfa", invite_friend: "🦁 Arkadaş davet et, 0.01 TON kazan",
     invite_desc: "Bağlantınızla katılan her arkadaş için", share_link: "🔗 Bağlantıyı Paylaş",
     your_referrals: "Referanslarınız", link_wallet: "🔗 Cüzdan Bağla",
     no_wallet: "Cüzdan bağlı değil", link: "🔗 Bağla", unlink: "🗑️ Kaldır",
@@ -505,7 +532,7 @@ const I18N = {
     choose_lang: "🌐 Dil Seçin", feed_me: "🍖 Beni besle",
     str: "GÜÇ", spd: "HIZ", cha: "ÇEK",
     buy: "Satın Al", owned: "Sahip", active: "Aktif", activate: "Etkinleştir", locked: "Kilitli",
-    tpl_lion_tired: "Yorgun Aslan", tpl_lion_tired_desc: "İlginize ihtiyacı olan zayıf bir aslan",
+    tpl_lion_tired: "Yorgun Aslan 🦁", tpl_lion_tired_desc: "Kral olmak için ilginize ihtiyacı olan zayıf bir aslan",
     tpl_tiger: "Kaplan", tpl_tiger_desc: "Hızlı ve güçlü",
     tpl_wolf: "Kurt", tpl_wolf_desc: "Vahşi zeka",
     tpl_bear: "Ayı", tpl_bear_desc: "Durdurulamaz güç",
@@ -748,7 +775,7 @@ async function startInvestment(level) {
 /* ============ الأصدقاء والمحفظة ============ */
 function shareReferral() {
   const userId = tg?.initDataUnsafe?.user?.id;
-  const botUsername = "YourBotUsername"; // استبدل باسم بوتك بدون @
+  const botUsername = "YourBotUsername"; // ← غيّر هذا إلى اسم بوتك بدون @
   const link = `https://t.me/${botUsername}?start=ref_${userId}`;
   if (tg) {
     tg.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(link)}`);
