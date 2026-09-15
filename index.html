@@ -1,1952 +1,666 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
-
-<title>GRAM MAX</title>
-
-<script src="https://telegram.org/js/telegram-web-app.js"></script>
-
-<style>
-*{
-    box-sizing:border-box;
-    margin:0;
-    padding:0;
-    font-family:Arial,"Tahoma",sans-serif;
-}
-
-body{
-    background:#070b12;
-    color:#fff;
-    min-height:100vh;
-    overflow-x:hidden;
-}
-
-button,input{
-    font-family:inherit;
-}
-
-button{
-    border:0;
-    cursor:pointer;
-}
-
-.app{
-    width:100%;
-    max-width:520px;
-    margin:auto;
-    min-height:100vh;
-    padding-bottom:90px;
-}
-
-/* HEADER */
-
-.header{
-    padding:18px 16px 10px;
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-}
-
-.logo{
-    font-size:24px;
-    font-weight:900;
-    letter-spacing:1px;
-}
-
-.logo span{
-    color:#52e6a7;
-}
-
-.header-btn{
-    width:42px;
-    height:42px;
-    border-radius:14px;
-    background:#101a29;
-    color:#8fdfff;
-    font-size:20px;
-}
-
-/* PROFILE */
-
-.profile{
-    margin:8px 16px 14px;
-    padding:16px;
-    border-radius:22px;
-    background:linear-gradient(135deg,#101c2e,#0c1522);
-    border:1px solid #203650;
-    box-shadow:0 10px 30px rgba(0,0,0,.25);
-    display:flex;
-    align-items:center;
-    gap:13px;
-}
-
-.avatar{
-    width:58px;
-    height:58px;
-    border-radius:18px;
-    object-fit:cover;
-    background:#18283c;
-    border:2px solid #51dba5;
-}
-
-.profile-info{
-    flex:1;
-    min-width:0;
-}
-
-.profile-name{
-    font-size:17px;
-    font-weight:800;
-    white-space:nowrap;
-    overflow:hidden;
-    text-overflow:ellipsis;
-}
-
-.profile-username{
-    color:#8ea4bb;
-    font-size:13px;
-    margin-top:4px;
-}
-
-.profile-level{
-    margin-top:7px;
-    color:#62e4b0;
-    font-size:12px;
-    font-weight:bold;
-}
-
-/* BALANCE */
-
-.balance{
-    margin:0 16px 15px;
-    padding:20px;
-    border-radius:24px;
-    background:linear-gradient(135deg,#10253b,#102b2c);
-    border:1px solid #24455b;
-    box-shadow:0 12px 35px rgba(0,0,0,.3);
-    position:relative;
-    overflow:hidden;
-}
-
-.balance:after{
-    content:"";
-    position:absolute;
-    width:130px;
-    height:130px;
-    background:#52e6a7;
-    opacity:.06;
-    border-radius:50%;
-    left:-40px;
-    top:-50px;
-}
-
-.balance-title{
-    color:#91a8bd;
-    font-size:13px;
-}
-
-.balance-number{
-    margin-top:8px;
-    font-size:34px;
-    font-weight:900;
-}
-
-.balance-number span{
-    color:#5ee5aa;
-    font-size:18px;
-}
-
-.balance-actions{
-    display:flex;
-    gap:9px;
-    margin-top:17px;
-}
-
-.btn{
-    flex:1;
-    padding:12px 8px;
-    border-radius:13px;
-    font-size:13px;
-    font-weight:800;
-}
-
-.btn-green{
-    background:#4ddca4;
-    color:#06120d;
-}
-
-.btn-blue{
-    background:#8fdfff;
-    color:#07111d;
-}
-
-.btn-dark{
-    background:#172536;
-    color:#dcecff;
-    border:1px solid #29435c;
-}
-
-/* SECTIONS */
-
-.section{
-    padding:0 16px;
-    margin-top:18px;
-}
-
-.section-title{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    margin-bottom:10px;
-}
-
-.section-title h2{
-    font-size:18px;
-}
-
-.section-title span{
-    color:#71879b;
-    font-size:12px;
-}
-
-/* CARDS */
-
-.card{
-    background:#0d1725;
-    border:1px solid #1d344b;
-    border-radius:20px;
-    padding:16px;
-    margin-bottom:11px;
-    box-shadow:0 8px 25px rgba(0,0,0,.18);
-}
-
-.card-head{
-    display:flex;
-    align-items:center;
-    gap:11px;
-}
-
-.card-icon{
-    width:43px;
-    height:43px;
-    border-radius:14px;
-    background:#13273a;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-size:21px;
-}
-
-.card-title{
-    font-weight:800;
-    font-size:15px;
-}
-
-.card-sub{
-    color:#7e94a9;
-    font-size:12px;
-    margin-top:4px;
-}
-
-.card-info{
-    display:flex;
-    justify-content:space-between;
-    margin-top:15px;
-    padding-top:12px;
-    border-top:1px solid #1b2d40;
-}
-
-.info-item{
-    text-align:center;
-    flex:1;
-}
-
-.info-item:not(:last-child){
-    border-left:1px solid #1b2d40;
-}
-
-.info-label{
-    color:#71879a;
-    font-size:11px;
-}
-
-.info-value{
-    margin-top:5px;
-    font-weight:bold;
-    color:#cce5f8;
-    font-size:13px;
-}
-
-/* INVESTMENT */
-
-.investment-card{
-    border-radius:21px;
-    padding:17px;
-    background:linear-gradient(145deg,#101e30,#0e1825);
-    border:1px solid #23415a;
-    margin-bottom:12px;
-    position:relative;
-}
-
-.investment-card.active{
-    border-color:#4bdba4;
-    box-shadow:0 0 0 1px rgba(75,219,164,.1),
-               0 12px 28px rgba(0,0,0,.2);
-}
-
-.level{
-    color:#65e4b1;
-    font-size:13px;
-    font-weight:bold;
-}
-
-.investment-title{
-    font-size:18px;
-    font-weight:900;
-    margin-top:6px;
-}
-
-.investment-return{
-    color:#8ea6ba;
-    margin-top:4px;
-    font-size:12px;
-}
-
-.investment-data{
-    display:flex;
-    justify-content:space-between;
-    margin-top:14px;
-}
-
-.investment-data div{
-    color:#8ba0b3;
-    font-size:11px;
-}
-
-.investment-data strong{
-    display:block;
-    color:#fff;
-    font-size:14px;
-    margin-top:4px;
-}
-
-.invest-btn{
-    width:100%;
-    margin-top:15px;
-    padding:13px;
-    border-radius:14px;
-    background:#51dda5;
-    color:#06130d;
-    font-weight:900;
-}
-
-.invest-btn.locked{
-    background:#182737;
-    color:#6d8499;
-}
-
-/* TASKS */
-
-.task-card{
-    background:linear-gradient(145deg,#111f31,#0e1926);
-    border:1px solid #28445d;
-    border-radius:21px;
-    padding:16px;
-    margin-bottom:12px;
-    box-shadow:0 9px 25px rgba(0,0,0,.2);
-}
-
-.task-card.done{
-    border-color:#4edba5;
-    background:linear-gradient(145deg,#102a27,#10201f);
-}
-
-.task-top{
-    display:flex;
-    align-items:center;
-    gap:12px;
-}
-
-.task-icon{
-    width:46px;
-    height:46px;
-    border-radius:15px;
-    background:#162d43;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-size:22px;
-}
-
-.task-name{
-    font-size:16px;
-    font-weight:900;
-}
-
-.task-description{
-    color:#7f95a9;
-    font-size:12px;
-    margin-top:4px;
-}
-
-.reward{
-    margin-top:14px;
-    background:#122536;
-    border-radius:13px;
-    padding:10px;
-    color:#75e5b6;
-    font-weight:bold;
-    font-size:13px;
-}
-
-.task-buttons{
-    display:flex;
-    gap:8px;
-    margin-top:11px;
-}
-
-.task-btn{
-    flex:1;
-    padding:12px 7px;
-    border-radius:13px;
-    font-weight:800;
-    font-size:12px;
-}
-
-.open-btn{
-    background:#91ddff;
-    color:#07131d;
-}
-
-.verify-btn{
-    background:#4fdca5;
-    color:#06130d;
-}
-
-.verify-btn.loading{
-    opacity:.6;
-    pointer-events:none;
-}
-
-.completed{
-    margin-top:12px;
-    padding:12px;
-    border-radius:13px;
-    background:#102f27;
-    color:#61e5ae;
-    text-align:center;
-    font-size:13px;
-    font-weight:bold;
-}
-
-/* WALLET */
-
-.wallet-box{
-    background:#0d1725;
-    border:1px solid #1f374d;
-    border-radius:21px;
-    padding:17px;
-}
-
-.wallet-status{
-    padding:12px;
-    background:#122336;
-    border-radius:13px;
-    color:#9bb0c3;
-    font-size:12px;
-    line-height:1.7;
-    word-break:break-all;
-}
-
-.input{
-    width:100%;
-    padding:14px;
-    margin-top:10px;
-    background:#09121e;
-    border:1px solid #284159;
-    border-radius:13px;
-    color:#fff;
-    outline:none;
-    direction:ltr;
-    text-align:left;
-}
-
-.input:focus{
-    border-color:#58dca8;
-}
-
-.full-btn{
-    width:100%;
-    padding:14px;
-    border-radius:14px;
-    margin-top:10px;
-    font-weight:900;
-}
-
-.withdraw-box{
-    margin-top:13px;
-    padding-top:15px;
-    border-top:1px solid #203247;
-}
-
-.withdraw-info{
-    color:#8196a9;
-    font-size:12px;
-    line-height:1.8;
-}
-
-/* PROFILE PAGE */
-
-.profile-big{
-    text-align:center;
-    padding:20px;
-}
-
-.profile-big .avatar{
-    width:85px;
-    height:85px;
-    border-radius:25px;
-}
-
-.profile-big h2{
-    margin-top:10px;
-}
-
-.stats{
-    display:grid;
-    grid-template-columns:repeat(2,1fr);
-    gap:10px;
-    margin-top:15px;
-}
-
-.stat{
-    padding:15px;
-    border-radius:17px;
-    background:#0e1b2a;
-    border:1px solid #1e354a;
-    text-align:center;
-}
-
-.stat-number{
-    font-size:20px;
-    font-weight:900;
-    color:#62e4b0;
-}
-
-.stat-label{
-    color:#778da1;
-    font-size:11px;
-    margin-top:5px;
-}
-
-/* SETTINGS */
-
-.setting{
-    display:flex;
-    align-items:center;
-    gap:12px;
-    padding:15px;
-    border-radius:17px;
-    background:#0d1725;
-    border:1px solid #1d3448;
-    margin-bottom:9px;
-}
-
-.setting-icon{
-    width:40px;
-    height:40px;
-    border-radius:13px;
-    background:#14263a;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-size:19px;
-}
-
-.setting-info{
-    flex:1;
-}
-
-.setting-title{
-    font-weight:bold;
-    font-size:14px;
-}
-
-.setting-sub{
-    color:#71869a;
-    font-size:11px;
-    margin-top:4px;
-}
-
-.setting-arrow{
-    color:#668097;
-}
-
-/* PAGES */
-
-.page{
-    display:none;
-}
-
-.page.active{
-    display:block;
-}
-
-/* BOTTOM NAV */
-
-.bottom-nav{
-    position:fixed;
-    bottom:0;
-    left:50%;
-    transform:translateX(-50%);
-    width:100%;
-    max-width:520px;
-    padding:9px 8px calc(9px + env(safe-area-inset-bottom));
-    background:rgba(7,12,19,.96);
-    backdrop-filter:blur(16px);
-    border-top:1px solid #17283a;
-    display:grid;
-    grid-template-columns:repeat(5,1fr);
-    z-index:100;
-}
-
-.nav-btn{
-    background:none;
-    color:#61788d;
-    padding:5px 2px;
-    font-size:10px;
-    font-weight:bold;
-}
-
-.nav-icon{
-    display:block;
-    font-size:20px;
-    margin-bottom:3px;
-}
-
-.nav-btn.active{
-    color:#62e4b0;
-}
-
-/* TOAST */
-
-.toast{
-    position:fixed;
-    top:18px;
-    left:50%;
-    transform:translateX(-50%) translateY(-120px);
-    width:calc(100% - 30px);
-    max-width:480px;
-    background:#142536;
-    border:1px solid #33516b;
-    border-radius:15px;
-    padding:13px 15px;
-    text-align:center;
-    font-size:13px;
-    z-index:999;
-    transition:.3s;
-    box-shadow:0 10px 30px rgba(0,0,0,.35);
-}
-
-.toast.show{
-    transform:translateX(-50%) translateY(0);
-}
-
-.toast.success{
-    border-color:#4fdca5;
-}
-
-.toast.error{
-    border-color:#e46f6f;
-}
-
-/* EMPTY */
-
-.empty{
-    text-align:center;
-    color:#71869a;
-    padding:30px 10px;
-    font-size:13px;
-}
-
-/* LOADING */
-
-.loading{
-    text-align:center;
-    padding:35px 10px;
-    color:#7f95aa;
-}
-
-.spinner{
-    width:30px;
-    height:30px;
-    border:3px solid #21364a;
-    border-top-color:#58dfa8;
-    border-radius:50%;
-    margin:0 auto 12px;
-    animation:spin .8s linear infinite;
-}
-
-@keyframes spin{
-    to{transform:rotate(360deg);}
-}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GRAM MAX</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+        }
+
+        body {
+            background: #0a0e1a;
+            color: #fff;
+            padding-bottom: 80px;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 15px;
+        }
+
+        /* ========== الهيدر (الملف الشخصي) ========== */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: linear-gradient(135deg, #1a1f35, #0f1425);
+            padding: 15px;
+            border-radius: 20px;
+            margin-bottom: 20px;
+            border: 1px solid #2a3050;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .avatar {
+            width: 55px;
+            height: 55px;
+            border-radius: 50%;
+            border: 3px solid #00d4ff;
+            object-fit: cover;
+            box-shadow: 0 0 15px rgba(0, 212, 255, 0.4);
+        }
+
+        .user-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .user-name {
+            font-size: 16px;
+            font-weight: bold;
+            color: #fff;
+        }
+
+        .user-username {
+            font-size: 12px;
+            color: #8892b0;
+        }
+
+        .user-badge {
+            font-size: 10px;
+            color: #00d4ff;
+            background: rgba(0, 212, 255, 0.1);
+            padding: 2px 8px;
+            border-radius: 10px;
+            margin-top: 3px;
+            display: inline-block;
+            width: fit-content;
+        }
+
+        .refresh-btn {
+            background: #1a1f35;
+            border: 1px solid #2a3050;
+            color: #00d4ff;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            font-size: 18px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .refresh-btn:hover {
+            background: #2a3050;
+            transform: rotate(180deg);
+        }
+
+        /* ========== بطاقة الرصيد ========== */
+        .balance-card {
+            background: linear-gradient(135deg, #00d4ff, #0077ff);
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 20px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 212, 255, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .balance-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+        }
+
+        .balance-label {
+            font-size: 14px;
+            color: rgba(255,255,255,0.8);
+            margin-bottom: 10px;
+        }
+
+        .balance-value {
+            font-size: 42px;
+            font-weight: 900;
+            color: #fff;
+            margin-bottom: 5px;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+
+        .balance-currency {
+            font-size: 18px;
+            color: rgba(255,255,255,0.9);
+        }
+
+        .balance-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .balance-actions button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .btn-wallet {
+            background: rgba(255,255,255,0.2);
+            color: #fff;
+            backdrop-filter: blur(10px);
+        }
+
+        .btn-tasks {
+            background: #fff;
+            color: #0077ff;
+        }
+
+        .balance-actions button:hover {
+            transform: translateY(-2px);
+        }
+
+        /* ========== شبكة الإحصائيات ========== */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #1a1f35, #0f1425);
+            border-radius: 15px;
+            padding: 18px;
+            border: 1px solid #2a3050;
+            text-align: center;
+            transition: 0.3s;
+        }
+
+        .stat-card:hover {
+            border-color: #00d4ff;
+            transform: translateY(-2px);
+        }
+
+        .stat-icon {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 22px;
+            font-weight: bold;
+            color: #00d4ff;
+            margin-bottom: 3px;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: #8892b0;
+        }
+
+        /* ========== قسم المهام السريعة ========== */
+        .quick-tasks {
+            background: linear-gradient(135deg, #1a1f35, #0f1425);
+            border-radius: 20px;
+            padding: 20px;
+            border: 1px solid #2a3050;
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .task-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px;
+            background: #0a0e1a;
+            border-radius: 12px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .task-item:hover {
+            background: #1a1f35;
+        }
+
+        .task-item-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .task-icon {
+            font-size: 20px;
+        }
+
+        .task-text {
+            font-size: 13px;
+        }
+
+        .task-reward {
+            font-size: 12px;
+            color: #00ff88;
+            font-weight: bold;
+        }
+
+        /* ========== شريط التنقل السفلي ========== */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #0f1425;
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 0;
+            border-top: 1px solid #2a3050;
+            z-index: 100;
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.3);
+        }
+
+        .nav {
+            background: none;
+            border: none;
+            color: #8892b0;
+            font-size: 10px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 5px 12px;
+            transition: 0.3s;
+            border-radius: 10px;
+        }
+
+        .nav.active {
+            color: #00d4ff;
+            background: rgba(0, 212, 255, 0.1);
+        }
+
+        .nav-icon {
+            font-size: 20px;
+            margin-bottom: 3px;
+        }
+
+        /* ========== الصفحات ========== */
+        .page {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h2 {
+            margin-bottom: 20px;
+            color: #00d4ff;
+            font-size: 20px;
+        }
+
+        /* ========== أزرار عامة ========== */
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #00d4ff, #0077ff);
+            color: #fff;
+            border: none;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-bottom: 10px;
+            transition: 0.3s;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: #1a1f35;
+            color: #fff;
+            border: 1px solid #2a3050;
+        }
+
+        /* ========== الإعدادات ========== */
+        .setting-item {
+            display: flex;
+            align-items: center;
+            background: linear-gradient(135deg, #1a1f35, #0f1425);
+            padding: 15px;
+            border-radius: 15px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: 0.3s;
+            border: 1px solid #2a3050;
+        }
+
+        .setting-item:hover {
+            border-color: #00d4ff;
+            transform: translateX(-3px);
+        }
+
+        .setting-icon {
+            font-size: 22px;
+            margin-left: 12px;
+        }
+
+        .setting-info {
+            flex: 1;
+        }
+
+        .setting-title {
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .setting-sub {
+            font-size: 11px;
+            color: #8892b0;
+            margin-top: 2px;
+        }
+
+        .arrow {
+            font-size: 20px;
+            color: #4a5578;
+        }
+
+        /* ========== المفتاح (Switch) ========== */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 48px;
+            height: 24px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #2a3050;
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: #00d4ff;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(24px);
+        }
+    </style>
 </head>
-
 <body>
 
-<div class="app">
+<div class="container">
 
-    <!-- HEADER -->
-    <header class="header">
-        <div class="logo">GRAM <span>MAX</span></div>
-        <button class="header-btn" onclick="refreshData()">↻</button>
-    </header>
+    <!-- ========== الهيدر (الملف الشخصي) ========== -->
+    <div class="header">
+        <div class="header-left">
+            <img id="userAvatar" class="avatar" src="https://i.ibb.co/6PqZ8XK/welcome.jpg" alt="Avatar">
+            <div class="user-info">
+                <div class="user-name" id="userName">جاري التحميل...</div>
+                <div class="user-username" id="userUsername">@username</div>
+                <div class="user-badge">عضو GRAM MAX</div>
+            </div>
+        </div>
+        <button class="refresh-btn" onclick="refreshData()">↻</button>
+    </div>
 
-    <!-- PROFILE -->
-    <div class="profile">
-        <img id="userAvatar" class="avatar" src="" alt="avatar">
+    <!-- ========== الصفحة الرئيسية ========== -->
+    <div id="page-home" class="page active">
 
-        <div class="profile-info">
-            <div id="userName" class="profile-name">جارٍ التحميل...</div>
-            <div id="userUsername" class="profile-username">@username</div>
-            <div class="profile-level">عضو GRAM MAX</div>
+        <!-- بطاقة الرصيد -->
+        <div class="balance-card">
+            <div class="balance-label">💰 رصيدك الحالي</div>
+            <div class="balance-value">
+                <span id="balance">0.00</span>
+                <span class="balance-currency">GRAM</span>
+            </div>
+            <div class="balance-actions">
+                <button class="btn-wallet" onclick="showPage('wallet')">💳 المحفظة</button>
+                <button class="btn-tasks" onclick="showPage('tasks')">📋 المهام</button>
+            </div>
+        </div>
+
+        <!-- شبكة الإحصائيات -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">👥</div>
+                <div class="stat-value" id="referrals">0</div>
+                <div class="stat-label">الإحالات</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📋</div>
+                <div class="stat-value" id="tasksCompleted">0</div>
+                <div class="stat-label">المهام المكتملة</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📈</div>
+                <div class="stat-value" id="activeInvestments">0</div>
+                <div class="stat-label">الاستثمارات النشطة</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">💎</div>
+                <div class="stat-value" id="totalEarnings">0.00</div>
+                <div class="stat-label">إجمالي الأرباح</div>
+            </div>
+        </div>
+
+        <!-- المهام السريعة -->
+        <div class="quick-tasks">
+            <div class="section-title">⚡ مهام سريعة</div>
+            <div class="task-item" onclick="showPage('tasks')">
+                <div class="task-item-left">
+                    <div class="task-icon">🏢</div>
+                    <div class="task-text">الاشتراك بالقناة الرسمية</div>
+                </div>
+                <div class="task-reward">+0.01 GRAM</div>
+            </div>
+            <div class="task-item" onclick="showPage('tasks')">
+                <div class="task-item-left">
+                    <div class="task-icon">📢</div>
+                    <div class="task-text">الاشتراك بقناة المهام</div>
+                </div>
+                <div class="task-reward">+0.01 GRAM</div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ========== صفحة الاستثمار ========== -->
+    <div id="page-investment" class="page">
+        <h2>📈 الاستثمار</h2>
+        <div id="activeInvestment"></div>
+        <div class="btn" onclick="startInvestment(1)">المستوى 1 - 1 GRAM</div>
+        <div class="btn" onclick="startInvestment(2)">المستوى 2 - 2 GRAM</div>
+        <div class="btn" onclick="startInvestment(3)">المستوى 3 - 5 GRAM</div>
+        <div class="btn" onclick="startInvestment(4)">المستوى 4 - 7 GRAM</div>
+        <div class="btn" onclick="startInvestment(5)">المستوى 5 - 10 GRAM</div>
+    </div>
+
+    <!-- ========== صفحة المهام ========== -->
+    <div id="page-tasks" class="page">
+        <h2>📋 المهام</h2>
+        <div class="quick-tasks">
+            <div class="task-item">
+                <div class="task-item-left">
+                    <div class="task-icon">🏢</div>
+                    <div class="task-text">الاشتراك بالقناة الرسمية</div>
+                </div>
+                <button class="btn" style="width:auto;padding:8px 15px;margin:0;" onclick="verifyTask(1)">تحقق</button>
+            </div>
+            <div class="task-item">
+                <div class="task-item-left">
+                    <div class="task-icon">📢</div>
+                    <div class="task-text">الاشتراك بقناة المهام</div>
+                </div>
+                <button class="btn" style="width:auto;padding:8px 15px;margin:0;" onclick="verifyTask(2)">تحقق</button>
+            </div>
         </div>
     </div>
 
-    <!-- HOME -->
-    <main id="homePage" class="page active">
+    <!-- ========== صفحة المحفظة ========== -->
+    <div id="page-wallet" class="page">
+        <h2>💳 المحفظة</h2>
+        <div class="quick-tasks">
+            <div class="section-title">🔗 ربط المحفظة</div>
+            <div class="setting-sub" style="margin-bottom:15px;">اربط محفظة TON الخاصة بك</div>
+            <div id="walletStatus" style="padding:12px;background:#0a0e1a;border-radius:12px;text-align:center;margin-bottom:15px;">لا توجد محفظة مرتبطة</div>
+            <input id="walletInput" class="input" placeholder="أدخل عنوان TON" style="width:100%;padding:12px;background:#0a0e1a;border:1px solid #2a3050;border-radius:12px;color:#fff;margin-bottom:10px;">
+            <button class="btn" onclick="saveWallet()">🔗 ربط المحفظة</button>
+            <button class="btn btn-secondary" onclick="unlinkWallet()">🗑️ إلغاء الربط</button>
+        </div>
+    </div>
 
-        <div class="balance">
-            <div class="balance-title">رصيدك الحالي</div>
+    <!-- ========== صفحة الإعدادات ========== -->
+    <div id="page-settings" class="page">
+        <h2>⚙️ الإعدادات</h2>
 
-            <div class="balance-number">
-                <span id="balance">0.00</span>
-                <span>GRAM</span>
+        <div class="setting-item" onclick="openSupport()">
+            <div class="setting-icon">🆘</div>
+            <div class="setting-info">
+                <div class="setting-title">الدعم السريع</div>
+                <div class="setting-sub">تواصل مع فريق الدعم</div>
             </div>
-
-            <div class="balance-actions">
-                <button class="btn btn-green" onclick="showPage('wallet')">
-                    💳 المحفظة
-                </button>
-
-                <button class="btn btn-blue" onclick="showPage('tasks')">
-                    🎯 المهام
-                </button>
-            </div>
+            <div class="arrow">‹</div>
         </div>
 
-        <section class="section">
-            <div class="section-title">
-                <h2>📊 ملخص حسابك</h2>
-                <span>GRAM MAX</span>
+        <div class="setting-item" onclick="showLanguage()">
+            <div class="setting-icon">🌐</div>
+            <div class="setting-info">
+                <div class="setting-title">اللغة</div>
+                <div class="setting-sub" id="currentLanguage">العربية 🇸🇾</div>
             </div>
+            <div class="arrow">‹</div>
+        </div>
 
-            <div class="card">
-                <div class="card-head">
-                    <div class="card-icon">👥</div>
-
-                    <div>
-                        <div class="card-title">دعوة الأصدقاء</div>
-                        <div class="card-sub">
-                            اكسب من نشاط الأشخاص الذين دعوتهم
-                        </div>
-                    </div>
-                </div>
-
-                <div class="card-info">
-                    <div class="info-item">
-                        <div class="info-label">الإحالات</div>
-                        <div id="referrals" class="info-value">0</div>
-                    </div>
-
-                    <div class="info-item">
-                        <div class="info-label">المكافآت</div>
-                        <div id="referralEarnings" class="info-value">0.00</div>
-                    </div>
-                </div>
+        <div class="setting-item">
+            <div class="setting-icon">🔔</div>
+            <div class="setting-info">
+                <div class="setting-title">الإشعارات</div>
+                <div class="setting-sub">تفعيل أو إيقاف الإشعارات</div>
             </div>
-
-            <div class="card">
-                <div class="card-head">
-                    <div class="card-icon">📋</div>
-
-                    <div>
-                        <div class="card-title">المهام المكتملة</div>
-                        <div class="card-sub">
-                            أكمل المهام واحصل على مكافآتك
-                        </div>
-                    </div>
-                </div>
-
-                <div class="card-info">
-                    <div class="info-item">
-                        <div class="info-label">المكتملة</div>
-                        <div id="completedTasks" class="info-value">0</div>
-                    </div>
-
-                    <div class="info-item">
-                        <div class="info-label">المطلوب للسحب</div>
-                        <div class="info-value">5</div>
-                    </div>
-                </div>
-            </div>
-
-        </section>
-
-    </main>
-
-    <!-- INVESTMENT -->
-    <main id="investmentPage" class="page">
-
-        <section class="section">
-
-            <div class="section-title">
-                <h2>📈 الاستثمار</h2>
-                <span>مستويات متتالية</span>
-            </div>
-
-            <div id="investmentList">
-
-                <div class="investment-card active">
-                    <div class="level">المستوى 1</div>
-                    <div class="investment-title">
-                        1 GRAM ➜ 1.15 GRAM
-                    </div>
-                    <div class="investment-return">
-                        مدة الاستثمار: 12 ساعة
-                    </div>
-
-                    <div class="investment-data">
-                        <div>
-                            المبلغ
-                            <strong>1 GRAM</strong>
-                        </div>
-
-                        <div>
-                            العائد
-                            <strong>1.15 GRAM</strong>
-                        </div>
-
-                        <div>
-                            المدة
-                            <strong>12 ساعة</strong>
-                        </div>
-                    </div>
-
-                    <button class="invest-btn" onclick="startInvestment(1)">
-                        🚀 بدء الاستثمار
-                    </button>
-                </div>
-
-                <div class="investment-card">
-                    <div class="level">المستوى 2</div>
-                    <div class="investment-title">
-                        2 GRAM ➜ 2.30 GRAM
-                    </div>
-                    <div class="investment-return">
-                        مدة الاستثمار: 24 ساعة
-                    </div>
-
-                    <div class="investment-data">
-                        <div>
-                            المبلغ
-                            <strong>2 GRAM</strong>
-                        </div>
-
-                        <div>
-                            العائد
-                            <strong>2.30 GRAM</strong>
-                        </div>
-
-                        <div>
-                            المدة
-                            <strong>24 ساعة</strong>
-                        </div>
-                    </div>
-
-                    <button class="invest-btn locked" onclick="lockedInvestment()">
-                        🔒 مقفل
-                    </button>
-                </div>
-
-                <div class="investment-card">
-                    <div class="level">المستوى 3</div>
-                    <div class="investment-title">
-                        5 GRAM ➜ 5.70 GRAM
-                    </div>
-                    <div class="investment-return">
-                        مدة الاستثمار: 48 ساعة
-                    </div>
-
-                    <div class="investment-data">
-                        <div>
-                            المبلغ
-                            <strong>5 GRAM</strong>
-                        </div>
-
-                        <div>
-                            العائد
-                            <strong>5.70 GRAM</strong>
-                        </div>
-
-                        <div>
-                            المدة
-                            <strong>48 ساعة</strong>
-                        </div>
-                    </div>
-
-                    <button class="invest-btn locked" onclick="lockedInvestment()">
-                        🔒 مقفل
-                    </button>
-                </div>
-
-                <div class="investment-card">
-                    <div class="level">المستوى 4</div>
-                    <div class="investment-title">
-                        7 GRAM ➜ 8.30 GRAM
-                    </div>
-                    <div class="investment-return">
-                        مدة الاستثمار: 3 أيام
-                    </div>
-
-                    <div class="investment-data">
-                        <div>
-                            المبلغ
-                            <strong>7 GRAM</strong>
-                        </div>
-
-                        <div>
-                            العائد
-                            <strong>8.30 GRAM</strong>
-                        </div>
-
-                        <div>
-                            المدة
-                            <strong>3 أيام</strong>
-                        </div>
-                    </div>
-
-                    <button class="invest-btn locked" onclick="lockedInvestment()">
-                        🔒 مقفل
-                    </button>
-                </div>
-
-                <div class="investment-card">
-                    <div class="level">المستوى 5</div>
-                    <div class="investment-title">
-                        10 GRAM ➜ 13 GRAM
-                    </div>
-                    <div class="investment-return">
-                        مدة الاستثمار: 5 أيام
-                    </div>
-
-                    <div class="investment-data">
-                        <div>
-                            المبلغ
-                            <strong>10 GRAM</strong>
-                        </div>
-
-                        <div>
-                            العائد
-                            <strong>13 GRAM</strong>
-                        </div>
-
-                        <div>
-                            المدة
-                            <strong>5 أيام</strong>
-                        </div>
-                    </div>
-
-                    <button class="invest-btn locked" onclick="lockedInvestment()">
-                        🔒 مقفل
-                    </button>
-                </div>
-
-            </div>
-
-        </section>
-
-    </main>
-
-    <!-- TASKS -->
-    <main id="tasksPage" class="page">
-
-        <section class="section">
-
-            <div class="section-title">
-                <h2>📋 مهام اليوم</h2>
-                <span>+0.01 GRAM</span>
-            </div>
-
-            <div id="tasksContainer">
-
-                <!-- TASK 1 -->
-                <div class="task-card" id="task-1">
-
-                    <div class="task-top">
-                        <div class="task-icon">🏢</div>
-
-                        <div>
-                            <div class="task-name">
-                                الاشتراك بالقناة الرسمية
-                            </div>
-
-                            <div class="task-description">
-                                اشترك بالقناة ثم اضغط تحقق
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="reward">
-                        💰 المكافأة: 0.01 GRAM
-                    </div>
-
-                    <div class="task-buttons">
-                        <button
-                            class="task-btn open-btn"
-                            onclick="openTask(1,'https://t.me/CRYBTO_MAX_1')">
-                            🔗 فتح القناة
-                        </button>
-
-                        <button
-                            id="verify-1"
-                            class="task-btn verify-btn"
-                            onclick="verifyTask(1)">
-                            ✅ تحقق
-                        </button>
-                    </div>
-
-                    <div id="done-1" class="completed" style="display:none;">
-                        ✅ تم إكمال المهمة<br>
-                        <span>+0.01 GRAM</span>
-                    </div>
-
-                </div>
-
-                <!-- TASK 2 -->
-                <div class="task-card" id="task-2">
-
-                    <div class="task-top">
-                        <div class="task-icon">📢</div>
-
-                        <div>
-                            <div class="task-name">
-                                الاشتراك بقناة المهام
-                            </div>
-
-                            <div class="task-description">
-                                اشترك ثم عد واضغط تحقق
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="reward">
-                        💰 المكافأة: 0.01 GRAM
-                    </div>
-
-                    <div class="task-buttons">
-                        <button
-                            class="task-btn open-btn"
-                            onclick="openTask(2,'https://t.me/olka_ad')">
-                            🔗 فتح القناة
-                        </button>
-
-                        <button
-                            id="verify-2"
-                            class="task-btn verify-btn"
-                            onclick="verifyTask(2)">
-                            ✅ تحقق
-                        </button>
-                    </div>
-
-                    <div id="done-2" class="completed" style="display:none;">
-                        ✅ تم إكمال المهمة<br>
-                        <span>+0.01 GRAM</span>
-                    </div>
-
-                </div>
-
-            </div>
-
-        </section>
-
-    </main>
-
-    <!-- WALLET -->
-    <main id="walletPage" class="page">
-
-        <section class="section">
-
-            <div class="section-title">
-                <h2>💳 المحفظة</h2>
-                <span>TON</span>
-            </div>
-
-            <div class="wallet-box">
-
-                <div class="card-title">
-                    عنوان محفظتك
-                </div>
-
-                <div id="walletStatus" class="wallet-status" style="margin-top:10px;">
-                    لم يتم ربط محفظة بعد.
-                </div>
-
-                <input
-                    id="walletInput"
-                    class="input"
-                    type="text"
-                    placeholder="EQ... أو UQ..."
-                    autocomplete="off"
-                >
-
-                <button
-                    class="full-btn btn-green"
-                    onclick="saveWallet()">
-                    💾 حفظ المحفظة
-                </button>
-
-                <button
-                    class="full-btn btn-dark"
-                    onclick="unlinkWallet()">
-                    🗑️ إلغاء ربط المحفظة
-                </button>
-
-                <div class="withdraw-box">
-
-                    <div class="card-title">
-                        💵 طلب سحب
-                    </div>
-
-                    <div class="withdraw-info">
-                        الحد الأدنى للسحب مرتبط بإكمال 5 مهام.<br>
-                        رسوم السحب: 1%.
-                    </div>
-
-                    <input
-                        id="withdrawAmount"
-                        class="input"
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        placeholder="أدخل المبلغ بالـ GRAM"
-                    >
-
-                    <button
-                        class="full-btn btn-blue"
-                        onclick="requestWithdraw()">
-                        💸 طلب سحب
-                    </button>
-
-                </div>
-
-            </div>
-
-        </section>
-
-    </main>
-
-    <!-- PROFILE -->
-    <main id="profilePage" class="page">
-
-        <section class="section">
-
-            <div class="card profile-big">
-
-                <img id="profileAvatar"
-                     class="avatar"
-                     src=""
-                     alt="profile">
-
-                <h2 id="profileName">
-                    المستخدم
-                </h2>
-
-                <div id="profileUsername"
-                     class="profile-username">
-                    @username
-                </div>
-
-                <div class="stats">
-
-                    <div class="stat">
-                        <div id="profileBalance"
-                             class="stat-number">
-                            0.00
-                        </div>
-
-                        <div class="stat-label">
-                            الرصيد
-                        </div>
-                    </div>
-
-                    <div class="stat">
-                        <div id="profileReferrals"
-                             class="stat-number">
-                            0
-                        </div>
-
-                        <div class="stat-label">
-                            الإحالات
-                        </div>
-                    </div>
-
-                    <div class="stat">
-                        <div id="profileTasks"
-                             class="stat-number">
-                            0
-                        </div>
-
-                        <div class="stat-label">
-                            المهام
-                        </div>
-                    </div>
-
-                    <div class="stat">
-                        <div id="profileInvestments"
-                             class="stat-number">
-                            0
-                        </div>
-
-                        <div class="stat-label">
-                            الاستثمارات
-                        </div>
-                    </div>
-
-                </div>
-
-            </div>
-
-        </section>
-
-    </main>
-
-    <!-- SETTINGS -->
-    <main id="settingsPage" class="page">
-
-        <section class="section">
-
-            <div class="section-title">
-                <h2>⚙️ الإعدادات</h2>
-            </div>
-
-            <div class="setting"
-                 onclick="openLink('https://t.me/CRYBTO_MAX_1')">
-
-                <div class="setting-icon">🏢</div>
-
-                <div class="setting-info">
-                    <div class="setting-title">
-                        القناة الرسمية
-                    </div>
-
-                    <div class="setting-sub">
-                        تابع آخر الأخبار والتحديثات
-                    </div>
-                </div>
-
-                <div class="setting-arrow">‹</div>
-            </div>
-
-            <div class="setting"
-                 onclick="openLink('https://t.me/FastHelp3')">
-
-                <div class="setting-icon">🆘</div>
-
-                <div class="setting-info">
-                    <div class="setting-title">
-                        الدعم السريع
-                    </div>
-
-                    <div class="setting-sub">
-                        تواصل معنا عند وجود مشكلة
-                    </div>
-                </div>
-
-                <div class="setting-arrow">‹</div>
-            </div>
-
-            <div class="setting"
-                 onclick="shareReferral()">
-
-                <div class="setting-icon">👥</div>
-
-                <div class="setting-info">
-                    <div class="setting-title">
-                        دعوة الأصدقاء
-                    </div>
-
-                    <div class="setting-sub">
-                        شارك رابط الإحالة الخاص بك
-                    </div>
-                </div>
-
-                <div class="setting-arrow">‹</div>
-            </div>
-
-            <div class="setting">
-
-                <div class="setting-icon">🌐</div>
-
-                <div class="setting-info">
-                    <div class="setting-title">
-                        اللغة
-                    </div>
-
-                    <div class="setting-sub">
-                        العربية
-                    </div>
-                </div>
-
-                <div class="setting-arrow">
-                    العربية
-                </div>
-
-            </div>
-
-        </section>
-
-    </main>
+            <label class="switch">
+                <input type="checkbox" id="notificationsToggle" checked onchange="toggleNotifications()">
+                <span class="slider"></span>
+            </label>
+        </div>
+    </div>
 
 </div>
 
-<!-- BOTTOM NAV -->
-
-<nav class="bottom-nav">
-
-    <button id="nav-home"
-            class="nav-btn active"
-            onclick="showPage('home')">
-        <span class="nav-icon">🏠</span>
-        الرئيسية
+<!-- ========== شريط التنقل السفلي ========== -->
+<div class="bottom-nav">
+    <button id="nav-home" class="nav active" onclick="showPage('home')">
+        <span class="nav-icon">🏠</span> الرئيسية
     </button>
-
-    <button id="nav-investment"
-            class="nav-btn"
-            onclick="showPage('investment')">
-        <span class="nav-icon">📈</span>
-        الاستثمار
+    <button id="nav-investment" class="nav" onclick="showPage('investment')">
+        <span class="nav-icon">📈</span> الاستثمار
     </button>
-
-    <button id="nav-tasks"
-            class="nav-btn"
-            onclick="showPage('tasks')">
-        <span class="nav-icon">📋</span>
-        المهام
+    <button id="nav-tasks" class="nav" onclick="showPage('tasks')">
+        <span class="nav-icon">📋</span> المهام
     </button>
-
-    <button id="nav-wallet"
-            class="nav-btn"
-            onclick="showPage('wallet')">
-        <span class="nav-icon">💳</span>
-        المحفظة
+    <button id="nav-wallet" class="nav" onclick="showPage('wallet')">
+        <span class="nav-icon">💳</span> المحفظة
     </button>
-
-    <button id="nav-settings"
-            class="nav-btn"
-            onclick="showPage('settings')">
-        <span class="nav-icon">⚙️</span>
-        الإعدادات
+    <button id="nav-settings" class="nav" onclick="showPage('settings')">
+        <span class="nav-icon">⚙️</span> الإعدادات
     </button>
-
-</nav>
-
-<div id="toast" class="toast"></div>
+</div>
 
 <script>
-
-const tg = window.Telegram.WebApp;
-
-tg.ready();
-tg.expand();
-
-let appData = {};
-let apiUrl = new URLSearchParams(location.search).get("api") || "";
-
-const user = tg.initDataUnsafe?.user || {};
-
-function escapeHtml(text){
-    const div = document.createElement("div");
-    div.textContent = text ?? "";
-    return div.innerHTML;
-}
-
-/* USER */
-
-function setupUser(){
-
-    const name =
-        [user.first_name,user.last_name]
-        .filter(Boolean)
-        .join(" ") || "مستخدم Telegram";
-
-    const username =
-        user.username
-        ? "@" + user.username
-        : "بدون اسم مستخدم";
-
-    document.getElementById("userName").textContent = name;
-    document.getElementById("userUsername").textContent = username;
-
-    document.getElementById("profileName").textContent = name;
-    document.getElementById("profileUsername").textContent = username;
-
-    if(user.photo_url){
-
-        document.getElementById("userAvatar").src = user.photo_url;
-        document.getElementById("profileAvatar").src = user.photo_url;
-
-    }else{
-
-        document.getElementById("userAvatar").src =
-            "https://ui-avatars.com/api/?name=" +
-            encodeURIComponent(name) +
-            "&background=14283a&color=ffffff";
-
-        document.getElementById("profileAvatar").src =
-            "https://ui-avatars.com/api/?name=" +
-            encodeURIComponent(name) +
-            "&background=14283a&color=ffffff";
-    }
-}
-
-/* NAVIGATION */
-
-function showPage(page){
-
-    document.querySelectorAll(".page")
-        .forEach(el => el.classList.remove("active"));
-
-    const target =
-        document.getElementById(page + "Page");
-
-    if(target){
-        target.classList.add("active");
+    // ========== تحديث البيانات ==========
+    function refreshData() {
+        location.reload();
     }
 
-    document.querySelectorAll(".nav-btn")
-        .forEach(el => el.classList.remove("active"));
-
-    const nav =
-        document.getElementById("nav-" + page);
-
-    if(nav){
-        nav.classList.add("active");
+    // ========== التنقل ==========
+    function showPage(pageId) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.getElementById('page-' + pageId).classList.add('active');
+        document.querySelectorAll('.nav').forEach(n => n.classList.remove('active'));
+        document.getElementById('nav-' + pageId).classList.add('active');
     }
 
-    window.scrollTo({
-        top:0,
-        behavior:"smooth"
+    // ========== الدعم ==========
+    function openSupport() {
+        window.open('https://t.me/FastHelp3', '_blank');
+    }
+
+    // ========== اللغة ==========
+    function showLanguage() {
+        alert('🌐 اختر اللغة:\n\n🇸🇾 العربية\n🇬🇧 English\n🇷🇺 Русский');
+    }
+
+    // ========== الإشعارات ==========
+    function toggleNotifications() {
+        const enabled = document.getElementById('notificationsToggle').checked;
+        alert(enabled ? '✅ تم تفعيل الإشعارات' : '🔕 تم إيقاف الإشعارات');
+    }
+
+    // ========== تحميل بيانات المستخدم ==========
+    window.addEventListener('load', () => {
+        const user = window.Telegram?.WebApp?.initDataUnsafe?.user;
+        if (user) {
+            document.getElementById('userName').innerText = user.first_name || 'مستخدم';
+            document.getElementById('userUsername').innerText = '@' + (user.username || 'user');
+            if (user.photo_url) {
+                document.getElementById('userAvatar').src = user.photo_url;
+            }
+        }
     });
-}
-
-/* TOAST */
-
-function toast(message,type="normal"){
-
-    const box = document.getElementById("toast");
-
-    box.textContent = message;
-
-    box.className =
-        "toast show " +
-        (type === "success" ? "success" :
-         type === "error" ? "error" : "");
-
-    clearTimeout(window.toastTimer);
-
-    window.toastTimer =
-        setTimeout(()=>{
-            box.className = "toast";
-        },3000);
-}
-
-/* API */
-
-async function apiRequest(action,data={}){
-
-    if(!apiUrl){
-
-        /*
-          في حال لم يتم وضع API:
-          نستخدم sendData كحل احتياطي.
-        */
-
-        tg.sendData(JSON.stringify({
-            action,
-            ...data
-        }));
-
-        return null;
-    }
-
-    try{
-
-        const response =
-            await fetch(
-                apiUrl.replace(/\/$/,"") + "/api/action",
-                {
-                    method:"POST",
-
-                    headers:{
-                        "Content-Type":"application/json"
-                    },
-
-                    body:JSON.stringify({
-                        initData:tg.initData,
-                        action,
-                        data
-                    })
-                }
-            );
-
-        const result = await response.json();
-
-        if(!response.ok || result.ok === false){
-
-            throw new Error(
-                result.error || "حدث خطأ في الخادم"
-            );
-        }
-
-        return result;
-
-    }catch(error){
-
-        console.error(error);
-
-        toast(
-            error.message || "تعذر الاتصال بالخادم",
-            "error"
-        );
-
-        return null;
-    }
-}
-
-/* GET DATA */
-
-async function loadData(){
-
-    if(!apiUrl){
-        return;
-    }
-
-    try{
-
-        const response =
-            await fetch(
-                apiUrl.replace(/\/$/,"") +
-                "/api/get_data?initData=" +
-                encodeURIComponent(tg.initData)
-            );
-
-        const result = await response.json();
-
-        if(!response.ok || result.ok === false){
-
-            throw new Error(
-                result.error || "تعذر تحميل البيانات"
-            );
-        }
-
-        appData = result.data || {};
-
-        updateUI();
-
-    }catch(error){
-
-        console.error(error);
-
-        toast(
-            "تعذر تحميل بيانات الحساب",
-            "error"
-        );
-    }
-}
-
-async function refreshData(){
-
-    if(!apiUrl){
-
-        toast(
-            "لم يتم ربط واجهة البوت بالخادم بعد",
-            "error"
-        );
-
-        return;
-    }
-
-    toast("⏳ جاري تحديث البيانات...");
-
-    await loadData();
-
-    toast("✅ تم تحديث البيانات","success");
-}
-
-/* UPDATE UI */
-
-function updateUI(){
-
-    const data = appData || {};
-
-    const balance =
-        Number(data.balance || 0).toFixed(2);
-
-    document.getElementById("balance")
-        .textContent = balance;
-
-    document.getElementById("profileBalance")
-        .textContent = balance;
-
-    document.getElementById("referrals")
-        .textContent =
-        data.referrals || 0;
-
-    document.getElementById("profileReferrals")
-        .textContent =
-        data.referrals || 0;
-
-    document.getElementById("completedTasks")
-        .textContent =
-        data.completed_tasks || 0;
-
-    document.getElementById("profileTasks")
-        .textContent =
-        data.completed_tasks || 0;
-
-    document.getElementById("referralEarnings")
-        .textContent =
-        Number(data.referral_earnings || 0)
-        .toFixed(2);
-
-    document.getElementById("profileInvestments")
-        .textContent =
-        data.investments || 0;
-
-    if(data.wallet_address){
-
-        document.getElementById("walletStatus")
-            .textContent =
-            data.wallet_address;
-
-        document.getElementById("walletInput")
-            .value =
-            data.wallet_address;
-
-    }else{
-
-        document.getElementById("walletStatus")
-            .textContent =
-            "لم يتم ربط محفظة بعد.";
-
-        document.getElementById("walletInput")
-            .value = "";
-    }
-
-    updateTasks(data.tasks || []);
-}
-
-/* TASKS */
-
-function updateTasks(tasks){
-
-    tasks.forEach(task => {
-
-        if(!task.completed) return;
-
-        const done =
-            document.getElementById(
-                "done-" + task.task_id
-            );
-
-        const verify =
-            document.getElementById(
-                "verify-" + task.task_id
-            );
-
-        if(done){
-            done.style.display = "block";
-        }
-
-        if(verify){
-            verify.style.display = "none";
-        }
-
-        const card =
-            document.getElementById(
-                "task-" + task.task_id
-            );
-
-        if(card){
-            card.classList.add("done");
-        }
-
-    });
-}
-
-function openTask(id,url){
-
-    try{
-
-        tg.openTelegramLink(url);
-
-    }catch(e){
-
-        window.open(url,"_blank");
-    }
-}
-
-async function verifyTask(id){
-
-    const button =
-        document.getElementById("verify-" + id);
-
-    if(!button) return;
-
-    button.classList.add("loading");
-    button.textContent = "⏳ جاري التحقق...";
-
-    const result =
-        await apiRequest(
-            "verify_task",
-            {
-                task_id:id
-            }
-        );
-
-    if(result){
-
-        if(result.ok){
-
-            button.textContent = "✅ تم التحقق";
-
-            toast(
-                result.message ||
-                "✅ تم إكمال المهمة وحصلت على المكافأة",
-                "success"
-            );
-
-            await loadData();
-
-        }else{
-
-            button.classList.remove("loading");
-            button.textContent = "✅ تحقق";
-
-            toast(
-                result.error ||
-                "❌ لم يتم العثور على الاشتراك",
-                "error"
-            );
-        }
-
-    }else{
-
-        button.classList.remove("loading");
-        button.textContent = "✅ تحقق";
-    }
-}
-
-/* WALLET */
-
-function isValidTonWallet(address){
-
-    return /^[EU]Q[A-Za-z0-9_-]{46}$/.test(
-        address.trim()
-    );
-}
-
-async function saveWallet(){
-
-    const input =
-        document.getElementById("walletInput");
-
-    const address =
-        input.value.trim();
-
-    if(!isValidTonWallet(address)){
-
-        toast(
-            "❌ عنوان TON غير صحيح من ناحية التنسيق",
-            "error"
-        );
-
-        return;
-    }
-
-    const result =
-        await apiRequest(
-            "save_wallet",
-            {
-                wallet_address:address
-            }
-        );
-
-    if(result){
-
-        toast(
-            "✅ تم حفظ المحفظة",
-            "success"
-        );
-
-        await loadData();
-    }
-}
-
-async function unlinkWallet(){
-
-    if(!confirm("هل تريد فعلاً إلغاء ربط المحفظة؟")){
-        return;
-    }
-
-    const result =
-        await apiRequest(
-            "unlink_wallet"
-        );
-
-    if(result){
-
-        toast(
-            "✅ تم إلغاء ربط المحفظة",
-            "success"
-        );
-
-        await loadData();
-    }
-}
-
-/* WITHDRAW */
-
-async function requestWithdraw(){
-
-    const input =
-        document.getElementById(
-            "withdrawAmount"
-        );
-
-    const amount =
-        Number(input.value);
-
-    if(!amount || amount <= 0){
-
-        toast(
-            "❌ أدخل مبلغ سحب صحيح",
-            "error"
-        );
-
-        return;
-    }
-
-    const result =
-        await apiRequest(
-            "withdraw",
-            {
-                amount
-            }
-        );
-
-    if(result){
-
-        input.value = "";
-
-        toast(
-            result.message ||
-            "✅ تم إنشاء طلب السحب",
-            "success"
-        );
-
-        await loadData();
-    }
-}
-
-/* INVESTMENT */
-
-async function startInvestment(level){
-
-    const result =
-        await apiRequest(
-            "start_investment",
-            {
-                level
-            }
-        );
-
-    if(result){
-
-        toast(
-            result.message ||
-            "✅ تم بدء الاستثمار",
-            "success"
-        );
-
-        await loadData();
-    }
-}
-
-function lockedInvestment(){
-
-    toast(
-        "🔒 يجب إكمال المستوى السابق أولاً",
-        "error"
-    );
-}
-
-/* LINKS */
-
-function openLink(url){
-
-    try{
-
-        tg.openTelegramLink(url);
-
-    }catch(e){
-
-        window.open(url,"_blank");
-    }
-}
-
-/* REFERRAL */
-
-function shareReferral(){
-
-    const id = user.id;
-
-    if(!id){
-
-        toast(
-            "تعذر إنشاء رابط الإحالة",
-            "error"
-        );
-
-        return;
-    }
-
-    const link =
-        "https://t.me/GramMax1_Bot?start=" +
-        id;
-
-    const text =
-        "🚀 انضم إلى GRAM MAX وابدأ بجمع GRAM من المهام والمكافآت!";
-
-    const shareUrl =
-        "https://t.me/share/url?url=" +
-        encodeURIComponent(link) +
-        "&text=" +
-        encodeURIComponent(text);
-
-    openLink(shareUrl);
-}
-
-/* START */
-
-setupUser();
-
-loadData();
-
 </script>
 
 </body>
