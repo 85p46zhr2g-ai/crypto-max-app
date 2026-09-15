@@ -30,50 +30,39 @@ TASK_CHANNELS = {1: "@CRYBTO_MAX_1", 2: "@olka_ad"}
 TASK_REWARDS  = {1: 0.01, 2: 0.01}
 
 # ================== كتالوج القوالب ==================
-# القوالب قابلة للتوسع من هنا مباشرة بدون لمس الواجهة
 TEMPLATES = {
     "lion_tired": {
-        "id": "lion_tired",
-        "emoji": "🦁",
-        "name_key": "tpl_lion_tired",
-        "desc_key": "tpl_lion_tired_desc",
-        "level": 1,
-        "stats": {"str": 5, "spd": 3, "cha": 2},
-        "price": 0,
-        "owned_default": True,
-        "image": "https://api.dicebear.com/7.x/bottts-neutral/svg?seed=lion_tired&backgroundColor=ffb86b",
+        "id": "lion_tired", "emoji": "🦁",
+        "name_key": "tpl_lion_tired", "desc_key": "tpl_lion_tired_desc",
+        "level": 1, "stats": {"str": 5, "spd": 3, "cha": 2},
+        "price": 0, "owned_default": True,
     },
     "tiger": {
         "id": "tiger", "emoji": "🐯",
         "name_key": "tpl_tiger", "desc_key": "tpl_tiger_desc",
         "level": 3, "stats": {"str": 12, "spd": 9, "cha": 6},
         "price": 2.5, "owned_default": False,
-        "image": "https://api.dicebear.com/7.x/bottts-neutral/svg?seed=tiger&backgroundColor=ffa94d",
     },
     "wolf": {
         "id": "wolf", "emoji": "🐺",
         "name_key": "tpl_wolf", "desc_key": "tpl_wolf_desc",
         "level": 5, "stats": {"str": 18, "spd": 22, "cha": 10},
         "price": 7.0, "owned_default": False,
-        "image": "https://api.dicebear.com/7.x/bottts-neutral/svg?seed=wolf&backgroundColor=94a3b8",
     },
     "bear": {
         "id": "bear", "emoji": "🐻",
         "name_key": "tpl_bear", "desc_key": "tpl_bear_desc",
         "level": 8, "stats": {"str": 35, "spd": 8, "cha": 15},
         "price": 15.0, "owned_default": False,
-        "image": "https://api.dicebear.com/7.x/bottts-neutral/svg?seed=bear&backgroundColor=a16207",
     },
     "eagle": {
         "id": "eagle", "emoji": "🦅",
         "name_key": "tpl_eagle", "desc_key": "tpl_eagle_desc",
         "level": 12, "stats": {"str": 20, "spd": 40, "cha": 25},
         "price": 30.0, "owned_default": False,
-        "image": "https://api.dicebear.com/7.x/bottts-neutral/svg?seed=eagle&backgroundColor=475569",
     },
 }
 
-# مستويات الاستثمار (محافظة على النظام القديم)
 INVEST_LEVELS = {
     1: (1.0, 24, 0.02),
     2: (2.0, 24, 0.05),
@@ -485,8 +474,16 @@ async def cmd_start(message: Message):
         InlineKeyboardButton(text="🦁 فتح LION MAX", web_app=WebAppInfo(url=WEBAPP_URL))
     ]])
     await message.answer(
-        "أهلًا بك في LION MAX 🦁\nطوّر أسدك المتعب وابنِ إمبراطوريتك!\nاضغط الزر لفتح التطبيق.",
+        "🦁 <b>LION MAX</b>\n"
+        "━━━━━━━━━━━━━━\n"
+        "👑 من أسد هزيل... إلى ملك الغابة\n\n"
+        "🍖 أطعم أسدك\n"
+        "📈 استثمر أرباحك\n"
+        "🛒 اشترِ قوالب أقوى\n"
+        "🎁 اجمع المكافآت\n\n"
+        "اضغط الزر لتبدأ رحلتك:",
         reply_markup=kb,
+        parse_mode="HTML",
     )
 
 
@@ -500,12 +497,13 @@ async def cmd_admin(message: Message):
         cur = await db.execute("SELECT COUNT(*) FROM owned_templates")
         (owned,) = await cur.fetchone()
     await message.answer(
-        f"📊 LION MAX — Admin\n\n"
+        f"📊 <b>LION MAX — Admin</b>\n\n"
         f"👥 المستخدمون: {cnt or 0}\n"
         f"💰 مجموع الأرصدة: {(total_bal or 0):.4f} TON\n"
         f"📈 مجموع الأرباح: {(total_earn or 0):.4f} TON\n"
         f"🦁 القوالب المملوكة: {owned or 0}\n\n"
-        f"💳 محفظة: {TON_WALLET}"
+        f"💳 محفظة: <code>{TON_WALLET}</code>",
+        parse_mode="HTML",
     )
 
 
