@@ -16,16 +16,20 @@ from aiogram.types import (
 )
 
 # ================== الإعدادات ==================
-BOT_TOKEN   = os.getenv("BOT_TOKEN", "ضع_توكن_البوت_هنا")
-WEBAPP_URL  = os.getenv("WEBAPP_URL", "https://example.com/index.html")  # رابط ملف HTML
+BOT_TOKEN   = os.getenv("BOT_TOKEN", "8724497887:AAE02WdKwwMWaXzXmRlsVUiYjPqjVfVR5LI")
+WEBAPP_URL  = os.getenv("WEBAPP_URL", "https://example.com/index.html")
 HOST        = os.getenv("HOST", "0.0.0.0")
 PORT        = int(os.getenv("PORT", "8080"))
 DB_PATH     = os.getenv("DB_PATH", "grammax.db")
 
+ADMIN_ID       = 8183652969
+SUPPORT_URL    = "https://t.me/FastHelp3"
+TON_WALLET     = "UQBrfxfxzB5-op8FGLs-BxnZgOBv0CveJ8VJbC3Xc9pVXZ5X"
+
 # قنوات المهام (يجب أن يكون البوت أدمن فيها)
 TASK_CHANNELS = {
-    1: "@official_channel",
-    2: "@tasks_channel",
+    1: "@CRYBTO_MAX_1",
+    2: "@olka_ad",
 }
 TASK_REWARDS = {
     1: 0.01,
@@ -92,7 +96,6 @@ async def get_or_create_user(user: dict, referrer_id: int | None = None):
             )
             await db.commit()
             return
-        # تحقق من الإحالة
         if referrer_id and referrer_id != uid:
             cur = await db.execute("SELECT user_id FROM users WHERE user_id=?", (referrer_id,))
             if await cur.fetchone():
@@ -311,6 +314,27 @@ async def api_investments(request: web.Request):
     return web.json_response({"items": items})
 
 
+@auth_middleware
+async def api_support(request: web.Request):
+    return web.json_response({"url": SUPPORT_URL})
+
+
+@auth_middleware
+async def api_config(request: web.Request):
+    return web.json_response({
+        "support": SUPPORT_URL,
+        "tonWallet": TON_WALLET,
+        "tasks": [
+            {"id": 1, "channel": TASK_CHANNELS[1], "reward": TASK_REWARDS[1]},
+            {"id": 2, "channel": TASK_CHANNELS[2], "reward": TASK_REWARDS[2]},
+        ],
+        "levels": [
+            {"level": k, "price": v[0], "hours": v[1], "rate": v[2]}
+            for k, v in INVEST_LEVELS.items()
+        ],
+    })
+
+
 # ================== البوت ==================
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
@@ -338,6 +362,24 @@ async def cmd_start(message: Message):
     await message.answer("أهلًا بك في GRAM MAX!\nاضغط الزر لفتح التطبيق.", reply_markup=kb)
 
 
+@dp.message(F.text == "/admin")
+async def cmd_admin(message: Message):
+    if message.from_user.id != ADMIN_ID:
+        return
+    async with aiosqlite.connect(DB_PATH) as db:
+        cur = await db.execute("SELECT COUNT(*), SUM(balance), SUM(total_earn) FROM users")
+        cnt, total_bal, total_earn = await cur.fetchone()
+    text = (
+        f"📊 إحصائيات GRAM MAX\n\n"
+        f"👥 المستخدمون: {cnt or 0}\n"
+        f"💰 مجموع الأرصدة: {(total_bal or 0):.4f} GRAM\n"
+        f"📈 مجموع الأرباح: {(total_earn or 0):.4f} GRAM\n\n"
+        f"📢 القنوات:\n{TASK_CHANNELS[1]}\n{TASK_CHANNELS[2]}\n\n"
+        f"💳 محفظة TON:\n{TON_WALLET}"
+    )
+    await message.answer(text)
+
+
 # ================== السيرفر ==================
 def make_app():
     app = web.Application()
@@ -348,7 +390,8 @@ def make_app():
     app.router.add_post("/api/investments", api_investments)
     app.router.add_post("/api/wallet", api_save_wallet)
     app.router.add_delete("/api/wallet", api_unlink_wallet)
-    # خدمة ملف HTML نفسه
+    app.router.add_post("/api/config", api_config)
+    app.router.add_post("/api/support", api_support)
     app.router.add_get("/", lambda r: web.FileResponse("index.html"))
     return app
 
