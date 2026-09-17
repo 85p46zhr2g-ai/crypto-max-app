@@ -3,22 +3,21 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Tired Rich</title>
+  <title>TIRED RICH</title>
 
   <style>
     :root {
-      --bg: #071321;
-      --bg-light: #0d2137;
-      --card: rgba(17, 45, 72, 0.92);
-      --card-light: rgba(28, 65, 98, 0.9);
-      --blue: #168cff;
-      --blue-light: #42b8ff;
-      --gold: #f4bd36;
-      --text: #ffffff;
-      --muted: #9bb1c8;
-      --success: #25d695;
-      --danger: #ff6875;
-      --border: rgba(120, 190, 255, 0.22);
+      --bg: #17120e;
+      --bg2: #2a1d13;
+      --card: rgba(64, 43, 25, .91);
+      --card2: rgba(91, 60, 31, .9);
+      --gold: #f5b83d;
+      --gold2: #ffd875;
+      --text: #fff8e9;
+      --muted: #c5ab85;
+      --line: rgba(255, 207, 108, .27);
+      --green: #55d391;
+      --red: #ef7068;
     }
 
     * {
@@ -31,14 +30,13 @@
     body {
       min-height: 100vh;
       color: var(--text);
-      background:
-        linear-gradient(rgba(4, 15, 27, .78), rgba(4, 15, 27, .96)),
-        url("assets/city-background.jpg") center / cover fixed;
+      background: #090806;
     }
 
     button,
     input,
-    select {
+    select,
+    textarea {
       font: inherit;
     }
 
@@ -49,244 +47,297 @@
 
     .app {
       width: 100%;
-      max-width: 480px;
+      max-width: 470px;
       min-height: 100vh;
       margin: auto;
+      overflow: hidden;
       padding-bottom: 86px;
-      background: linear-gradient(180deg, rgba(5, 18, 31, .55), #071321);
+      background:
+        linear-gradient(rgba(14, 10, 7, .58), rgba(20, 13, 8, .97)),
+        url("assets/city-background.jpg") center / cover fixed;
     }
 
     .topbar {
+      height: 62px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 16px 18px;
-      background: rgba(5, 18, 31, .9);
-      border-bottom: 1px solid var(--border);
+      padding: 9px 15px;
+      background: rgba(27, 18, 11, .94);
+      border-bottom: 1px solid var(--line);
       position: sticky;
       top: 0;
-      z-index: 10;
+      z-index: 20;
     }
 
     .brand {
       display: flex;
       align-items: center;
-      gap: 10px;
-      font-size: 18px;
-      font-weight: bold;
+      gap: 9px;
     }
 
-    .logo {
-      width: 36px;
-      height: 36px;
-      display: grid;
-      place-items: center;
+    .brand img {
+      width: 40px;
+      height: 40px;
       border-radius: 50%;
-      background: linear-gradient(135deg, var(--blue), #0753a0);
-      font-size: 20px;
+      object-fit: cover;
+      border: 2px solid var(--gold);
+    }
+
+    .brand-title {
+      color: var(--gold2);
+      font-weight: bold;
+      font-size: 17px;
+      letter-spacing: .5px;
     }
 
     .top-actions {
       display: flex;
-      gap: 8px;
+      gap: 7px;
     }
 
-    .icon-btn {
-      width: 36px;
-      height: 36px;
-      border-radius: 12px;
-      color: white;
-      background: var(--bg-light);
-      border: 1px solid var(--border);
+    .small-btn {
+      min-width: 38px;
+      height: 34px;
+      padding: 5px 9px;
+      color: var(--text);
+      border-radius: 10px;
+      background: #3a2a1b;
+      border: 1px solid var(--line);
     }
 
     .content {
-      padding: 15px;
+      padding: 14px;
     }
 
     .hero {
-      min-height: 150px;
+      min-height: 275px;
       display: flex;
       align-items: end;
-      padding: 18px;
-      border-radius: 22px;
+      justify-content: center;
+      position: relative;
+      margin: 0 -14px 12px;
       overflow: hidden;
       background:
-        linear-gradient(0deg, rgba(3, 14, 26, .95), transparent),
-        url("assets/anime-character.jpg") center / cover;
-      border: 1px solid var(--border);
-      margin-bottom: 14px;
+        linear-gradient(0deg, rgba(22, 13, 7, .95), transparent 65%),
+        url("assets/city-background.jpg") center / cover;
     }
 
-    .hero h1 {
-      font-size: 22px;
-      margin-bottom: 5px;
+    .hero-character {
+      width: 245px;
+      max-height: 270px;
+      object-fit: contain;
+      object-position: bottom;
+      filter: drop-shadow(0 9px 8px #000);
+      position: relative;
+      z-index: 2;
     }
 
-    .hero p {
+    .hero-info {
+      position: absolute;
+      right: 16px;
+      top: 15px;
+      z-index: 3;
+      text-align: right;
+    }
+
+    .hero-info h1 {
+      font-size: 21px;
+      color: var(--gold2);
+    }
+
+    .hero-info p {
       color: var(--muted);
-      font-size: 13px;
+      font-size: 12px;
+      margin-top: 5px;
     }
 
     .balance-card {
-      padding: 18px;
-      border-radius: 20px;
-      background: linear-gradient(135deg, #0b65bf, #12395f);
-      box-shadow: 0 10px 28px rgba(0, 117, 255, .18);
-      margin-bottom: 14px;
+      padding: 14px;
+      border-radius: 17px;
+      background: linear-gradient(135deg, #5b3a1b, #2c2015);
+      border: 1px solid var(--line);
+      margin-bottom: 12px;
+      box-shadow: 0 8px 22px rgba(0, 0, 0, .3);
     }
 
-    .balance-title {
-      color: #dceeff;
-      font-size: 13px;
-      margin-bottom: 8px;
+    .balance-head {
+      display: flex;
+      justify-content: space-between;
+      color: var(--muted);
+      font-size: 12px;
     }
 
-    .balance {
-      font-size: 30px;
+    .balance-value {
+      direction: ltr;
+      text-align: right;
+      color: var(--gold2);
+      font-size: 25px;
       font-weight: bold;
+      margin: 8px 0;
+    }
+
+    .address {
       direction: ltr;
       text-align: right;
+      color: #ddc69e;
+      font-size: 10px;
+      overflow: hidden;
+      white-space: nowrap;
     }
 
-    .coin {
-      color: var(--gold);
-    }
-
-    .wallet-address {
-      color: #d0e9ff;
-      font-size: 11px;
-      margin-top: 8px;
-      direction: ltr;
-      text-align: right;
-    }
-
-    .action-row {
+    .actions {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      margin-top: 15px;
+      gap: 8px;
+      margin-top: 12px;
     }
 
-    .primary-btn,
-    .secondary-btn,
-    .danger-btn {
-      min-height: 44px;
-      border-radius: 13px;
+    .gold-btn,
+    .dark-btn,
+    .red-btn {
+      min-height: 40px;
+      border-radius: 10px;
+      padding: 8px;
       font-weight: bold;
+      color: #24170b;
+    }
+
+    .gold-btn {
+      background: linear-gradient(135deg, var(--gold2), #e99c16);
+      box-shadow: 0 4px 12px rgba(244, 170, 35, .2);
+    }
+
+    .dark-btn {
+      color: var(--text);
+      background: #352517;
+      border: 1px solid var(--line);
+    }
+
+    .red-btn {
       color: white;
-      padding: 10px;
-    }
-
-    .primary-btn {
-      background: linear-gradient(135deg, var(--blue-light), var(--blue));
-    }
-
-    .secondary-btn {
-      background: rgba(255,255,255,.12);
-      border: 1px solid rgba(255,255,255,.2);
-    }
-
-    .danger-btn {
-      background: var(--danger);
+      background: var(--red);
     }
 
     .section-title {
       display: flex;
-      align-items: center;
       justify-content: space-between;
-      margin: 20px 2px 10px;
-      font-size: 17px;
+      align-items: center;
+      margin: 18px 2px 9px;
+      color: var(--gold2);
+      font-size: 16px;
+      font-weight: bold;
     }
 
     .section-title a {
-      color: var(--blue-light);
-      font-size: 12px;
+      color: var(--muted);
+      font-size: 11px;
+      cursor: pointer;
+    }
+
+    .game-card {
+      min-height: 92px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 11px;
+      margin-bottom: 9px;
+      border-radius: 15px;
+      background: var(--card);
+      border: 1px solid var(--line);
+    }
+
+    .game-icon {
+      width: 68px;
+      height: 68px;
+      display: grid;
+      place-items: center;
+      flex-shrink: 0;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #eaa72d, #713a16);
+      font-size: 38px;
+    }
+
+    .game-info {
+      flex: 1;
+    }
+
+    .game-info h3 {
+      font-size: 15px;
+      margin-bottom: 5px;
+    }
+
+    .game-info p {
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.5;
+    }
+
+    .game-action {
+      min-width: 65px;
+      padding: 8px 5px;
+      border-radius: 9px;
+      color: #291a09;
+      background: var(--gold);
+      font-size: 11px;
+      font-weight: bold;
     }
 
     .level-card {
-      padding: 15px;
-      border-radius: 18px;
+      padding: 13px;
+      margin-bottom: 9px;
+      border-radius: 15px;
       background: var(--card);
-      border: 1px solid var(--border);
+      border: 1px solid var(--line);
+    }
+
+    .level-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
       margin-bottom: 10px;
     }
 
-    .level-head {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 12px;
-    }
-
     .level-name {
-      font-size: 17px;
+      color: var(--gold2);
       font-weight: bold;
     }
 
     .status {
-      color: var(--success);
-      font-size: 12px;
+      color: var(--green);
+      font-size: 11px;
     }
 
     .locked {
-      color: var(--muted);
+      color: #9b8870;
     }
 
-    .level-info {
+    .level-data {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
-      gap: 8px;
+      gap: 9px;
       color: var(--muted);
-      font-size: 12px;
-      margin-bottom: 12px;
+      font-size: 11px;
+      margin-bottom: 11px;
     }
 
-    .level-info strong {
+    .level-data strong {
       display: block;
       color: white;
-      margin-top: 4px;
       direction: ltr;
-    }
-
-    .wide-btn {
-      width: 100%;
+      text-align: right;
+      margin-top: 3px;
     }
 
     .notice {
       padding: 12px;
-      margin: 12px 0;
-      border-radius: 13px;
-      color: #cbe8ff;
-      background: rgba(22, 140, 255, .12);
-      border: 1px solid rgba(22, 140, 255, .3);
-      font-size: 12px;
+      color: #f6dca7;
+      background: rgba(150, 96, 28, .3);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      font-size: 11px;
       line-height: 1.7;
-    }
-
-    .menu-card {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 10px;
-    }
-
-    .menu-item {
-      padding: 16px 10px;
-      text-align: center;
-      color: white;
-      border-radius: 16px;
-      background: var(--card);
-      border: 1px solid var(--border);
-    }
-
-    .menu-item span {
-      display: block;
-      font-size: 25px;
-      margin-bottom: 8px;
-    }
-
-    .menu-item small {
-      color: var(--muted);
+      margin: 12px 0;
     }
 
     .bottom-nav {
@@ -295,39 +346,39 @@
       left: 50%;
       transform: translateX(-50%);
       width: 100%;
-      max-width: 480px;
+      max-width: 470px;
       display: grid;
       grid-template-columns: repeat(5, 1fr);
-      padding: 10px 7px calc(10px + env(safe-area-inset-bottom));
-      background: rgba(5, 18, 31, .97);
-      border-top: 1px solid var(--border);
-      z-index: 20;
+      padding: 9px 5px calc(9px + env(safe-area-inset-bottom));
+      background: rgba(30, 19, 11, .98);
+      border-top: 1px solid var(--line);
+      z-index: 30;
     }
 
     .nav-btn {
-      color: var(--muted);
+      color: #a9906b;
       background: transparent;
-      font-size: 11px;
+      font-size: 10px;
     }
 
     .nav-btn span {
       display: block;
-      font-size: 21px;
+      font-size: 20px;
       margin-bottom: 3px;
     }
 
     .nav-btn.active {
-      color: var(--blue-light);
+      color: var(--gold2);
     }
 
     .modal {
       display: none;
-      position: fixed;
-      inset: 0;
-      z-index: 50;
       align-items: end;
       justify-content: center;
-      background: rgba(0, 0, 0, .7);
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      background: rgba(0, 0, 0, .72);
     }
 
     .modal.show {
@@ -336,78 +387,89 @@
 
     .modal-box {
       width: 100%;
-      max-width: 480px;
-      padding: 20px;
-      border-radius: 24px 24px 0 0;
-      background: #0b1d30;
-      border: 1px solid var(--border);
+      max-width: 470px;
+      max-height: 88vh;
+      overflow-y: auto;
+      padding: 18px;
+      border-radius: 22px 22px 0 0;
+      background: #2b1d13;
+      border: 1px solid var(--line);
     }
 
-    .modal-head {
+    .modal-title {
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      margin-bottom: 18px;
+      justify-content: space-between;
+      color: var(--gold2);
+      margin-bottom: 17px;
     }
 
-    .close {
+    .close-btn {
       color: white;
       background: transparent;
-      font-size: 24px;
+      font-size: 25px;
     }
 
     .field {
-      margin-bottom: 14px;
+      margin-bottom: 13px;
     }
 
     .field label {
       display: block;
       color: var(--muted);
-      font-size: 12px;
-      margin-bottom: 7px;
+      font-size: 11px;
+      margin-bottom: 6px;
     }
 
     .field input,
-    .field select {
+    .field select,
+    .field textarea {
       width: 100%;
-      padding: 13px;
+      padding: 12px;
       color: white;
-      background: #102b45;
-      border: 1px solid var(--border);
-      border-radius: 12px;
+      background: #3a2819;
+      border: 1px solid var(--line);
+      border-radius: 10px;
       outline: none;
+    }
+
+    .field textarea {
+      min-height: 90px;
+      resize: vertical;
     }
 
     .settings-row {
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      padding: 14px 0;
-      border-bottom: 1px solid var(--border);
+      justify-content: space-between;
+      padding: 13px 0;
+      border-bottom: 1px solid var(--line);
+      font-size: 13px;
     }
 
     .settings-row small {
       display: block;
       color: var(--muted);
+      font-size: 10px;
       margin-top: 4px;
     }
 
     .toggle {
-      width: 48px;
-      height: 26px;
+      width: 47px;
+      height: 25px;
       padding: 3px;
       border-radius: 20px;
-      background: #38536b;
+      background: #554737;
     }
 
     .toggle.active {
-      background: var(--blue);
+      background: #d99c2b;
     }
 
     .toggle i {
       display: block;
-      width: 20px;
-      height: 20px;
+      width: 19px;
+      height: 19px;
       border-radius: 50%;
       background: white;
       transition: .2s;
@@ -417,181 +479,220 @@
       transform: translateX(-22px);
     }
 
-    .empty {
-      padding: 35px 10px;
-      color: var(--muted);
-      text-align: center;
+    .language-btn {
+      width: 100%;
+      min-height: 43px;
+      color: white;
+      text-align: right;
+      padding: 10px 13px;
+      margin-bottom: 8px;
+      border-radius: 10px;
+      background: #3a2819;
+      border: 1px solid var(--line);
     }
   </style>
 </head>
 
 <body>
   <main class="app">
+
     <header class="topbar">
       <div class="brand">
-        <div class="logo">😴</div>
-        <span>Tired Rich</span>
+        <img src="assets/logo.png" alt="Tired Rich Logo">
+        <div class="brand-title">TIRED RICH</div>
       </div>
 
       <div class="top-actions">
-        <button class="icon-btn" onclick="openModal('languageModal')">🇸🇦</button>
-        <button class="icon-btn" onclick="openModal('settingsModal')">⚙️</button>
+        <button class="small-btn" onclick="openModal('languageModal')">🇸🇦</button>
+        <button class="small-btn" onclick="openModal('settingsModal')">⋮</button>
       </div>
     </header>
 
     <section class="content">
+
       <div class="hero">
-        <div>
-          <h1>مرحبًا بك 👋</h1>
-          <p>استثمر، افتح المستويات، واجمع أرباحك</p>
+        <div class="hero-info">
+          <h1>Rich Bums</h1>
+          <p>استثمر واجمع أرباحك</p>
         </div>
+
+        <img
+          class="hero-character"
+          src="assets/anime-character.png"
+          alt="Anime Character"
+        />
       </div>
 
       <div class="balance-card">
-        <div class="balance-title">الرصيد المتاح</div>
-        <div class="balance">0.20200 <span class="coin">GRAM</span></div>
-        <div class="wallet-address">المحفظة: UQ8x...C3Xc</div>
+        <div class="balance-head">
+          <span>💰 الرصيد الحالي</span>
+          <span>GRAM</span>
+        </div>
 
-        <div class="action-row">
-          <button class="primary-btn" onclick="openModal('depositModal')">
+        <div class="balance-value">
+          0.20200 GRAM
+        </div>
+
+        <div class="address">
+          Wallet: UQ8x...C3Xc
+        </div>
+
+        <div class="actions">
+          <button class="gold-btn" onclick="openModal('depositModal')">
             إيداع
           </button>
-          <button class="secondary-btn" onclick="openModal('withdrawModal')">
+
+          <button class="dark-btn" onclick="openModal('withdrawModal')">
             سحب
           </button>
         </div>
       </div>
 
       <div class="section-title">
-        <span>الاستثمار</span>
-        <a href="#" onclick="showLevels()">عرض الكل</a>
+        <span>المطعم</span>
+        <a>عرض الكل</a>
+      </div>
+
+      <div class="game-card">
+        <div class="game-icon">🍜</div>
+
+        <div class="game-info">
+          <h3>النودلز</h3>
+          <p>
+            التكلفة: 0.1 GRAM<br>
+            الربح المتوقع: 0.05 GRAM
+          </p>
+        </div>
+
+        <button class="game-action" onclick="alert('تم فتح المطعم')">
+          دخول
+        </button>
+      </div>
+
+      <div class="section-title">
+        <span>الألعاب المصغرة</span>
+        <a>عرض الكل</a>
+      </div>
+
+      <div class="game-card">
+        <div class="game-icon">🎰</div>
+
+        <div class="game-info">
+          <h3>Mini Games</h3>
+          <p>
+            العب ألعابًا صغيرة<br>
+            واجمع مكافآت إضافية
+          </p>
+        </div>
+
+        <button class="game-action" onclick="alert('سيتم فتح الألعاب')">
+          لعب
+        </button>
+      </div>
+
+      <div class="section-title">
+        <span>مستويات الاستثمار</span>
+        <a onclick="scrollToLevels()">عرض الكل</a>
       </div>
 
       <div id="levels">
+
         <div class="level-card">
-          <div class="level-head">
+          <div class="level-top">
             <span class="level-name">المستوى 1</span>
             <span class="status">مفتوح ✅</span>
           </div>
 
-          <div class="level-info">
+          <div class="level-data">
             <div>الاستثمار<strong>1 GRAM</strong></div>
             <div>المدة<strong>12 ساعة</strong></div>
             <div>الربح<strong>0.15 GRAM</strong></div>
             <div>الإجمالي<strong>1.15 GRAM</strong></div>
           </div>
 
-          <button class="primary-btn wide-btn" onclick="invest(1, 1)">
+          <button class="gold-btn" style="width:100%" onclick="invest(1, 1)">
             استثمر الآن
           </button>
         </div>
 
         <div class="level-card">
-          <div class="level-head">
+          <div class="level-top">
             <span class="level-name">المستوى 2</span>
             <span class="status">مفتوح ✅</span>
           </div>
 
-          <div class="level-info">
+          <div class="level-data">
             <div>الاستثمار<strong>2 GRAM</strong></div>
             <div>المدة<strong>24 ساعة</strong></div>
             <div>الربح<strong>0.30 GRAM</strong></div>
             <div>الإجمالي<strong>2.30 GRAM</strong></div>
           </div>
 
-          <button class="primary-btn wide-btn" onclick="invest(2, 2)">
+          <button class="gold-btn" style="width:100%" onclick="invest(2, 2)">
             استثمر الآن
           </button>
         </div>
 
         <div class="level-card">
-          <div class="level-head">
+          <div class="level-top">
             <span class="level-name">المستوى 3</span>
             <span class="locked">مغلق 🔒</span>
           </div>
 
-          <div class="level-info">
+          <div class="level-data">
             <div>الاستثمار<strong>5 GRAM</strong></div>
             <div>المدة<strong>48 ساعة</strong></div>
             <div>الربح<strong>0.70 GRAM</strong></div>
             <div>الإجمالي<strong>5.70 GRAM</strong></div>
           </div>
 
-          <button class="secondary-btn wide-btn" disabled>
-            أكمل المستوى السابق لفتح المستوى
+          <button class="dark-btn" style="width:100%" disabled>
+            أكمل المستوى السابق
           </button>
         </div>
 
         <div class="level-card">
-          <div class="level-head">
+          <div class="level-top">
             <span class="level-name">المستوى 4</span>
             <span class="locked">مغلق 🔒</span>
           </div>
 
-          <div class="level-info">
+          <div class="level-data">
             <div>الاستثمار<strong>7 GRAM</strong></div>
             <div>المدة<strong>72 ساعة</strong></div>
             <div>الربح<strong>1.30 GRAM</strong></div>
             <div>الإجمالي<strong>8.30 GRAM</strong></div>
           </div>
 
-          <button class="secondary-btn wide-btn" disabled>
+          <button class="dark-btn" style="width:100%" disabled>
             مغلق
           </button>
         </div>
 
         <div class="level-card">
-          <div class="level-head">
+          <div class="level-top">
             <span class="level-name">المستوى 5</span>
             <span class="locked">مغلق 🔒</span>
           </div>
 
-          <div class="level-info">
+          <div class="level-data">
             <div>الاستثمار<strong>10 GRAM</strong></div>
             <div>المدة<strong>120 ساعة</strong></div>
             <div>الربح<strong>3 GRAM</strong></div>
             <div>الإجمالي<strong>13 GRAM</strong></div>
           </div>
 
-          <button class="secondary-btn wide-btn" disabled>
+          <button class="dark-btn" style="width:100%" disabled>
             مغلق
           </button>
         </div>
+
       </div>
 
       <div class="notice">
-        🔔 مدة معالجة طلبات السحب تصل إلى 24 ساعة.
-        يمكنك متابعة حالة طلبك من سجل العمليات.
-      </div>
-
-      <div class="section-title">
-        <span>خدمات سريعة</span>
-      </div>
-
-      <div class="menu-card">
-        <button class="menu-item" onclick="openModal('walletModal')">
-          <span>💳</span>
-          المحفظة
-          <small>ربط المحفظة</small>
-        </button>
-
-        <button class="menu-item" onclick="openModal('supportModal')">
-          <span>🎧</span>
-          الدعم
-          <small>فتح تذكرة</small>
-        </button>
-
-        <button class="menu-item" onclick="openModal('notificationsModal')">
-          <span>🔔</span>
-          الإشعارات
-          <small>تفعيل أو إيقاف</small>
-        </button>
-
-        <button class="menu-item" onclick="alert('سيتم إضافة سجل العمليات هنا')">
-          <span>📋</span>
-          العمليات
-          <small>السجل الكامل</small>
-        </button>
+        ⏱️ تتم معالجة طلبات السحب والإيداع خلال مدة تصل إلى 24 ساعة.
+        <br>
+        🔒 يمكنك الاستثمار في جميع المستويات المفتوحة فقط.
       </div>
     </section>
 
@@ -601,9 +702,9 @@
         الرئيسية
       </button>
 
-      <button class="nav-btn" onclick="alert('صفحة الاستثمار')">
-        <span>📈</span>
-        استثمار
+      <button class="nav-btn" onclick="scrollToLevels()">
+        <span>♙</span>
+        الاستثمار
       </button>
 
       <button class="nav-btn" onclick="openModal('walletModal')">
@@ -612,45 +713,49 @@
       </button>
 
       <button class="nav-btn" onclick="openModal('supportModal')">
-        <span>🎧</span>
+        <span>☷</span>
         الدعم
       </button>
 
       <button class="nav-btn" onclick="openModal('settingsModal')">
-        <span>⚙️</span>
+        <span>⚙</span>
         الإعدادات
       </button>
     </nav>
   </main>
 
+  <!-- نافأكمل نهاية الملف ابتداءً من السطر الأخير السابق:
+
+```html
   <!-- نافذة الإيداع -->
   <div class="modal" id="depositModal">
     <div class="modal-box">
-      <div class="modal-head">
+      <div class="modal-title">
         <h3>💰 إيداع GRAM</h3>
-        <button class="close" onclick="closeModal('depositModal')">×</button>
+        <button class="close-btn" onclick="closeModal('depositModal')">×</button>
       </div>
 
       <div class="notice">
-        أرسل المبلغ إلى عنوان الإيداع الظاهر أدناه، ثم أدخل رقم العملية.
+        أرسل المبلغ إلى عنوان الإيداع، ثم أدخل رقم العملية حتى تتم مراجعتها.
       </div>
 
       <div class="field">
         <label>عنوان الإيداع</label>
-        <input value="UQxxxxxxxxxxxxxxxxC3Xc" readonly />
+        <input value="UQxxxxxxxxxxxxxxxxC3Xc" readonly>
       </div>
 
       <div class="field">
         <label>المبلغ</label>
-        <input type="number" placeholder="مثال: 2 GRAM" />
+        <input type="number" placeholder="أدخل المبلغ بالـ GRAM">
       </div>
 
       <div class="field">
         <label>رقم العملية</label>
-        <input type="text" placeholder="أدخل رقم العملية" />
+        <input type="text" placeholder="أدخل رقم العملية">
       </div>
 
-      <button class="primary-btn wide-btn" onclick="submitAction('تم تسجيل طلب الإيداع للمراجعة')">
+      <button class="gold-btn" style="width:100%"
+        onclick="submitAction('تم إرسال طلب الإيداع للمراجعة', 'depositModal')">
         تأكيد الإيداع
       </button>
     </div>
@@ -659,9 +764,9 @@
   <!-- نافذة السحب -->
   <div class="modal" id="withdrawModal">
     <div class="modal-box">
-      <div class="modal-head">
+      <div class="modal-title">
         <h3>💸 سحب GRAM</h3>
-        <button class="close" onclick="closeModal('withdrawModal')">×</button>
+        <button class="close-btn" onclick="closeModal('withdrawModal')">×</button>
       </div>
 
       <div class="notice">
@@ -669,40 +774,53 @@
       </div>
 
       <div class="field">
-        <label>المبلغ</label>
-        <input type="number" placeholder="أدخل مبلغ السحب" />
+        <label>المبلغ المتاح</label>
+        <input value="0.20200 GRAM" readonly>
+      </div>
+
+      <div class="field">
+        <label>مبلغ السحب</label>
+        <input type="number" placeholder="أدخل مبلغ السحب">
       </div>
 
       <div class="field">
         <label>المحفظة المرتبطة</label>
-        <input value="UQ8x...C3Xc" readonly />
+        <input value="UQ8x...C3Xc" readonly>
       </div>
 
-      <button class="primary-btn wide-btn" onclick="submitAction('تم إرسال طلب السحب للمراجعة')">
+      <button class="gold-btn" style="width:100%"
+        onclick="submitAction('تم إرسال طلب السحب للمراجعة', 'withdrawModal')">
         تأكيد طلب السحب
       </button>
     </div>
   </div>
 
-  <!-- نافذة ربط المحفظة -->
+  <!-- نافذة المحفظة -->
   <div class="modal" id="walletModal">
     <div class="modal-box">
-      <div class="modal-head">
+      <div class="modal-title">
         <h3>💳 ربط المحفظة</h3>
-        <button class="close" onclick="closeModal('walletModal')">×</button>
+        <button class="close-btn" onclick="closeModal('walletModal')">×</button>
       </div>
 
       <div class="notice">
-        لن نطلب منك العبارة السرية أو المفتاح الخاص. سيتم الربط من خلال المحفظة الرسمية.
+        لن نطلب منك العبارة السرية أو المفتاح الخاص. يتم الربط من خلال المحفظة الرسمية.
       </div>
 
-      <button class="primary-btn wide-btn" onclick="submitAction('سيتم فتح المحفظة الرسمية للتأكيد')">
+      <div class="field">
+        <label>حالة المحفظة</label>
+        <input value="غير مربوطة ❌" readonly>
+      </div>
+
+      <button class="gold-btn" style="width:100%"
+        onclick="submitAction('سيتم فتح المحفظة الرسمية للتأكيد', 'walletModal')">
         🔗 ربط المحفظة
       </button>
 
-      <br /><br />
+      <br><br>
 
-      <button class="secondary-btn wide-btn" onclick="submitAction('تم فصل المحفظة')">
+      <button class="dark-btn" style="width:100%"
+        onclick="submitAction('تم فصل المحفظة', 'walletModal')">
         فصل المحفظة
       </button>
     </div>
@@ -711,22 +829,20 @@
   <!-- نافذة اللغة -->
   <div class="modal" id="languageModal">
     <div class="modal-box">
-      <div class="modal-head">
-        <h3>🌐 اللغة</h3>
-        <button class="close" onclick="closeModal('languageModal')">×</button>
+      <div class="modal-title">
+        <h3>🌐 اختيار اللغة</h3>
+        <button class="close-btn" onclick="closeModal('languageModal')">×</button>
       </div>
 
-      <button class="secondary-btn wide-btn" onclick="changeLanguage('العربية')">
+      <button class="language-btn" onclick="selectLanguage('العربية')">
         🇸🇦 العربية
       </button>
-      <br /><br />
 
-      <button class="secondary-btn wide-btn" onclick="changeLanguage('English')">
+      <button class="language-btn" onclick="selectLanguage('English')">
         🇬🇧 English
       </button>
-      <br /><br />
 
-      <button class="secondary-btn wide-btn" onclick="changeLanguage('Русский')">
+      <button class="language-btn" onclick="selectLanguage('Русский')">
         🇷🇺 Русский
       </button>
     </div>
@@ -735,16 +851,17 @@
   <!-- نافذة الإعدادات -->
   <div class="modal" id="settingsModal">
     <div class="modal-box">
-      <div class="modal-head">
+      <div class="modal-title">
         <h3>⚙️ الإعدادات</h3>
-        <button class="close" onclick="closeModal('settingsModal')">×</button>
+        <button class="close-btn" onclick="closeModal('settingsModal')">×</button>
       </div>
 
       <div class="settings-row">
         <div>
           إشعارات الاستثمار
-          <small>تأكيد الاستثمارات الجديدة</small>
+          <small>عند تنفيذ استثمار جديد</small>
         </div>
+
         <button class="toggle active" onclick="toggleSwitch(this)">
           <i></i>
         </button>
@@ -752,9 +869,10 @@
 
       <div class="settings-row">
         <div>
-          إشعارات انتهاء الاستثمار
+          انتهاء الاستثمار
           <small>عند انتهاء مدة الاستثمار</small>
         </div>
+
         <button class="toggle active" onclick="toggleSwitch(this)">
           <i></i>
         </button>
@@ -762,42 +880,42 @@
 
       <div class="settings-row">
         <div>
-          إشعارات التحديثات
-          <small>تحديثات البوت والأخبار</small>
+          فتح المستويات
+          <small>عند فتح مستوى جديد</small>
         </div>
+
+        <button class="toggle active" onclick="toggleSwitch(this)">
+          <i></i>
+        </button>
+      </div>
+
+      <div class="settings-row">
+        <div>
+          تحديثات البوت
+          <small>التحديثات والأخبار الجديدة</small>
+        </div>
+
         <button class="toggle" onclick="toggleSwitch(this)">
           <i></i>
         </button>
       </div>
 
-      <br />
+      <div class="settings-row">
+        <div>
+          إشعارات السحب
+          <small>تحديث حالة طلب السحب</small>
+        </div>
 
-      <button class="secondary-btn wide-btn" onclick="openModal('languageModal')">
+        <button class="toggle active" onclick="toggleSwitch(this)">
+          <i></i>
+        </button>
+      </div>
+
+      <br>
+
+      <button class="dark-btn" style="width:100%"
+        onclick="openModal('languageModal')">
         🌐 تغيير اللغة
-      </button>
-    </div>
-  </div>
-
-  <!-- نافذة الإشعارات -->
-  <div class="modal" id="notificationsModal">
-    <div class="modal-box">
-      <div class="modal-head">
-        <h3>🔔 الإشعارات</h3>
-        <button class="close" onclick="closeModal('notificationsModal')">×</button>
-      </div>
-
-      <div class="notice">
-        فعّل الإشعارات حتى يصلك تأكيد الاستثمار، انتهاء الاستثمار، فتح المستويات والتحديثات.
-      </div>
-
-      <button class="primary-btn wide-btn" onclick="submitAction('تم تفعيل الإشعارات')">
-        تفعيل الإشعارات
-      </button>
-
-      <br /><br />
-
-      <button class="secondary-btn wide-btn" onclick="submitAction('تم إيقاف الإشعارات الاختيارية')">
-        إيقاف الإشعارات
       </button>
     </div>
   </div>
@@ -805,29 +923,31 @@
   <!-- نافذة الدعم -->
   <div class="modal" id="supportModal">
     <div class="modal-box">
-      <div class="modal-head">
+      <div class="modal-title">
         <h3>🎧 الدعم الفني</h3>
-        <button class="close" onclick="closeModal('supportModal')">×</button>
+        <button class="close-btn" onclick="closeModal('supportModal')">×</button>
       </div>
 
       <div class="field">
         <label>نوع المشكلة</label>
+
         <select>
           <option>مشكلة في السحب</option>
           <option>مشكلة في الإيداع</option>
           <option>مشكلة في الاستثمار</option>
-          <option>مشكلة في المحفظة</option>
+          <option>مشكلة في ربط المحفظة</option>
           <option>مشكلة تقنية</option>
           <option>موضوع آخر</option>
         </select>
       </div>
 
       <div class="field">
-        <label>اكتب رسالتك</label>
-        <input type="text" placeholder="اكتب تفاصيل المشكلة" />
+        <label>شرح المشكلة</label>
+        <textarea placeholder="اكتب تفاصيل المشكلة هنا"></textarea>
       </div>
 
-      <button class="primary-btn wide-btn" onclick="submitAction('تم فتح تذكرة دعم جديدة')">
+      <button class="gold-btn" style="width:100%"
+        onclick="submitAction('تم فتح تذكرة دعم جديدة', 'supportModal')">
         إرسال التذكرة
       </button>
     </div>
@@ -842,34 +962,42 @@
       document.getElementById(id).classList.remove("show");
     }
 
-    function submitAction(message) {
+    function submitAction(message, modalId) {
       alert("✅ " + message);
+
+      if (modalId) {
+        closeModal(modalId);
+      }
     }
 
-    function changeLanguage(language) {
+    function selectLanguage(language) {
       alert("تم اختيار اللغة: " + language);
       closeModal("languageModal");
     }
 
-    function toggleSwitch(element) {
-      element.classList.toggle("active");
+    function toggleSwitch(button) {
+      button.classList.toggle("active");
+    }
+
+    function scrollToLevels() {
+      document.getElementById("levels").scrollIntoView({
+        behavior: "smooth"
+      });
     }
 
     function invest(level, amount) {
       const confirmed = confirm(
-        "تأكيد الاستثمار في المستوى " + level +
-        "\nالمبلغ: " + amount + " GRAM"
+        "تأكيد الاستثمار\n\n" +
+        "المستوى: " + level + "\n" +
+        "المبلغ: " + amount + " GRAM"
       );
 
       if (confirmed) {
-        alert("✅ تم إرسال طلب الاستثمار للمراجعة");
+        alert(
+          "✅ تم إرسال طلب الاستثمار\n" +
+          "سيتم تحديث حالته بعد التأكيد."
+        );
       }
-    }
-
-    function showLevels() {
-      document.getElementById("levels").scrollIntoView({
-        behavior: "smooth"
-      });
     }
 
     window.addEventListener("click", function(event) {
